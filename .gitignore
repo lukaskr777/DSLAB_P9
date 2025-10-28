@@ -1,6 +1,5 @@
 .dslab_env/
 data/
 .DS_STORE
-
 /venv
 /Datasets
