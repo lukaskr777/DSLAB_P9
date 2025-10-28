@@ -1,5 +1,6 @@
-.dslab_env/
-data/
 .DS_STORE
-/venv
-/Datasets
+__pycache__/
+.venv/
+data/litellm/
+data/openwebui/
+figs/
