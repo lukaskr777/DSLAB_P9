@@ -9,7 +9,7 @@ Outputs:
 - Histograms: row spend, total/prompt/completion tokens, latency, ttfb, gen time
 - Whale curve: cumulative spend share vs user rank (end_user, spend > 0)
 - Per-top-user daily spend lines
-- Hourly patterns: spend, requests, latency by hour; weekday patterns; hour×weekday heatmap
+- Hourly patterns: spend, requests, latency by hour; weekday patterns; hour x weekday heatmap
 - Model/provider evolution: daily spend share for top-K model_groups and providers
 - Spend anomalies: daily spend z-score and rolling deviations
 - Latency breakdown shares: TTFB share and GEN share of total latency
@@ -31,8 +31,8 @@ Outputs:
 import numpy as np
 import pandas as pd
 
-from scripts.utils import PathLike, to_dt, ensure_empty_dir, read_table, sanitize_fname, save_csv, save_text
-from scripts.plotting_functions import line, bar, hist, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
+from scripts.file_utils import PathLike, to_dt, ensure_empty_dir, read_table, sanitize_fname, save_csv, save_text
+from scripts.plot_utils import line, bar, hist, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
 
 
 def _clean(df: pd.DataFrame) -> pd.DataFrame:
