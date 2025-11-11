@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from textwrap import shorten
 
-from utils import read_table
+from scripts.utils import read_table
 
-from plots_tables.plots_litellm_daily_tag_spend import plot_all_itellm_daily_tag_spend
+from plots_tables.plots_litellm_daily_tag_spend import plot_all_litellm_daily_tag_spend
 from plots_tables.plots_litellm_daily_team_spend import plot_all_litellm_daily_team_spend
 from plots_tables.plots_litellm_dayly_user_spend import plot_all_litellm_daily_user_spend
 from plots_tables.plots_litellm_end_user_table import plot_all_litellm_end_user_table
@@ -190,8 +190,13 @@ if __name__ == "__main__":
     p2 = summarize_tables_markdown(dataset="openwebui", md_file_name="openwebui_summary.md")
     print(f"Wrote {p2}")
 
-    plot_all_itellm_daily_tag_spend()
+    plot_all_litellm_daily_tag_spend()
+    print("Created plots for table 'Daily Tag Spend'")
     plot_all_litellm_daily_team_spend()
+    print("Created plots for the table 'Daily Team Spend'")
     plot_all_litellm_daily_user_spend()
+    print("Created plots for the table 'Daily User Spend'")
     plot_all_litellm_end_user_table()
+    print("Created plots for the table 'End User Table'")
     plot_all_litellm_spendlogs()
+    print("Created plots for the table 'Spend Logs'")

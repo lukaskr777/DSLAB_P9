@@ -13,7 +13,8 @@ Outputs:
 """
 
 import pandas as pd
-from utils import PathLike, read_table, ensure_empty_dir, line, bar, hist
+from scripts.utils import PathLike, read_table, ensure_empty_dir
+from scripts.plotting_functions import line, bar, hist
 
 
 def _to_date(df: pd.DataFrame, col: str = "date") -> pd.DataFrame:

@@ -13,7 +13,8 @@ Outputs:
 """
 
 import pandas as pd
-from utils import PathLike, read_table, ensure_empty_dir, line, bar, hist
+from scripts.utils import PathLike, read_table, ensure_empty_dir
+from scripts.plotting_functions import line, bar, hist
 
 
 def _to_date(df: pd.DataFrame, col: str = "date") -> pd.DataFrame:
@@ -47,7 +48,7 @@ def _top_by_spend(df: pd.DataFrame, key: str, top: int) -> pd.Series:
     return s.head(top)
 
 
-def plot_all_itellm_daily_tag_spend(
+def plot_all_litellm_daily_tag_spend(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
     outdir: PathLike = "figs/litellm_daily_tag_spend",
