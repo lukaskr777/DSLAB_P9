@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-from typing import Optional
 import shutil
 
 import pandas as pd
@@ -33,7 +32,7 @@ def sanitize_fname(name: PathLike) -> str:
     return s[:200]
 
 
-def make_outpath(fname: PathLike, outdir: PathLike, ext: Optional[str] = None) -> Path:
+def make_outpath(fname: PathLike, outdir: PathLike, ext: str | None = None) -> Path:
     """Build a sanitized output path with the given extension. """
     name = sanitize_fname(fname)
     if ext is not None:
@@ -65,11 +64,6 @@ def read_table(name: str, dataset: str = "litellm", dir_name: PathLike = "data")
         return pd.DataFrame()
 
     return pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
-
-
-def to_dt(s: pd.Series) -> pd.Series:
-    """Convert a Series to datetime in UTC, coercing errors to NaT."""
-    return pd.to_datetime(s, errors="coerce", utc=True)
 
 
 def save_csv(obj: pd.DataFrame | pd.Series, fname: PathLike, outdir: PathLike) -> Path:

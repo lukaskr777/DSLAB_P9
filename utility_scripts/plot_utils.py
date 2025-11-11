@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import Optional, Sequence 
+from collections.abc import Sequence 
 
 import numpy as np
 import pandas as pd
-
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.ticker import FixedLocator, FixedFormatter
@@ -75,7 +74,14 @@ def _tilt_and_crop_ticklabels(
 
 
 def line(
-    x: str, y: str, data: pd.DataFrame, title: str, xlabel: str, ylabel: str, fname: PathLike, outdir: PathLike
+    x: str, 
+    y: str, 
+    data: pd.DataFrame, 
+    title: str, 
+    xlabel: str, 
+    ylabel: str, 
+    fname: PathLike, 
+    outdir: PathLike,
 ) -> Path:
     """Save a line plot from DataFrame columns `x` and `y`."""
     if x not in data.columns or y not in data.columns:
@@ -108,8 +114,9 @@ def bar(
     ylabel: str,
     fname: PathLike,
     outdir: PathLike,
-    top: Optional[int] = None,
-    order: Optional[Sequence[str | float | int]] = None,
+    *,
+    top: int | None = None,
+    order: Sequence[str | float | int] | None = None,
     sort_values: bool = True,
     ascending: bool = False,
 ) -> Path:
@@ -155,6 +162,7 @@ def hist(
     ylabel: str,
     fname: PathLike,
     outdir: PathLike,
+    *,
     bins: int = 50,
     log_scale: bool = False,
 ) -> Path:
@@ -187,6 +195,63 @@ def hist(
     return out_path
 
 
+def grouped_hist(
+    values: pd.Series,
+    groups: pd.Series,
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    fname: PathLike,
+    outdir: PathLike,
+    *,
+    bins: int | Sequence[float] = 30,
+    stacked: bool = True,
+    log_scale: bool = False,
+) -> Path:
+    """
+    Stacked histogram by group with common bin edges.
+
+    Args:
+        values: Numeric sample values.
+        groups: Group labels aligned to `values`.
+        bins: Int for automatic binning or explicit bin edges.
+        stacked: Stack groups if True, otherwise overlay.
+        log_scale: Logarithmic Y axis if True.
+    """
+    out_path = make_outpath(fname, outdir, ext=".png")
+
+    v = pd.to_numeric(values, errors="coerce")
+    g = groups.astype("string")
+    mask = v.notna() & g.notna()
+    v, g = v[mask], g[mask]
+    if v.empty:
+        raise ValueError("No finite values to plot.")
+
+    if isinstance(bins, int):
+        edges = np.histogram_bin_edges(v.to_numpy(), bins=bins).tolist()
+    else:
+        edges = list(bins)
+
+    cats = list(pd.unique(g))
+    data = [v[g == c].to_numpy() for c in cats]
+
+    cmap = plt.colormaps.get_cmap("tab10")
+    colors = [cmap(i) for i in range(len(cats))]
+
+    fig, ax = plt.subplots()
+    ax.hist(
+        data, bins=edges, stacked=stacked, color=colors, label=[str(c) for c in cats], edgecolor="none", log=log_scale
+    )
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
+    return out_path
+
+
 def scatter(
     x: pd.Series,
     y: pd.Series,
@@ -195,7 +260,8 @@ def scatter(
     ylabel: str,
     fname: PathLike,
     outdir: PathLike,
-    annotate: Optional[pd.Series | Sequence[str]] = None,
+    *,
+    annotate: pd.Series | Sequence[str] | None = None,
 ) -> Path:
     """
     Save a scatter plot from two Series.
@@ -236,7 +302,8 @@ def scatter_with_fit(
     ylabel: str,
     fname: PathLike,
     outdir: PathLike,
-    write_params_path: Optional[PathLike] = None,
+    *,
+    write_params_path: PathLike | None = None,
 ) -> Path:
     """
     Scatter with least-squares line y = a*x + b.
@@ -278,7 +345,14 @@ def scatter_with_fit(
     return out_path
 
 
-def heatmap(pivot: pd.DataFrame, title: str, xlabel: str, ylabel: str, fname: PathLike, outdir: PathLike) -> Path:
+def heatmap(
+        pivot: pd.DataFrame, 
+        title: str, 
+        xlabel: str, 
+        ylabel: str, 
+        fname: PathLike, 
+        outdir: PathLike,
+    ) -> Path:
     """
     Save a heatmap from a pivoted DataFrame.
 
@@ -290,7 +364,13 @@ def heatmap(pivot: pd.DataFrame, title: str, xlabel: str, ylabel: str, fname: Pa
     
     out_path = make_outpath(fname, outdir)
     fig, ax = plt.subplots()
-    im = ax.imshow(pivot.values, aspect="auto")
+
+    M = pivot.apply(pd.to_numeric, errors="coerce")
+    if M.isna().all().all():
+        raise ValueError("Heatmap has only NaNs after numeric coercion.")
+    A = M.to_numpy(dtype=float)  # real float array, no object dtype
+
+    im = ax.imshow(A, aspect="auto")
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
     ax.set_xticks(np.arange(pivot.shape[1]))
