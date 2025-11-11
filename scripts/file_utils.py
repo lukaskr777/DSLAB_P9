@@ -112,4 +112,3 @@ def save_text(text: str, fname: PathLike, outdir: PathLike) -> Path:
     out_path = make_outpath(fname, outdir, ext=".txt")
     out_path.write_text(text, encoding="utf-8")
     return out_path
-

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from textwrap import shorten
 
-from scripts.utils import read_table
+from scripts.file_utils import read_table
 
 from plots_tables.plots_litellm_daily_tag_spend import plot_all_litellm_daily_tag_spend
 from plots_tables.plots_litellm_daily_team_spend import plot_all_litellm_daily_team_spend

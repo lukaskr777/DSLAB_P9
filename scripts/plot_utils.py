@@ -1,17 +1,20 @@
 from pathlib import Path
-from typing import Iterable, Literal, Optional, Sequence 
+from typing import Optional, Sequence 
 
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.ticker import FixedLocator, FixedFormatter
 
 from scripts.file_utils import PathLike, make_outpath, save_text
 
 
 def _tilt_and_crop_ticklabels(
     ax: Axes,
-    axes: Iterable[Literal["x", "y"]] = ("x",),
+    x_axis: bool = True,
+    y_axis: bool = False,
     tilt_thresh: int = 10,
     crop_thresh: int = 25,
     rotation: int = 35,
@@ -21,49 +24,54 @@ def _tilt_and_crop_ticklabels(
 
     Args:
         ax: Target axes.
-        axes: Iterable over {"x","y"} to apply formatting.
+        x_axis: Whether to process the X axis.
+        y_axis: Whether to process the Y axis.
         tilt_thresh: Rotate labels if any length >= this.
         crop_thresh: Crop labels whose length >= this.
         rotation: Rotation angle in degrees.
     """
-    something_changed = False
+    ax.figure.canvas.draw()
 
-    for axis in axes:
-        texts = ax.get_xticklabels() if axis == "x" else ax.get_yticklabels()
-
-        any_long = False
-
-        for t in texts:
-            s = t.get_text()
-            if not s:
-                continue
-
-            orig_len = len(s)
-            if orig_len >= tilt_thresh:
-                any_long = True
-
-            if orig_len >= crop_thresh:
-                new = s[: max(1, crop_thresh - 1)] + "…"
-                if new != s:
-                    t.set_text(new)
-                    something_changed = True
-
-        if any_long:
-            something_changed = True
-            if axis == "x":
-                plt.setp(texts, rotation=rotation, ha="right", rotation_mode="anchor")
-            else:  # "y"
-                plt.setp(texts, rotation=rotation, ha="right", va="center", rotation_mode="anchor")
-        else:
-            if axis == "x":
-                plt.setp(texts, rotation=0, ha="center", rotation_mode=None)
-                ax.tick_params(axis="x", labelrotation=0)
+    if x_axis:
+        x_ticks = [float(t) for t in ax.get_xticks()]
+        x_texts = [t.get_text() for t in ax.get_xticklabels()]
+        any_long_x = any(len(s or "") >= tilt_thresh for s in x_texts)
+        x_labels: list[str] = []
+        for s in x_texts:
+            if len("" if s is None else str(s)) < crop_thresh:
+                x_labels.append("" if s is None else str(s))
             else:
-                plt.setp(texts, rotation=0, ha="right", va="center", rotation_mode=None)
-                ax.tick_params(axis="y", labelrotation=0)
+                x_labels.append(("" if s is None else str(s))[: max(1, crop_thresh - 1)] + "…")
 
-    if something_changed:
-        ax.figure.canvas.draw_idle()
+        ax.xaxis.set_major_locator(FixedLocator(x_ticks))
+        ax.xaxis.set_major_formatter(FixedFormatter(x_labels))
+
+        ax.tick_params(axis="x", labelrotation=rotation if any_long_x else 0)
+        for lab in ax.get_xticklabels():
+            lab.set_horizontalalignment("right" if any_long_x else "center")
+            lab.set_rotation_mode("anchor" if any_long_x else None)
+
+    if y_axis:
+        y_ticks = [float(t) for t in ax.get_yticks()]
+        y_texts = [t.get_text() for t in ax.get_yticklabels()]
+        any_long_y = any(len(s or "") >= tilt_thresh for s in y_texts)
+        y_labels: list[str] = []
+        for s in y_texts:
+            if len("" if s is None else str(s)) < crop_thresh:
+                y_labels.append("" if s is None else str(s))
+            else:
+                y_labels.append(("" if s is None else str(s))[: max(1, crop_thresh - 1)] + "…")
+
+        ax.yaxis.set_major_locator(FixedLocator(y_ticks))
+        ax.yaxis.set_major_formatter(FixedFormatter(y_labels))
+
+        ax.tick_params(axis="y", labelrotation=rotation if any_long_y else 0)
+        for lab in ax.get_yticklabels():
+            lab.set_horizontalalignment("right")
+            lab.set_verticalalignment("center")
+            lab.set_rotation_mode("anchor" if any_long_y else None)
+
+    ax.figure.canvas.draw()
 
 
 def line(
@@ -85,7 +93,7 @@ def line(
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax)
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
@@ -132,7 +140,7 @@ def bar(
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax)
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
@@ -171,7 +179,7 @@ def hist(
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax)
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
@@ -212,38 +220,7 @@ def scatter(
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
-    return out_path
-
-
-def heatmap(pivot: pd.DataFrame, title: str, xlabel: str, ylabel: str, fname: PathLike, outdir: PathLike) -> Path:
-    """
-    Save a heatmap from a pivoted DataFrame.
-
-    Uses imshow for dense data and adds a colorbar.
-    Row and column labels are drawn from the DataFrame index and columns respectively.
-    """
-    if pivot.empty:
-        raise ValueError("Input DataFrame for heatmap is empty.")
-    
-    out_path = make_outpath(fname, outdir)
-    fig, ax = plt.subplots()
-    im = ax.imshow(pivot.values, aspect="auto")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-
-    ax.set_xticks(np.arange(pivot.shape[1]))
-    ax.set_xticklabels(pivot.columns)
-    ax.set_yticks(np.arange(pivot.shape[0]))
-    ax.set_yticklabels(pivot.index)
-
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, axes=("x", "y"))
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
@@ -289,7 +266,7 @@ def scatter_with_fit(
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax)
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
@@ -298,6 +275,37 @@ def scatter_with_fit(
     if write_params_path is not None:
         save_text(f"slope={a}\nintercept={b}\n", write_params_path, outdir)
 
+    return out_path
+
+
+def heatmap(pivot: pd.DataFrame, title: str, xlabel: str, ylabel: str, fname: PathLike, outdir: PathLike) -> Path:
+    """
+    Save a heatmap from a pivoted DataFrame.
+
+    Uses imshow for dense data and adds a colorbar.
+    Row and column labels are drawn from the DataFrame index and columns respectively.
+    """
+    if pivot.empty:
+        raise ValueError("Input DataFrame for heatmap is empty.")
+    
+    out_path = make_outpath(fname, outdir)
+    fig, ax = plt.subplots()
+    im = ax.imshow(pivot.values, aspect="auto")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    ax.set_xticks(np.arange(pivot.shape[1]))
+    ax.set_xticklabels(pivot.columns)
+    ax.set_yticks(np.arange(pivot.shape[0]))
+    ax.set_yticklabels(pivot.index)
+
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=True)
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
     return out_path
 
 
@@ -360,7 +368,7 @@ def pareto_frontier_plot(
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, axes=("x", "y"))
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=True)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)

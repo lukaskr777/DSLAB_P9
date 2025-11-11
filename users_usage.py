@@ -11,8 +11,8 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
-from scripts.utils import PathLike, to_dt, ensure_empty_dir, read_table, save_csv, sanitize_fname, save_text
-from scripts.plotting_functions import line, bar, hist, scatter
+from scripts.file_utils import PathLike, to_dt, ensure_empty_dir, read_table, save_csv, sanitize_fname, save_text
+from scripts.plot_utils import line, bar, hist, scatter
 
 
 def _clean(df: pd.DataFrame) -> pd.DataFrame:
