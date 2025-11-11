@@ -15,8 +15,8 @@ Outputs:
 
 import numpy as np
 import pandas as pd
-from scripts.file_utils import PathLike, read_table, ensure_empty_dir
-from scripts.plot_utils import line, bar, hist
+from utility_scripts.file_utils import PathLike, read_table, ensure_empty_dir
+from utility_scripts.plot_utils import line, bar, hist
 
 
 def _clean(df: pd.DataFrame) -> pd.DataFrame:

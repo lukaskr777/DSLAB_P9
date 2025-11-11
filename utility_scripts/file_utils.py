@@ -45,21 +45,6 @@ def make_outpath(fname: PathLike, outdir: PathLike, ext: Optional[str] = None) -
     return ensure_outdir(outdir) / name
 
 
-def make_outpath_chat(fname: PathLike, outdir: PathLike, ext: Optional[str] = None) -> Path:
-    """Build a sanitized output path with the given extension."""
-    name = sanitize_fname(fname)
-
-    if ext is not None:
-        if not ext.startswith("."):
-            raise ValueError(f"ext must start with '.': {ext}")
-        # Replace existing suffix, case-insensitive
-        stem, dot, suffix = name.rpartition(".")
-        if not dot or suffix.lower() != ext.lower().lstrip("."):
-            name = (stem or name) + ext
-
-    return ensure_outdir(outdir) / name
-
-
 def read_table(name: str, dataset: str = "litellm", dir_name: PathLike = "data") -> pd.DataFrame:
     """
     Load and concatenate all Parquet parts for a logical table.
@@ -88,7 +73,7 @@ def to_dt(s: pd.Series) -> pd.Series:
 
 
 def save_csv(obj: pd.DataFrame | pd.Series, fname: PathLike, outdir: PathLike) -> Path:
-    """Save a DataFrame or Series to CSV at {outdir}/{fname}. Only write index if non-default."""
+    """Save a DataFrame or Series to CSV at {outdir}/{fname}. Only write index if non-default. Return saved path."""
     out_path = make_outpath(fname, outdir, ext=".csv")
 
     if isinstance(obj, pd.Series):

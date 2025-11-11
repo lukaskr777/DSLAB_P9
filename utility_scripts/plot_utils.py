@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.ticker import FixedLocator, FixedFormatter
 
-from scripts.file_utils import PathLike, make_outpath, save_text
+from utility_scripts.file_utils import PathLike, make_outpath, save_text
 
 
 def _tilt_and_crop_ticklabels(

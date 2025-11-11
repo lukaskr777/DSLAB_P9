@@ -31,8 +31,8 @@ Outputs:
 import numpy as np
 import pandas as pd
 
-from scripts.file_utils import PathLike, to_dt, ensure_empty_dir, read_table, sanitize_fname, save_csv, save_text
-from scripts.plot_utils import line, bar, hist, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
+from utility_scripts.file_utils import PathLike, to_dt, ensure_empty_dir, read_table, sanitize_fname, save_csv, save_text
+from utility_scripts.plot_utils import line, bar, hist, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
 
 
 def _clean(df: pd.DataFrame) -> pd.DataFrame:

@@ -1,20 +1,20 @@
 """
-Produce a set of exploratory plots for the LiteLLM_DailyUserSpend table.
-Reads data via utils.read_table and writes figures to figs/litellm_daily_user_spend.
+Produce a set of exploratory plots for the LiteLLM_DailyTagSpend table.
+Reads data via utils.read_table and writes figures to figs/litellm_daily_tag_spend.
 
 Outputs:
 - Time series: total spend per day
 - Time series: total API requests per day
 - Time series: success rate per day
 - Time series: average tokens per request per day
-- Bars (Top-N): users by total spend, models by total spend, model_groups by total spend, api_keys by total spend
+- Time series: cache read input tokens per day
+- Bars (Top-N): tags by total spend, models by total spend, model_groups by total spend, api_keys by total spend
 - Histograms: row-level spend distribution, daily total spend distribution
-- Per-user daily spend lines for Top-N users
 """
 
 import pandas as pd
-from scripts.file_utils import PathLike, read_table, ensure_empty_dir
-from scripts.plot_utils import line, bar, hist
+from utility_scripts.file_utils import PathLike, read_table, ensure_empty_dir
+from utility_scripts.plot_utils import line, bar, hist
 
 
 def _to_date(df: pd.DataFrame, col: str = "date") -> pd.DataFrame:
@@ -48,18 +48,18 @@ def _top_by_spend(df: pd.DataFrame, key: str, top: int) -> pd.Series:
     return s.head(top)
 
 
-def plot_all_litellm_daily_user_spend(
+def plot_all_litellm_daily_tag_spend(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
-    outdir: PathLike = "figs/litellm_daily_user_spend",
+    outdir: PathLike = "figs/litellm_daily_tag_spend",
     top: int = 10
 ) -> None:
-    """Create all plots for LiteLLM_DailyUserSpend."""
+    """Create all plots for LiteLLM_DailyTagSpend."""
     out = ensure_empty_dir(outdir)
 
-    df = read_table("LiteLLM_DailyUserSpend", dataset=dataset, dir_name=dir_name)
+    df = read_table("LiteLLM_DailyTagSpend", dataset=dataset, dir_name=dir_name)
     if df.empty:
-        raise SystemExit("No data loaded from LiteLLM_DailyUserSpend.")
+        raise SystemExit("No data loaded from LiteLLM_DailyTagSpend.")
 
     needed = {
         "date",
@@ -70,7 +70,7 @@ def plot_all_litellm_daily_user_spend(
         "prompt_tokens",
         "completion_tokens",
         "cache_read_input_tokens",
-        "user_id",
+        "tag",
         "model",
         "model_group",
         "api_key",
@@ -78,10 +78,6 @@ def plot_all_litellm_daily_user_spend(
     missing = needed - set(df.columns)
     if missing:
         raise SystemExit(f"Missing required columns: {sorted(missing)}")
-
-    df["user_id"] = df["user_id"].fillna("").replace("", "unknown_user")
-    df["model_group"] = df["model_group"].fillna("").replace("", "unknown_group")
-    df["api_key"] = df["api_key"].fillna("").replace("", "unknown_key")
 
     df = _to_date(df, "date")
     daily = _daily_agg(df)
@@ -142,11 +138,11 @@ def plot_all_litellm_daily_user_spend(
     )
 
     bar(
-        _top_by_spend(df, "user_id", top),
-        title=f"Top {top} users by total spend",
-        xlabel="user_id",
+        _top_by_spend(df, "tag", top),
+        title=f"Top {top} tags by total spend",
+        xlabel="tag",
         ylabel="total spend",
-        fname=f"top{top}_users_spend.png",
+        fname=f"top{top}_tags_spend.png",
         outdir=out,
         top=top
     )
@@ -201,27 +197,3 @@ def plot_all_litellm_daily_user_spend(
         outdir=out,
         bins=min(50, max(10, daily_spend.nunique()))
     )
-
-    user_spend = df.groupby("user_id")["spend"].sum()
-    user_spend = user_spend[user_spend > 0].sort_values(ascending=False)
-    top_users = user_spend.head(top).index.tolist()
-
-    if not top_users:
-        return
-    
-    df_top = df[df["user_id"].isin(top_users)]
-    grouped = df_top.groupby(["date", "user_id"], as_index=False).agg(spend=("spend", "sum"))
-    per_user_daily = grouped.sort_values(by=["user_id", "date"])
-
-    for user in top_users:
-        sub = per_user_daily[per_user_daily["user_id"] == user]
-        line(
-            x="date",
-            y="spend",
-            data=sub,
-            title=f"Daily spend for user {user}",
-            xlabel="date",
-            ylabel="spend",
-            fname=f"daily_spend_user_{user}.png",
-            outdir=out
-        )
