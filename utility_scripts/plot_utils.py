@@ -107,6 +107,52 @@ def line(
     return out_path
 
 
+def lines_quantiles(
+    x: str,
+    y: str,
+    data: pd.DataFrame,
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    fname: PathLike,
+    outdir: PathLike,
+    *,
+    q: tuple[float, float, float] = (0.25, 0.5, 0.75),
+) -> Path:
+    """
+    Save a multi-line plot with Q1, median, Q3 of `y` grouped by `x`.
+    Keeps only rows with finite y and non-null x.
+    """
+    if x not in data.columns or y not in data.columns:
+        missing = {c for c in (x, y) if c not in data.columns}
+        raise KeyError(f"Missing columns: {missing}")
+
+    df = data[[x, y]].copy()
+    df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=[x, y])
+    if df.empty:
+        raise ValueError("DataFrame is empty after cleaning for quantile plotting.")
+
+    qvals = (
+        df.groupby(x, observed=True, sort=False)[y]
+        .quantile(np.array(q))
+        .unstack()  # columns are quantiles
+        .rename(columns={q[0]: "Q1", q[1]: "Median", q[2]: "Q3"})
+        .sort_index(kind="stable")
+    )
+
+    out_path = make_outpath(fname, outdir, ext=".png")
+    fig, ax = plt.subplots()
+    qvals.plot(ax=ax, legend=True)  # three lines
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
+    return out_path
+
+
 def bar(
     series: pd.Series,
     title: str,
@@ -252,6 +298,36 @@ def grouped_hist(
     return out_path
 
 
+def bin_and_quantiles(x: pd.Series, y: pd.Series, bins: int, label: str, fname: str, out: PathLike) -> None:
+    d = pd.DataFrame({"x": x, "y": y}).replace([np.inf, -np.inf], np.nan).dropna()
+    if d.empty:
+        return
+    d = d[d["x"] >= 0]
+    qn = min(bins, max(2, d["x"].nunique()))
+    d["bin"] = pd.qcut(d["x"], q=qn, duplicates="drop")
+    g = (
+        d.groupby("bin", observed=True)
+        .agg(avg_x=("x", "mean"),
+             q1=("y", lambda s: s.quantile(0.25)),
+             med=("y", "median"),
+             q3=("y", lambda s: s.quantile(0.75)))
+        .sort_values("avg_x", kind="stable")
+    )
+    out_path = make_outpath(fname, out, ext=".png")
+    fig, ax = plt.subplots()
+    ax.plot(g["avg_x"], g["q1"], label="Q1")
+    ax.plot(g["avg_x"], g["med"], label="Median")
+    ax.plot(g["avg_x"], g["q3"], label="Q3")
+    ax.set_title(f"{label}: Q1 / Median / Q3")
+    ax.set_xlabel(label)
+    ax.set_ylabel("latency (s)")
+    ax.legend()
+    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
+
+
 def scatter(
     x: pd.Series,
     y: pd.Series,
@@ -304,35 +380,49 @@ def scatter_with_fit(
     outdir: PathLike,
     *,
     write_params_path: PathLike | None = None,
+    x_scale: float = 1.0,   # divide x by this before plotting/fitting (e.g., 1e6 for “tokens (M)”)
+    y_scale: float = 1.0,   # divide y by this before plotting/fitting (e.g., 1e3 for “spend (k$)”)
 ) -> Path:
-    """
-    Scatter with least-squares line y = a*x + b.
+    """Scatter with least-squares line y = a*x + b in *displayed* units."""
 
-    NaNs/±inf are dropped pairwise before fitting. 
-    If `write_params_path` is set, writes `slope` and `intercept` to that file.
-    """
-    x_arr = np.asarray(x, dtype=float)
-    y_arr = np.asarray(y, dtype=float)
-    if x_arr.shape[0] != y_arr.shape[0]:
-        raise ValueError(f"Length mismatch: len(x)={len(x_arr)} != len(y)={len(y_arr)}")
+    x_arr = np.asarray(x, dtype=np.float64).ravel()
+    y_arr = np.asarray(y, dtype=np.float64).ravel()
+    if x_arr.size != y_arr.size:
+        raise ValueError(f"Length mismatch: len(x)={x_arr.size} != len(y)={y_arr.size}")
 
     mask = np.isfinite(x_arr) & np.isfinite(y_arr)
-    xv, yv = x_arr[mask], y_arr[mask]
-    if xv.size < 2:
+    xv_raw, yv_raw = x_arr[mask], y_arr[mask]
+    if xv_raw.size < 2:
         raise ValueError("Need at least 2 finite points for regression.")
 
-    a, b = np.polyfit(xv, yv, 1)
+    # Convert to displayed units
+    xv = xv_raw / x_scale
+    yv = yv_raw / y_scale
+
+    # OLS in displayed units: [x 1][a b]^T ≈ y
+    X = np.c_[xv, np.ones_like(xv)]
+    a_disp, b_disp = np.linalg.lstsq(X, yv, rcond=None)[0]
+
+    yhat = a_disp * xv + b_disp
+    ss_res = float(np.sum((yv - yhat) ** 2))
+    ss_tot = float(np.sum((yv - np.mean(yv)) ** 2))
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else np.nan
 
     out_path = make_outpath(fname, outdir)
     fig, ax = plt.subplots()
     ax.scatter(xv, yv, s=12)
 
-    xs = np.linspace(xv.min(), xv.max(), 100)
-    ax.plot(xs, a * xs + b, color='red', linestyle='--', label=f"Fit: y={a:.3g}x + {b:.3g}")
+    xs = np.linspace(xv.min(), xv.max(), 200)
+    ax.plot(xs, a_disp * xs + b_disp, linestyle="--", color="red",
+            label=f"Fit: y = {a_disp:.6g} x + {b_disp:.6g}  (R²={r2:.3f}, n={xv.size})")
+    ax.legend(loc="best")
 
     ax.set_title(title)
-    ax.set_xlabel(xlabel)
+    ax.set_xlabel(xlabel)  # include units in these labels if you like
     ax.set_ylabel(ylabel)
+
+    # Ensure labels match numbers shown
+    ax.ticklabel_format(style="plain", useOffset=False, axis="both")
     _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
 
     fig.tight_layout()
@@ -340,7 +430,16 @@ def scatter_with_fit(
     plt.close(fig)
 
     if write_params_path is not None:
-        save_text(f"slope={a}\nintercept={b}\n", write_params_path, outdir)
+        # Also record raw-units params for programmatic use
+        slope_raw = a_disp * (y_scale / x_scale)
+        intercept_raw = b_disp * y_scale
+        save_text(
+            f"# displayed_units\nslope={a_disp:.17g}\nintercept={b_disp:.17g}\n"
+            f"# raw_units\nslope={slope_raw:.17g}\nintercept={intercept_raw:.17g}\n"
+            f"R2={r2:.17g}\nn={int(xv.size)}\n",
+            write_params_path,
+            outdir,
+        )
 
     return out_path
 

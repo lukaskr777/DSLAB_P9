@@ -55,8 +55,6 @@ def preview_markdown(df: pd.DataFrame, max_cols: int = 30, max_rows: int = 5, ma
 def anchor(name: str) -> str:
     """Create a simple Markdown anchor slug."""
     slug = name.strip().lower().replace(" ", "-")
-    slug = re.sub(r"[^a-z0-9\-]", "", slug)
-    slug = re.sub(r"-{2,}", "-", slug).strip("-")
     return slug
 
 

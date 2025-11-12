@@ -6,8 +6,10 @@ Writes figures to figs/litellm_spendlogs.
 import numpy as np
 import pandas as pd
 
-from utility_scripts.file_utils import PathLike, ensure_empty_dir, read_table, sanitize_fname, save_csv, save_text
-from utility_scripts.plot_utils import line, bar, hist, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
+from utility_scripts.file_utils import PathLike, ensure_empty_dir, read_table, sanitize_fname, save_csv
+from utility_scripts.plot_utils import (
+    line, lines_quantiles, bar, hist, bin_and_quantiles, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
+)
 from utility_scripts.df_reading_utils import (
     require,
     to_utc,
@@ -75,6 +77,9 @@ def plot_all_litellm_spendlogs(
     df["week"] = ts.dt.isocalendar().week.astype(int)
     df["month"] = ts.dt.tz_localize(None).dt.to_period("M").astype(str)
 
+    df["ttfb_share_row"] = safe_div(df["ttfb_s"], df["latency_s"]).clip(lower=0, upper=1)
+    df["gen_share_row"]  = safe_div(df["gen_s"],  df["latency_s"]).clip(lower=0, upper=1)
+
     if "prompt_ratio" not in df.columns and {"prompt_tokens", "total_tokens"} <= set(df.columns):
         df["prompt_ratio"] = safe_div(df["prompt_tokens"], df["total_tokens"]).clip(lower=0, upper=1)
 
@@ -115,7 +120,6 @@ def plot_all_litellm_spendlogs(
     )
     daily = daily.sort_values("date", kind="stable")
 
-
     # Daily lines
     line(
         "date", "spend", daily, "Total spend per day", 
@@ -152,6 +156,31 @@ def plot_all_litellm_spendlogs(
     line(
         "date", "gen_share", daily, "Generation share of total latency (daily)", 
         "date", "share", "daily_gen_share.png", out
+    )
+
+    lines_quantiles(
+        "date", "total_tokens", df, "Tokens/request per day: Q1/Median/Q3",
+        "date", "tokens/request", "daily_tokens_quantiles.png", out
+    )
+    lines_quantiles(
+        "date", "latency_s", df, "Latency per day: Q1/Median/Q3",
+        "date", "latency (s)", "daily_latency_quantiles.png", out
+    )
+    lines_quantiles(
+        "date", "ttfb_s", df, "TTFB per day: Q1/Median/Q3",
+        "date", "ttfb (s)", "daily_ttfb_quantiles.png", out
+    )
+    lines_quantiles(
+        "date", "gen_s", df, "Generation time per day: Q1/Median/Q3",
+        "date", "gen time (s)", "daily_gen_quantiles.png", out
+    )
+    lines_quantiles(
+        "date", "ttfb_share_row", df, "TTFB share per day: Q1/Median/Q3",
+        "date", "share", "daily_ttfb_share_quantiles.png", out
+    )
+    lines_quantiles(
+        "date", "gen_share_row", df, "Generation share per day: Q1/Median/Q3",
+        "date", "share", "daily_gen_share_quantiles.png", out
     )
 
     # Bars: Top by spend
@@ -256,6 +285,11 @@ def plot_all_litellm_spendlogs(
         "hour", "avg_latency_s", hourly, "Avg latency by hour of day", 
         "hour", "latency (s)", "byhour_latency.png", out
     )
+    lines_quantiles(
+        "hour", "latency_s", df, "Latency by hour: Q1/Median/Q3",
+        "hour", "latency (s)", "byhour_latency_quantiles.png", out
+    )
+
 
     # Weekday patterns
     weekday = df.groupby("dow", as_index=False).agg(
@@ -279,6 +313,11 @@ def plot_all_litellm_spendlogs(
         "dow", "avg_latency_s", weekday, "Avg latency by weekday", 
         "weekday (0=Mon)", "latency (s)", "byweekday_latency.png", out
     )
+    lines_quantiles(
+        "dow", "latency_s", df, "Latency by weekday: Q1/Median/Q3",
+        "weekday (0=Mon)", "latency (s)", "byweekday_latency_quantiles.png", out
+    )
+
 
     # Weekday × hour heatmap of spend
     pivot_hw = (
@@ -539,7 +578,7 @@ def plot_all_litellm_spendlogs(
         scatter_with_fit(
             x=agg_daily["tokens"].to_numpy(dtype=float),
             y=agg_daily["spend"].to_numpy(dtype=float),
-            title="Spend vs tokens (daily) — least-squares slope in title",
+            title="Spend vs tokens (daily) — least-squares slope",
             xlabel="tokens",
             ylabel="spend",
             fname="elasticity_spend_vs_tokens.png",
@@ -578,7 +617,7 @@ def plot_all_litellm_spendlogs(
     )
     if lat_pivot.shape[0] and lat_pivot.shape[1]:
         heatmap(
-            lat_pivot, "Avg latency heatmap: model_group X provider", 
+            lat_pivot, "Avg latency heatmap: model_group x provider", 
             "provider", "model_group", "heatmap_latency_modelgroup_provider.png", out
         )
 
@@ -611,6 +650,15 @@ def plot_all_litellm_spendlogs(
     )
     _bin_and_avg(
         df["spend"], df["latency_s"], bins=10, label="row spend", fname="latency_vs_spend_binned.png"
+    )
+
+    bin_and_quantiles(
+        df["total_tokens"], df["latency_s"], bins=10,
+        label="Latency vs total tokens (binned)", fname="latency_vs_tokens_binned_quantiles.png", out=out
+    )
+    bin_and_quantiles(
+        df["spend"], df["latency_s"], bins=10,
+        label="Latency vs row spend (binned)", fname="latency_vs_spend_binned_quantiles.png", out=out
     )
 
     # Throughput vs token volume
@@ -649,6 +697,17 @@ def plot_all_litellm_spendlogs(
         for col, fname, title in have_daily:
             if col in daily_ratios.columns:
                 line("date", col, daily_ratios, title, "date", "ratio", fname, out)
+        
+        if "prompt_ratio" in df.columns:
+            lines_quantiles(
+                "date", "prompt_ratio", df, "Prompt ratio per day: Q1/Median/Q3",
+                "date", "ratio", "daily_prompt_ratio_quantiles.png", out
+            )
+        if "completion_ratio" in df.columns:
+            lines_quantiles(
+                "date", "completion_ratio", df, "Completion ratio per day: Q1/Median/Q3",
+                "date", "ratio", "daily_completion_ratio_quantiles.png", out
+            )
 
     # Failure rate by model_group
     fail_rate_mg = df.groupby("model_group", as_index=False).agg(
