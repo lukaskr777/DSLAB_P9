@@ -118,9 +118,10 @@ def lines_quantiles(
     outdir: PathLike,
     *,
     q: tuple[float, float, float] = (0.25, 0.5, 0.75),
+    plot_extrema: bool = False,
 ) -> Path:
     """
-    Save a multi-line plot with Q1, median, Q3 of `y` grouped by `x`.
+    Save a multi-line plot with min, Q1, median, Q3, mean, and max of `y` grouped by `x`.
     Keeps only rows with finite y and non-null x.
     """
     if x not in data.columns or y not in data.columns:
@@ -132,20 +133,29 @@ def lines_quantiles(
     if df.empty:
         raise ValueError("DataFrame is empty after cleaning for quantile plotting.")
 
-    qvals = (
-        df.groupby(x, observed=True, sort=False)[y]
-        .quantile(np.array(q))
-        .unstack()  # columns are quantiles
-        .rename(columns={q[0]: "Q1", q[1]: "Median", q[2]: "Q3"})
-        .sort_index(kind="stable")
-    )
+    grouped = df.groupby(x, observed=True, sort=False)[y]
+    qvals = grouped.quantile(np.array(q)).unstack().rename(columns={q[0]: "Q1", q[1]: "Median", q[2]: "Q3"})
+    qvals["Mean"] = grouped.mean()
+    if plot_extrema:
+        qvals["Min"] = grouped.min()
+        qvals["Max"] = grouped.max()
+    qvals = qvals.sort_index(kind="stable")
 
     out_path = make_outpath(fname, outdir, ext=".png")
     fig, ax = plt.subplots()
-    qvals.plot(ax=ax, legend=True)  # three lines
+
+    ax.plot(qvals.index, qvals["Q1"], label="Q1")
+    ax.plot(qvals.index, qvals["Median"], label="Median")
+    ax.plot(qvals.index, qvals["Q3"], label="Q3")
+    ax.plot(qvals.index, qvals["Mean"], label="Mean")
+    if plot_extrema:
+        ax.plot(qvals.index, qvals["Min"], "--", alpha=0.5, label="Min")
+        ax.plot(qvals.index, qvals["Max"], "--", alpha=0.5, label="Max")
+
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+    ax.legend()
     _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
@@ -298,27 +308,55 @@ def grouped_hist(
     return out_path
 
 
-def bin_and_quantiles(x: pd.Series, y: pd.Series, bins: int, label: str, fname: str, out: PathLike) -> None:
+def bin_and_quantiles(
+    x: pd.Series,
+    y: pd.Series,
+    bins: int,
+    label: str,
+    fname: str,
+    out: PathLike,
+    *,
+    plot_extrema: bool = False,
+) -> None:
+    """
+    Plot min, Q1, median, Q3, mean, and max of `y` across quantile bins of `x`.
+    Dashed, semi-transparent lines for min/max.
+    """
     d = pd.DataFrame({"x": x, "y": y}).replace([np.inf, -np.inf], np.nan).dropna()
     if d.empty:
         return
     d = d[d["x"] >= 0]
     qn = min(bins, max(2, d["x"].nunique()))
     d["bin"] = pd.qcut(d["x"], q=qn, duplicates="drop")
+
     g = (
         d.groupby("bin", observed=True)
-        .agg(avg_x=("x", "mean"),
-             q1=("y", lambda s: s.quantile(0.25)),
-             med=("y", "median"),
-             q3=("y", lambda s: s.quantile(0.75)))
+        .agg(
+            avg_x=("x", "mean"),
+            q1=("y", lambda s: s.quantile(0.25)),
+            med=("y", "median"),
+            q3=("y", lambda s: s.quantile(0.75)),
+            mean_y=("y", "mean"),
+            min_y=("y", "min"),
+            max_y=("y", "max"),
+        )
         .sort_values("avg_x", kind="stable")
     )
+
     out_path = make_outpath(fname, out, ext=".png")
     fig, ax = plt.subplots()
+
     ax.plot(g["avg_x"], g["q1"], label="Q1")
     ax.plot(g["avg_x"], g["med"], label="Median")
     ax.plot(g["avg_x"], g["q3"], label="Q3")
-    ax.set_title(f"{label}: Q1 / Median / Q3")
+    ax.plot(g["avg_x"], g["mean_y"], label="Mean")
+
+    if plot_extrema:
+        ax.plot(g["avg_x"], g["min_y"], "--", alpha=0.5, label="Min")
+        ax.plot(g["avg_x"], g["max_y"], "--", alpha=0.5, label="Max")
+
+    title_suffix = "Q1 / Median / Q3 / Mean" + (" / Min / Max" if plot_extrema else "")
+    ax.set_title(f"{label}: {title_suffix}")
     ax.set_xlabel(label)
     ax.set_ylabel("latency (s)")
     ax.legend()

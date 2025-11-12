@@ -159,28 +159,58 @@ def plot_all_litellm_spendlogs(
     )
 
     lines_quantiles(
-        "date", "total_tokens", df, "Tokens/request per day: Q1/Median/Q3",
+        "date", "total_tokens", df, "Tokens/request per day: Q1/Median/Q3/Mean",
         "date", "tokens/request", "daily_tokens_quantiles.png", out
     )
     lines_quantiles(
-        "date", "latency_s", df, "Latency per day: Q1/Median/Q3",
+        "date", "total_tokens", df, "Tokens/request per day: Q1/Median/Q3/Mean/Min/Max",
+        "date", "tokens/request", "daily_tokens_quantiles_with_max.png", out,
+        plot_extrema=True
+    )
+    lines_quantiles(
+        "date", "latency_s", df, "Latency per day: Q1/Median/Q3/Mean",
         "date", "latency (s)", "daily_latency_quantiles.png", out
     )
     lines_quantiles(
-        "date", "ttfb_s", df, "TTFB per day: Q1/Median/Q3",
+        "date", "latency_s", df, "Latency per day: Q1/Median/Q3/Mean/Min/Max",
+        "date", "latency (s)", "daily_latency_quantiles_with_max.png", out,
+        plot_extrema=True
+    )
+    lines_quantiles(
+        "date", "ttfb_s", df, "TTFB per day: Q1/Median/Q3/Mean",
         "date", "ttfb (s)", "daily_ttfb_quantiles.png", out
     )
     lines_quantiles(
-        "date", "gen_s", df, "Generation time per day: Q1/Median/Q3",
+        "date", "ttfb_s", df, "TTFB per day: Q1/Median/Q3/Mean/Min/Max",
+        "date", "ttfb (s)", "daily_ttfb_quantiles_with_max.png", out,
+        plot_extrema=True
+    )
+    lines_quantiles(
+        "date", "gen_s", df, "Generation time per day: Q1/Median/Q3/Mean",
         "date", "gen time (s)", "daily_gen_quantiles.png", out
     )
     lines_quantiles(
-        "date", "ttfb_share_row", df, "TTFB share per day: Q1/Median/Q3",
+        "date", "gen_s", df, "Generation time per day: Q1/Median/Q3/Mean/Min/Max",
+        "date", "gen time (s)", "daily_gen_quantiles_with_max.png", out,
+        plot_extrema=True
+    )
+    lines_quantiles(
+        "date", "ttfb_share_row", df, "TTFB share per day: Q1/Median/Q3/Mean",
         "date", "share", "daily_ttfb_share_quantiles.png", out
     )
     lines_quantiles(
-        "date", "gen_share_row", df, "Generation share per day: Q1/Median/Q3",
+        "date", "ttfb_share_row", df, "TTFB share per day: Q1/Median/Q3/Mean/Min/Max",
+        "date", "share", "daily_ttfb_share_quantiles_with_max.png", out,
+        plot_extrema=True
+    )
+    lines_quantiles(
+        "date", "gen_share_row", df, "Generation share per day: Q1/Median/Q3/Mean",
         "date", "share", "daily_gen_share_quantiles.png", out
+    )
+    lines_quantiles(
+        "date", "gen_share_row", df, "Generation share per day: Q1/Median/Q3/Mean/Min/Max",
+        "date", "share", "daily_gen_share_quantiles_with_max.png", out,
+        plot_extrema=True
     )
 
     # Bars: Top by spend
@@ -286,8 +316,13 @@ def plot_all_litellm_spendlogs(
         "hour", "latency (s)", "byhour_latency.png", out
     )
     lines_quantiles(
-        "hour", "latency_s", df, "Latency by hour: Q1/Median/Q3",
+        "hour", "latency_s", df, "Latency by hour: Q1/Median/Q3/Mean",
         "hour", "latency (s)", "byhour_latency_quantiles.png", out
+    )
+    lines_quantiles(
+        "hour", "latency_s", df, "Latency by hour: Q1/Median/Q3/Mean/Min/Max",
+        "hour", "latency (s)", "byhour_latency_quantiles_with_max.png", out,
+        plot_extrema=True
     )
 
 
@@ -314,8 +349,13 @@ def plot_all_litellm_spendlogs(
         "weekday (0=Mon)", "latency (s)", "byweekday_latency.png", out
     )
     lines_quantiles(
-        "dow", "latency_s", df, "Latency by weekday: Q1/Median/Q3",
+        "dow", "latency_s", df, "Latency by weekday: Q1/Median/Q3/Mean",
         "weekday (0=Mon)", "latency (s)", "byweekday_latency_quantiles.png", out
+    )
+    lines_quantiles(
+        "dow", "latency_s", df, "Latency by weekday: Q1/Median/Q3/Mean/Min/Max",
+        "weekday (0=Mon)", "latency (s)", "byweekday_latency_quantiles_with_max.png", out,
+        plot_extrema=True
     )
 
 
@@ -657,8 +697,19 @@ def plot_all_litellm_spendlogs(
         label="Latency vs total tokens (binned)", fname="latency_vs_tokens_binned_quantiles.png", out=out
     )
     bin_and_quantiles(
+        df["total_tokens"], df["latency_s"], bins=10,
+        label="Latency vs total tokens (binned)", fname="latency_vs_tokens_binned_quantiles_with_max.png", out=out,
+        plot_extrema=True
+    )
+    bin_and_quantiles(
         df["spend"], df["latency_s"], bins=10,
         label="Latency vs row spend (binned)", fname="latency_vs_spend_binned_quantiles.png", out=out
+    )
+    bin_and_quantiles(
+        df["spend"], df["latency_s"], bins=10,
+        label="Latency vs row spend (binned)", fname="latency_vs_spend_binned_quantiles_with_max.png", out=out,
+
+        plot_extrema=True
     )
 
     # Throughput vs token volume
@@ -703,10 +754,20 @@ def plot_all_litellm_spendlogs(
                 "date", "prompt_ratio", df, "Prompt ratio per day: Q1/Median/Q3",
                 "date", "ratio", "daily_prompt_ratio_quantiles.png", out
             )
+            lines_quantiles(
+                "date", "prompt_ratio", df, "Prompt ratio per day: Q1/Median/Q3",
+                "date", "ratio", "daily_prompt_ratio_quantiles_with_max.png", out,
+                plot_extrema=True
+            )
         if "completion_ratio" in df.columns:
             lines_quantiles(
                 "date", "completion_ratio", df, "Completion ratio per day: Q1/Median/Q3",
                 "date", "ratio", "daily_completion_ratio_quantiles.png", out
+            )
+            lines_quantiles(
+                "date", "completion_ratio", df, "Completion ratio per day: Q1/Median/Q3",
+                "date", "ratio", "daily_completion_ratio_quantiles_with_max.png", out,
+                plot_extrema=True
             )
 
     # Failure rate by model_group
