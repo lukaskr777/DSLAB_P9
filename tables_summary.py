@@ -1,10 +1,9 @@
-import re
 from pathlib import Path
+from textwrap import shorten
 import math
 import numbers
 
 import pandas as pd
-from textwrap import shorten
 
 from utility_scripts.file_utils import PathLike, make_outpath, read_table
 

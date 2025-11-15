@@ -8,7 +8,7 @@ import pandas as pd
 
 from utility_scripts.file_utils import PathLike, ensure_empty_dir, read_table, sanitize_fname, save_csv
 from utility_scripts.plot_utils import (
-    line, lines_quantiles, bar, hist, bin_and_quantiles, heatmap, scatter, scatter_with_fit, pareto_frontier_plot
+    line, lines_quantiles, bar, hist, bin_and_quantiles, heatmap, scatter, scatter_with_fit
 )
 from utility_scripts.df_reading_utils import (
     require,
@@ -626,27 +626,6 @@ def plot_all_litellm_spendlogs(
             write_params_path="elasticity_spend_vs_tokens.txt",
         )
 
-    # Pareto front: model_group
-    mg_agg = df.groupby("model_group", as_index=False).agg(
-        spend=("spend", "sum"),
-        tokens=("total_tokens", "sum"),
-        avg_latency=("latency_s", "mean"),
-        requests=("request_id", "count"),
-    )
-    mg_agg = mg_agg[(mg_agg["tokens"] > 0) & (mg_agg["requests"] > 100)]
-    if not mg_agg.empty:
-        mg_agg["cost_per_1k"] = 1000.0 * mg_agg["spend"] / mg_agg["tokens"]
-        pareto_frontier_plot(
-            x=mg_agg["cost_per_1k"].to_numpy(dtype=float),
-            y=mg_agg["avg_latency"].to_numpy(dtype=float),
-            labels=mg_agg["model_group"].astype(str).tolist(),
-            title="Pareto: cost vs latency by model_group",
-            xlabel="cost per 1k tokens",
-            ylabel="avg latency (s)",
-            fname="pareto_cost_vs_latency_modelgroup.png",
-            outdir=out,
-        )
-
     # Avg latency by (model_group × provider) heatmap
     lat_pivot = df.pivot_table(index="model_group", columns="custom_llm_provider", values="latency_s", aggfunc="mean")
     top_mg = df.groupby("model_group")["spend"].sum().sort_values(ascending=False).head(top_share_k).index
@@ -663,7 +642,6 @@ def plot_all_litellm_spendlogs(
 
     # Save selected tables
     save_csv(user_stats, "user_stats.csv", out)
-    save_csv(mg_agg, "modelgroup_agg.csv", out)
     save_csv(hourly, "byhour_stats.csv", out)
     save_csv(weekday, "byweekday_stats.csv", out)
 
@@ -694,21 +672,24 @@ def plot_all_litellm_spendlogs(
 
     bin_and_quantiles(
         df["total_tokens"], df["latency_s"], bins=10,
-        label="Latency vs total tokens (binned)", fname="latency_vs_tokens_binned_quantiles.png", out=out
+        xlabel="Latency vs total tokens (binned)", ylabel= "latency (s)", 
+        fname="latency_vs_tokens_binned_quantiles.png", out=out
     )
     bin_and_quantiles(
         df["total_tokens"], df["latency_s"], bins=10,
-        label="Latency vs total tokens (binned)", fname="latency_vs_tokens_binned_quantiles_with_max.png", out=out,
+        xlabel="Latency vs total tokens (binned)", ylabel= "latency (s)", 
+        fname="latency_vs_tokens_binned_quantiles_with_max.png", out=out,
         plot_extrema=True
     )
     bin_and_quantiles(
         df["spend"], df["latency_s"], bins=10,
-        label="Latency vs row spend (binned)", fname="latency_vs_spend_binned_quantiles.png", out=out
+        xlabel="Latency vs row spend (binned)", ylabel= "latency (s)", 
+        fname="latency_vs_spend_binned_quantiles.png", out=out
     )
     bin_and_quantiles(
         df["spend"], df["latency_s"], bins=10,
-        label="Latency vs row spend (binned)", fname="latency_vs_spend_binned_quantiles_with_max.png", out=out,
-
+        xlabel="Latency vs row spend (binned)", ylabel= "latency (s)", 
+        fname="latency_vs_spend_binned_quantiles_with_max.png", out=out,
         plot_extrema=True
     )
 

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.ticker import FixedLocator, FixedFormatter
 
 from utility_scripts.file_utils import PathLike, make_outpath, save_text
@@ -73,6 +74,36 @@ def _tilt_and_crop_ticklabels(
     ax.figure.canvas.draw()
 
 
+def _final_plotting(
+        ax: Axes, 
+        fig: Figure, 
+        title: str, 
+        xlabel: str, 
+        ylabel: str, 
+        out_path: PathLike, 
+        *,
+        x_axis: bool = True,
+        y_axis: bool = False,
+        xgrid: bool = True,
+        ygrid: bool = True,
+    ) -> None:
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    _tilt_and_crop_ticklabels(ax, x_axis=x_axis, y_axis=y_axis)
+    if xgrid or ygrid:
+        ax.grid(
+            which="major", 
+            axis="x" if xgrid and not ygrid else "y" if ygrid and not xgrid else "both", 
+            linestyle="--", 
+            alpha=0.7
+        )
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
+
+
 def line(
     x: str, 
     y: str, 
@@ -82,6 +113,9 @@ def line(
     ylabel: str, 
     fname: PathLike, 
     outdir: PathLike,
+    *,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """Save a line plot from DataFrame columns `x` and `y`."""
     if x not in data.columns or y not in data.columns:
@@ -96,14 +130,7 @@ def line(
 
     fig, ax = plt.subplots()
     df.plot(x=x, y=y, kind="line", legend=False, ax=ax)
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
 
@@ -119,6 +146,8 @@ def lines_quantiles(
     *,
     q: tuple[float, float, float] = (0.25, 0.5, 0.75),
     plot_extrema: bool = False,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """
     Save a multi-line plot with min, Q1, median, Q3, mean, and max of `y` grouped by `x`.
@@ -151,15 +180,8 @@ def lines_quantiles(
     if plot_extrema:
         ax.plot(qvals.index, qvals["Min"], "--", alpha=0.5, label="Min")
         ax.plot(qvals.index, qvals["Max"], "--", alpha=0.5, label="Max")
-
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
     ax.legend()
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
 
@@ -175,6 +197,8 @@ def bar(
     order: Sequence[str | float | int] | None = None,
     sort_values: bool = True,
     ascending: bool = False,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """
     Save a bar chart from a Series aggregated by index.
@@ -200,14 +224,7 @@ def bar(
 
     fig, ax = plt.subplots()
     s.plot(kind="bar", ax=ax)
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
 
@@ -221,6 +238,8 @@ def hist(
     *,
     bins: int = 50,
     log_scale: bool = False,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """
     Save a histogram from a numeric Series.
@@ -240,14 +259,7 @@ def hist(
     s.plot(kind="hist", bins=bins, ax=ax)
     if log_scale:
         ax.set_yscale("log")
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
 
@@ -263,6 +275,8 @@ def grouped_hist(
     bins: int | Sequence[float] = 30,
     stacked: bool = True,
     log_scale: bool = False,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """
     Stacked histogram by group with common bin edges.
@@ -298,13 +312,8 @@ def grouped_hist(
     ax.hist(
         data, bins=edges, stacked=stacked, color=colors, label=[str(c) for c in cats], edgecolor="none", log=log_scale
     )
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
     ax.legend()
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
 
@@ -312,11 +321,14 @@ def bin_and_quantiles(
     x: pd.Series,
     y: pd.Series,
     bins: int,
-    label: str,
+    xlabel: str,
+    ylabel: str,
     fname: str,
     out: PathLike,
     *,
     plot_extrema: bool = False,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> None:
     """
     Plot min, Q1, median, Q3, mean, and max of `y` across quantile bins of `x`.
@@ -355,14 +367,10 @@ def bin_and_quantiles(
         ax.plot(g["avg_x"], g["min_y"], "--", alpha=0.5, label="Min")
         ax.plot(g["avg_x"], g["max_y"], "--", alpha=0.5, label="Max")
 
-    title_suffix = "Q1 / Median / Q3 / Mean" + (" / Min / Max" if plot_extrema else "")
-    ax.set_title(f"{label}: {title_suffix}")
-    ax.set_xlabel(label)
-    ax.set_ylabel("latency (s)")
     ax.legend()
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    title_suffix = "Q1 / Median / Q3 / Mean" + (" / Min / Max" if plot_extrema else "")
+    title = f"{xlabel}: {title_suffix}"
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     plt.close(fig)
 
 
@@ -376,6 +384,8 @@ def scatter(
     outdir: PathLike,
     *,
     annotate: pd.Series | Sequence[str] | None = None,
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """
     Save a scatter plot from two Series.
@@ -397,14 +407,7 @@ def scatter(
             if pd.notna(xi) and pd.notna(yi):
                 ax.annotate(str(lab), (xi, yi), fontsize=6, alpha=0.7)
 
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
 
@@ -420,6 +423,8 @@ def scatter_with_fit(
     write_params_path: PathLike | None = None,
     x_scale: float = 1.0,   # divide x by this before plotting/fitting (e.g., 1e6 for “tokens (M)”)
     y_scale: float = 1.0,   # divide y by this before plotting/fitting (e.g., 1e3 for “spend (k$)”)
+    xgrid: bool = True,
+    ygrid: bool = True,
 ) -> Path:
     """Scatter with least-squares line y = a*x + b in *displayed* units."""
 
@@ -455,17 +460,8 @@ def scatter_with_fit(
             label=f"Fit: y = {a_disp:.6g} x + {b_disp:.6g}  (R²={r2:.3f}, n={xv.size})")
     ax.legend(loc="best")
 
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)  # include units in these labels if you like
-    ax.set_ylabel(ylabel)
-
-    # Ensure labels match numbers shown
     ax.ticklabel_format(style="plain", useOffset=False, axis="both")
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=False)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
 
     if write_params_path is not None:
         # Also record raw-units params for programmatic use
@@ -489,6 +485,9 @@ def heatmap(
         ylabel: str, 
         fname: PathLike, 
         outdir: PathLike,
+        *,
+        xgrid: bool = True,
+        ygrid: bool = True,
     ) -> Path:
     """
     Save a heatmap from a pivoted DataFrame.
@@ -515,79 +514,6 @@ def heatmap(
     ax.set_yticks(np.arange(pivot.shape[0]))
     ax.set_yticklabels(pivot.index)
 
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=True)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
+    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=True, xgrid=xgrid, ygrid=ygrid)
     return out_path
 
-
-def pareto_frontier_plot(
-    x: Sequence[float] | np.ndarray | pd.Series,
-    y: Sequence[float] | np.ndarray | pd.Series,
-    labels: Sequence[str] | np.ndarray | pd.Series | None,
-    title: str,
-    xlabel: str,
-    ylabel: str,
-    fname: PathLike,
-    outdir: PathLike,
-) -> Path:
-    """
-    Scatter with lower-left Pareto frontier (minimize both axes).
-
-    Drops NaNs/±inf pairwise. Frontier keeps points with strictly decreasing y when scanning in increasing x. 
-    If `labels` is given, points are annotated.
-    """
-    x_arr = np.asarray(x, dtype=float)
-    y_arr = np.asarray(y, dtype=float)
-    if x_arr.shape[0] != y_arr.shape[0]:
-        raise ValueError(f"Length mismatch: len(x)={len(x_arr)} != len(y)={len(y_arr)}")
-
-    if labels is not None and len(labels) != len(x_arr):
-        raise ValueError(f"Length mismatch: len(labels)={len(labels)} != len(x)={len(x_arr)}")
-
-    mask = np.isfinite(x_arr) & np.isfinite(y_arr)
-    xv, yv = x_arr[mask], y_arr[mask]
-    labs = (np.asarray(labels, dtype=object)[mask] if labels is not None else None)
-
-    if xv.size == 0:
-        raise ValueError("No finite points to plot.")
-
-    # Frontier: scan by increasing x, keep strict improvements in y.
-    order = np.argsort(xv)
-    best_y = np.inf
-    frontier_idx: list[int] = []
-    for i in order:
-        yi = yv[i]
-        if yi < best_y:
-            best_y = yi
-            frontier_idx.append(i)
-
-    out_path = make_outpath(fname, outdir)
-    fig, ax = plt.subplots()
-    ax.scatter(xv, yv, s=16)
-
-    if frontier_idx:
-        fxs = xv[frontier_idx]
-        fys = yv[frontier_idx]
-        ord_f = np.argsort(fxs)
-        ax.plot(fxs[ord_f], fys[ord_f], color='red', marker='o', linestyle='-', linewidth=2, label="Pareto Frontier")
-        ax.legend()
-
-    if labs is not None:
-        for xi, yi, lab in zip(xv, yv, labs):
-            ax.annotate(str(lab), (xi, yi), fontsize=6, alpha=0.7)
-
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=True, y_axis=True)
-
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
-    plt.close(fig)
-    return out_path
