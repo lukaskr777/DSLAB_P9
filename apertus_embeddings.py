@@ -24,7 +24,7 @@ DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled_enriched.parqu
 OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
 
 # Models for which we want one embedding matrix each
-MODEL_NAMES: list[str] = [
+MODEL_NAMES = [
     "sentence-transformers/all-MiniLM-L6-v2",
     "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
     "sentence-transformers/stsb-xlm-r-multilingual",

@@ -10,17 +10,22 @@ Pipeline:
    - `conversation_text`
    - simple conversation-level features (n_turns, lengths, etc.).
 2. Load precomputed L2-normalized embeddings from EMBEDDINGS_PATH.
-3. Run PCA on embeddings.
-4. Run HDBSCAN on PCA-reduced embeddings.
-5. Run KMeans sweep over k, select best k, then run final KMeans.
-6. Save:
-   - PCA embeddings and PCA model
+3. Clean embeddings: drop rows with non-finite values.
+4. L2-normalize embeddings again (cosine geometry).
+5. Run UMAP (metric='cosine') to reduce to a low-dimensional space.
+6. Standardize UMAP coordinates.
+7. Run HDBSCAN on the reduced space.
+8. Run KMeans sweep over k on the same reduced space, select best k,
+   then run final KMeans.
+9. Save:
+   - UMAP embeddings and UMAP model
    - clustered DataFrame
    - HDBSCAN and KMeans models
    - diagnostic plots
    - a TXT file summarizing clustering scores/statistics.
 
-To use different embeddings (e.g., from different models), just change the global EMBEDDINGS_PATH and rerun the script.
+To use different embeddings (e.g., from different models), just change the
+global EMBEDDINGS_PATH and rerun the script.
 """
 
 import json
@@ -49,7 +54,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from sklearn.preprocessing import StandardScaler
@@ -58,6 +62,7 @@ import re
 import stopwordsiso
 import langid
 from wordcloud import WordCloud
+import umap
 
 
 # ---------- CONFIG ----------
@@ -73,33 +78,36 @@ FIGS_ROOT = Path("figs/apertus_clustering")
 # EMBEDDINGS_PATH = OUT_DIR / (
 #     "train_sampled_conversation_embeddings__sentence-transformers__all-MiniLM-L6-v2.npy"
 # )
-# EMBEDDINGS_PATH = OUT_DIR / (
-#     "train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
-# )
+EMBEDDINGS_PATH = OUT_DIR / (
+    "train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
+)
 # EMBEDDINGS_PATH = OUT_DIR / (
 #     "train_sampled_conversation_embeddings__sentence-transformers__stsb-xlm-r-multilingual.npy"
 # )
-EMBEDDINGS_PATH = OUT_DIR / (
-    "train_sampled_conversation_embeddings__sentence-transformers__gtr-t5-base.npy"
-)
+# EMBEDDINGS_PATH = OUT_DIR / (
+#     "train_sampled_conversation_embeddings__sentence-transformers__gtr-t5-base.npy"
+# )
 
-# PCA
-N_COMPONENTS_PCA = 50
-PCA_RANDOM_STATE = 0
+# UMAP settings
+UMAP_N_COMPONENTS = 15
+UMAP_N_NEIGHBORS = 70
+UMAP_MIN_DIST = 0.0
+UMAP_METRIC = "cosine"
+UMAP_RANDOM_STATE = 0
 
 # HDBSCAN
-HDBSCAN_MIN_CLUSTER_SIZE = 30
-HDBSCAN_MIN_SAMPLES: int | None = None  # None -> default (min_cluster_size)
+HDBSCAN_MIN_CLUSTER_SIZE = 250
+HDBSCAN_MIN_SAMPLES = 50  # None -> default (min_cluster_size)
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
 
 # KMeans
-KMEANS_K_VALUES = list(range(2, 32))
+KMEANS_K_VALUES = list(range(2, 42))
 KMEANS_RANDOM_STATE = 0
 
 # Silhouette
-MAX_SILHOUETTE_SAMPLES: int | None = None  # None -> full dataset
+MAX_SILHOUETTE_SAMPLES: int | None = None  # None -> use all samples
 
 # Feature columns used in cluster summaries / plots
 FEATURE_COLUMNS = [
@@ -114,8 +122,8 @@ FEATURE_COLUMNS = [
 
 TAG = EMBEDDINGS_PATH.stem  # e.g. "train_sampled_conversation_embeddings__..."
 
-PCA_EMBEDDINGS_PATH = OUT_DIR / f"{TAG}_pca.npy"
-PCA_MODEL_PATH = OUT_DIR / f"{TAG}_pca_model.joblib"
+UMAP_EMBEDDINGS_PATH = OUT_DIR / f"{TAG}_umap.npy"
+UMAP_MODEL_PATH = OUT_DIR / f"{TAG}_umap_model.joblib"
 CLUSTERED_DF_PATH = OUT_DIR / f"{TAG}_clustered.parquet"
 HDBSCAN_MODEL_PATH = OUT_DIR / f"{TAG}_hdbscan_model.joblib"
 KMEANS_MODEL_PATH = OUT_DIR / f"{TAG}_kmeans_model.joblib"
@@ -123,7 +131,7 @@ SCORES_TXT_PATH = OUT_DIR / f"{TAG}_cluster_scores.txt"
 
 FIGS_DIR = FIGS_ROOT / TAG
 
-FONT_PATH = "/System/Library/Fonts/AppleSDGothicNeo.ttc"  # macOS system font
+FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
 
 
 # ---------- Multilingual stopwords for word clouds ----------
@@ -301,46 +309,7 @@ def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ---------- PCA + clustering ----------
-
-def reduce_dimensionality(
-    emb: np.ndarray,
-    n_components: int = N_COMPONENTS_PCA,
-    random_state: int = PCA_RANDOM_STATE,
-) -> tuple[np.ndarray, PCA]:
-    """
-    PCA reduction on embedding matrix (n_samples, dim) -> (n_samples, n_components_eff),
-    and return the fitted PCA object.
-    """
-    n_samples, dim = emb.shape
-    if n_samples <= 1:
-        return emb.copy(), PCA(n_components=min(dim, 1), random_state=random_state)
-
-    n_components_eff = min(n_components, dim, n_samples - 1)
-    pca = PCA(n_components=n_components_eff, random_state=random_state)
-    X_pca = pca.fit_transform(emb)
-    return X_pca, pca
-
-
-def cluster_hdbscan(
-    X: np.ndarray,
-    min_cluster_size: int = HDBSCAN_MIN_CLUSTER_SIZE,
-    min_samples: int | None = HDBSCAN_MIN_SAMPLES,
-    metric: str = HDBSCAN_METRIC,
-    cluster_selection_method: str = HDBSCAN_CLUSTER_SELECTION_METHOD,
-    cluster_selection_epsilon: float = HDBSCAN_CLUSTER_SELECTION_EPSILON,
-) -> tuple[np.ndarray, hdbscan.HDBSCAN]:
-    """Cluster with HDBSCAN. Returns label array (noise labeled as -1) and the fitted model."""
-    clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=min_cluster_size,
-        min_samples=min_samples,
-        metric=metric,
-        cluster_selection_method=cluster_selection_method,
-        cluster_selection_epsilon=cluster_selection_epsilon,
-    )
-    labels = clusterer.fit_predict(X)
-    return labels, clusterer
-
+# ---------- Metrics helpers ----------
 
 def evaluate_clustering_metrics(
     X: np.ndarray,
@@ -489,61 +458,89 @@ def cluster_kmeans(
 
 def make_cluster_plots(
     df: pd.DataFrame,
-    X_pca: np.ndarray,
+    X_red: np.ndarray,
     label_col: str,
     figs_dir: Path,
+    *,
+    use_robust_limits: bool = False,
 ) -> None:
     """
-    Produce basic diagnostic plots:
-    - PCA scatter (PC1 vs PC2) colored by cluster
+    Diagnostic cluster plots:
+    - 2D scatter of reduced space (Dim 1 vs Dim 2)
     - Cluster size bar chart
     - Heatmap of per-cluster feature means (z-scored)
     - Per-feature bar charts of per-cluster raw means
+
+    If use_robust_limits=True:
+        - The scatter plot uses 1%–99% quantile axis limits
+        - Output filename has "_robust" appended
     """
     figs_dir.mkdir(parents=True, exist_ok=True)
     labels = df[label_col].to_numpy()
 
-    # Drop label -1 for HDBSCAN noise in summaries/plots
+    # Drop HDBSCAN noise for per-cluster summaries
     if label_col == "cluster_hdbscan":
         mask = labels != -1
         df = df[mask].reset_index(drop=True)
         labels = labels[mask]
-        X_pca = X_pca[mask]
+        X_red = X_red[mask]
 
-    # --- PCA scatter: PC1 vs PC2 colored by cluster ---
-    if X_pca.shape[1] >= 2:
+    # -------------------------------
+    # Scatter plot (Dim 1 vs Dim 2)
+    # -------------------------------
+    if X_red.shape[1] >= 2:
+        x = X_red[:, 0]
+        y = X_red[:, 1]
+
+        suffix = "_robust" if use_robust_limits else ""
+
         plt.figure(figsize=(8, 6))
         scatter = plt.scatter(
-            X_pca[:, 0],
-            X_pca[:, 1],
+            x,
+            y,
             c=labels,
             s=5,
             alpha=0.7,
             cmap="tab20",
         )
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title(f"PCA scatter (colored by {label_col})")
+        plt.xlabel("Dim 1")
+        plt.ylabel("Dim 2")
+        plt.title(f"Reduced-space scatter (colored by {label_col})")
         cbar = plt.colorbar(scatter)
         cbar.set_label(label_col)
+
+        if use_robust_limits:
+            # Focus on the central mass of points
+            x_lo, x_hi = np.quantile(x, [0.01, 0.99])
+            y_lo, y_hi = np.quantile(y, [0.01, 0.99])
+            x_m = 0.05 * (x_hi - x_lo)
+            y_m = 0.05 * (y_hi - y_lo)
+            plt.xlim(x_lo - x_m, x_hi + x_m)
+            plt.ylim(y_lo - y_m, y_hi + y_m)
+
         plt.tight_layout()
-        out_path = figs_dir / f"pca_scatter_pc1_pc2_{label_col}.png"
+        out_path = figs_dir / f"scatter_dim1_dim2_{label_col}{suffix}.png"
         plt.savefig(out_path, dpi=150)
         plt.close()
 
-    # --- Cluster size bar chart ---
+    # -------------------------------
+    # Cluster size bar chart
+    # -------------------------------
     counts = df[label_col].value_counts(dropna=False).sort_index()
     plt.figure(figsize=(8, 4))
     counts.plot(kind="bar")
     plt.xlabel("Cluster")
-    plt.ylabel("Number of conversations")
+    plt.ylabel("Number of items")
     plt.title(f"Cluster sizes ({label_col})")
     plt.tight_layout()
     out_path = figs_dir / f"cluster_sizes_{label_col}.png"
     plt.savefig(out_path, dpi=150)
     plt.close()
 
-    # --- Per-cluster feature means ---
+    # -------------------------------
+    # Feature summary heatmap + bar plots
+    # -------------------------------
+    FEATURE_COLUMNS = ["n_turns", "user_msg_len", "assistant_msg_len", "text_length"]
     numeric_features = [c for c in FEATURE_COLUMNS if c in df.columns]
     if not numeric_features:
         return
@@ -553,11 +550,9 @@ def make_cluster_plots(
         .mean()
         .sort_index()
     )
-
     if cluster_means.empty:
         return
 
-    # Z-score scaling across clusters so features are comparable in the heatmap
     scaler = StandardScaler()
     cluster_means_z = pd.DataFrame(
         scaler.fit_transform(cluster_means),
@@ -565,11 +560,9 @@ def make_cluster_plots(
         columns=cluster_means.columns,
     )
 
-    # Heatmap of z-scored feature means
     plt.figure(figsize=(1.5 * len(numeric_features) + 2, 0.4 * len(cluster_means_z) + 2))
     im = plt.imshow(cluster_means_z.values, aspect="auto")
     plt.colorbar(im, label="Mean z-score")
-
     plt.xticks(
         ticks=np.arange(len(numeric_features)),
         labels=numeric_features,
@@ -588,7 +581,6 @@ def make_cluster_plots(
     plt.savefig(out_path, dpi=150)
     plt.close()
 
-    # Individual bar plots per feature (raw means)
     for feat in numeric_features:
         plt.figure(figsize=(8, 4))
         cluster_means[feat].plot(kind="bar")
@@ -610,7 +602,7 @@ def preprocess_text_for_wordcloud(text: str, lang: str | None = None) -> str:
     - Remove role prefixes like 'user:', 'assistant:', 'system:'.
     - Lowercase.
     - Tokenize on whitespace.
-    - Drop very short tokens (len < 3).
+    - Drop very short tokens (len < 3 for ASCII tokens).
     - Remove multilingual stopwords (per-language if available, else global).
     """
     if not text:
@@ -631,12 +623,16 @@ def preprocess_text_for_wordcloud(text: str, lang: str | None = None) -> str:
     else:
         sw = GLOBAL_STOPWORDS
 
-    # Filter tokens: length >= 3 and not in stopwords
-    filtered = [
-        tok
-        for tok in tokens
-        if len(tok) >= 3 and tok not in sw
-    ]
+    # Filter tokens:
+    # - For ASCII tokens, require length >= 3
+    # - For non-ASCII (e.g. CJK), allow shorter tokens
+    filtered = []
+    for tok in tokens:
+        if tok in sw:
+            continue
+        if tok.isascii() and len(tok) < 3:
+            continue
+        filtered.append(tok)
 
     return " ".join(filtered)
 
@@ -646,6 +642,7 @@ def make_cluster_wordclouds(
     label_col: str,
     text_col: str,
     figs_dir: Path,
+    font_path: str | None = None,
 ) -> None:
     """
     Compute and save a word cloud image for each cluster, based on `text_col`.
@@ -672,26 +669,33 @@ def make_cluster_wordclouds(
             if not raw.strip():
                 continue
 
-            # Language detection
             lang, _ = langid.classify(raw)
-
             cleaned = preprocess_text_for_wordcloud(raw, lang=lang)
-            if cleaned:
-                pieces.append(cleaned)
+            if not cleaned:
+                continue
+
+            if len(cleaned.split()) < 3:
+                # Skip extremely sparse texts for wordcloud purposes
+                continue
+
+            pieces.append(cleaned)
 
         combined = "\n".join(pieces)
         if not combined.strip():
+            print(f"Skipping cluster {cluster_label} (no usable text for wordcloud).")
             continue
 
-        # We already applied our own stopwords, so pass an empty set here.
-        wc = WordCloud(
-            width=1600,
-            height=900,
-            background_color="white",
-            stopwords=set(),
-            max_words=200,
-            font_path=FONT_PATH,
-        ).generate(combined)
+        wc_kwargs: dict[str, Any] = {
+            "width": 1600,
+            "height": 900,
+            "background_color": "white",
+            "stopwords": set(),  # already applied our own
+            "max_words": 200,
+        }
+        if font_path is not None:
+            wc_kwargs["font_path"] = font_path
+
+        wc = WordCloud(**wc_kwargs).generate(combined)
 
         plt.figure(figsize=(10, 6))
         plt.imshow(wc, interpolation="bilinear")
@@ -708,7 +712,7 @@ def make_cluster_wordclouds(
 
 def write_scores_file(
     df: pd.DataFrame,
-    X_pca: np.ndarray,
+    X_red: np.ndarray,
     kmeans_results: dict[int, dict[str, float]],
     best_k: int,
     scores_path: Path,
@@ -722,14 +726,11 @@ def write_scores_file(
     noise_frac = n_noise / n_samples if n_samples else float("nan")
     n_clusters_hdb = int((counts_hdb.index != -1).sum())
 
-    # --- HDBSCAN metrics on non-noise points ---
-    # Get all HDBSCAN labels as a numpy array once
+    # HDBSCAN metrics on non-noise points
     labels_all_hdb = df["cluster_hdbscan"].to_numpy()
     mask_hdb = labels_all_hdb != -1
-
     if mask_hdb.any():
-        X_hdb = X_pca[mask_hdb]
-        # Index the numpy array directly and cast to int to make Pylance happy
+        X_hdb = X_red[mask_hdb]
         labels_hdb = labels_all_hdb[mask_hdb].astype(int)
         metrics_hdb = evaluate_clustering_metrics(X_hdb, labels_hdb)
     else:
@@ -739,15 +740,15 @@ def write_scores_file(
             "calinski_harabasz": float("nan"),
         }
 
-    # --- Final KMeans metrics ---
+    # Final KMeans metrics
     labels_k_best = df["cluster_kmeans"].to_numpy().astype(int)
-    metrics_k_best = evaluate_clustering_metrics(X_pca, labels_k_best)
+    metrics_k_best = evaluate_clustering_metrics(X_red, labels_k_best)
 
     with scores_path.open("w", encoding="utf-8") as f:
         f.write(f"Embeddings file: {EMBEDDINGS_PATH}\n")
         f.write(f"TAG: {TAG}\n")
         f.write(f"n_samples: {n_samples}\n")
-        f.write(f"PCA shape: {X_pca.shape}\n")
+        f.write(f"Reduced shape (UMAP dims): {X_red.shape}\n")
         f.write("\n")
 
         # HDBSCAN summary
@@ -826,44 +827,75 @@ def main() -> None:
             "Ensure you are using embeddings computed on this exact filtered dataset and in the same order."
         )
 
-    # Sanity check: clean NaN / inf in embeddings before PCA
-    if not np.isfinite(emb).all():
-        row_mask = np.isfinite(emb).all(axis=1)
-        n_bad_rows = (~row_mask).sum()
-        print(f"Dropping {n_bad_rows} rows with NaN/inf embeddings before PCA.")
-        bad_idx_path = OUT_DIR / f"{TAG}_dropped_embedding_rows.txt"
-        np.savetxt(bad_idx_path, np.where(~row_mask)[0], fmt="%d")
+    # Drop rows with any NaN/inf in embeddings
+    mask_finite_rows = np.isfinite(emb).all(axis=1)
+    n_bad_rows = int((~mask_finite_rows).sum())
+    if n_bad_rows > 0:
+        bad_idx = np.where(~mask_finite_rows)[0]
+        print(
+            f"Dropping {n_bad_rows} rows with non-finite embeddings "
+            f"(out of {emb.shape[0]} total rows)."
+        )
+        bad_idx_path = OUT_DIR / f"{TAG}_nonfinite_embedding_rows.txt"
+        np.savetxt(bad_idx_path, bad_idx, fmt="%d")
         print(f"Saved indices of dropped rows to: {bad_idx_path}")
-        emb = emb[row_mask]
-        df = df.loc[row_mask].reset_index(drop=True)
 
-    # PCA
-    if PCA_EMBEDDINGS_PATH.exists() and PCA_MODEL_PATH.exists():
-        print(f"Loading precomputed PCA embeddings from: {PCA_EMBEDDINGS_PATH}")
-        X_pca = np.load(PCA_EMBEDDINGS_PATH)
-        print(f"Loading PCA model from: {PCA_MODEL_PATH}")
-        pca = joblib.load(PCA_MODEL_PATH)
+        emb = emb[mask_finite_rows]
+        df = df.loc[mask_finite_rows].reset_index(drop=True)
+
+    # L2-normalize embeddings (cosine geometry)
+    norms = np.linalg.norm(emb, axis=1, keepdims=True)
+    norms = np.maximum(norms, 1e-12)
+    emb_norm = emb / norms
+
+        # UMAP reduction
+    X_umap: np.ndarray
+    if UMAP_EMBEDDINGS_PATH.exists() and UMAP_MODEL_PATH.exists():
+        print(f"Loading precomputed UMAP embeddings from: {UMAP_EMBEDDINGS_PATH}")
+        X_umap = np.load(UMAP_EMBEDDINGS_PATH)
+        print(f"Loading UMAP model from: {UMAP_MODEL_PATH}")
+        umap_model = joblib.load(UMAP_MODEL_PATH)
     else:
-        print("Running PCA on embeddings...")
-        X_pca, pca = reduce_dimensionality(emb, n_components=N_COMPONENTS_PCA)
-        np.save(PCA_EMBEDDINGS_PATH, X_pca)
-        joblib.dump(pca, PCA_MODEL_PATH)
-        print(f"Saved PCA-reduced embeddings to: {PCA_EMBEDDINGS_PATH}")
-        print(f"Saved PCA model to: {PCA_MODEL_PATH}")
+        print("Running UMAP on embeddings...")
+        umap_model = umap.UMAP(
+            n_neighbors=UMAP_N_NEIGHBORS,
+            min_dist=UMAP_MIN_DIST,
+            n_components=UMAP_N_COMPONENTS,
+            metric=UMAP_METRIC,
+            random_state=UMAP_RANDOM_STATE,
+        )
+        # Force to numpy array so Pylance knows the type
+        X_umap = np.asarray(umap_model.fit_transform(emb_norm), dtype=float)
+        np.save(UMAP_EMBEDDINGS_PATH, X_umap)
+        joblib.dump(umap_model, UMAP_MODEL_PATH)
+        print(f"Saved UMAP-reduced embeddings to: {UMAP_EMBEDDINGS_PATH}")
+        print(f"Saved UMAP model to: {UMAP_MODEL_PATH}")
+    print(f"UMAP shape: {X_umap.shape}")
 
-    # HDBSCAN
-    print("Clustering with HDBSCAN on PCA-reduced embeddings...")
-    labels_hdbscan, hdbscan_model = cluster_hdbscan(X_pca)
+    # Standardize reduced space for clustering
+    scaler = StandardScaler()
+    X_red = scaler.fit_transform(X_umap)
+
+    # HDBSCAN on reduced space
+    print("Clustering with HDBSCAN on UMAP-reduced embeddings...")
+    clusterer = hdbscan.HDBSCAN(
+        min_cluster_size=HDBSCAN_MIN_CLUSTER_SIZE,
+        min_samples=HDBSCAN_MIN_SAMPLES,
+        metric=HDBSCAN_METRIC,
+        cluster_selection_method=HDBSCAN_CLUSTER_SELECTION_METHOD,
+        cluster_selection_epsilon=HDBSCAN_CLUSTER_SELECTION_EPSILON,
+    )
+    labels_hdbscan = clusterer.fit_predict(X_red)
     df["cluster_hdbscan"] = labels_hdbscan
-    joblib.dump(hdbscan_model, HDBSCAN_MODEL_PATH)
+    joblib.dump(clusterer, HDBSCAN_MODEL_PATH)
     print(f"Saved HDBSCAN model to: {HDBSCAN_MODEL_PATH}")
 
-    # KMeans sweep + final clustering
+    # KMeans sweep + final clustering on reduced space
     print("Running KMeans sweep over k values...")
-    best_k, kmeans_results = sweep_kmeans(X_pca, KMEANS_K_VALUES)
+    best_k, kmeans_results = sweep_kmeans(X_red, KMEANS_K_VALUES)
     print(f"Selected k for KMeans: {best_k}")
-    print(f"Clustering with KMeans using k={best_k} on PCA-reduced embeddings...")
-    labels_kmeans, kmeans_model = cluster_kmeans(X_pca, n_clusters=best_k)
+    print(f"Clustering with KMeans using k={best_k} on UMAP-reduced embeddings...")
+    labels_kmeans, kmeans_model = cluster_kmeans(X_red, n_clusters=best_k)
     df["cluster_kmeans"] = labels_kmeans
     joblib.dump(kmeans_model, KMEANS_MODEL_PATH)
     print(f"Saved KMeans model to: {KMEANS_MODEL_PATH}")
@@ -880,8 +912,10 @@ def main() -> None:
 
     # Plots
     print("\nGenerating cluster plots...")
-    make_cluster_plots(df, X_pca, label_col="cluster_hdbscan", figs_dir=FIGS_DIR)
-    make_cluster_plots(df, X_pca, label_col="cluster_kmeans", figs_dir=FIGS_DIR)
+    make_cluster_plots(df, X_red, label_col="cluster_hdbscan", figs_dir=FIGS_DIR)
+    make_cluster_plots(df, X_red, label_col="cluster_kmeans", figs_dir=FIGS_DIR)
+    make_cluster_plots(df, X_red, label_col="cluster_hdbscan", figs_dir=FIGS_DIR, use_robust_limits=True)
+    make_cluster_plots(df, X_red, label_col="cluster_kmeans", figs_dir=FIGS_DIR, use_robust_limits=True)
 
     # Word clouds
     print("\nGenerating word clouds per cluster...")
@@ -890,19 +924,21 @@ def main() -> None:
         label_col="cluster_hdbscan",
         text_col="conversation_text",
         figs_dir=FIGS_DIR,
+        font_path=FONT_PATH,
     )
     make_cluster_wordclouds(
         df=df,
         label_col="cluster_kmeans",
         text_col="conversation_text",
         figs_dir=FIGS_DIR,
+        font_path=FONT_PATH,
     )
 
     # Scores file
     print(f"\nWriting clustering scores to: {SCORES_TXT_PATH}")
     write_scores_file(
         df=df,
-        X_pca=X_pca,
+        X_red=X_red,
         kmeans_results=kmeans_results,
         best_k=best_k,
         scores_path=SCORES_TXT_PATH,
