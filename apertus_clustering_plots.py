@@ -17,6 +17,7 @@ Existing figures directory is cleared with `ensure_empty_dir` before plotting.
 
 from pathlib import Path
 from typing import Any
+import re
 import warnings
 
 # Silence stopwordsiso/pkg_resources deprecation warning
@@ -26,15 +27,11 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 
-import tqdm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from sklearn.preprocessing import StandardScaler
-
-import tqdm
-import re
+from tqdm.auto import tqdm
 import stopwordsiso
 import langid
 from wordcloud import WordCloud
@@ -106,14 +103,16 @@ def make_cluster_plots(
     If use_robust_limits=True:
         - The scatter plot uses 1%–99% quantile axis limits
         - Output filename has "_robust" appended
+
+    For HDBSCAN, points labeled -1 (noise) are dropped from all per-cluster plots.
     """
     figs_dir.mkdir(parents=True, exist_ok=True)
     labels = df[label_col].to_numpy()
 
-    # Drop HDBSCAN noise for per-cluster summaries/2D scatter
+    # Drop HDBSCAN noise for per-cluster plots
     if label_col == "cluster_hdbscan":
         mask = labels != -1
-        df = df[mask].reset_index(drop=True)
+        df = df.loc[mask].reset_index(drop=True)
         labels = labels[mask]
         X_red = X_red[mask]
 
@@ -180,11 +179,7 @@ def make_cluster_plots(
         print(f"[{label_col}] No numeric feature columns found, skipping feature plots.")
         return
 
-    cluster_means = (
-        df.groupby(label_col, observed=True)[numeric_features]
-        .mean()
-        .sort_index()
-    )
+    cluster_means = df.groupby(label_col, observed=True)[numeric_features].mean().sort_index()
     if cluster_means.empty:
         print(f"[{label_col}] Empty cluster_means, skipping feature plots.")
         return
@@ -197,12 +192,7 @@ def make_cluster_plots(
     )
 
     # Heatmap
-    plt.figure(
-        figsize=(
-            1.5 * len(numeric_features) + 2,
-            0.4 * len(cluster_means_z) + 2,
-        )
-    )
+    plt.figure(figsize=(1.5 * len(numeric_features) + 2, 0.4 * len(cluster_means_z) + 2))
     im = plt.imshow(cluster_means_z.values, aspect="auto")
     plt.colorbar(im, label="Mean z-score")
     plt.xticks(
@@ -281,11 +271,7 @@ def preprocess_text_for_wordcloud(text: str, lang: str | None = None) -> str:
 
 
 def make_cluster_wordclouds(
-    df: pd.DataFrame,
-    label_col: str,
-    text_col: str,
-    figs_dir: Path,
-    font_path: str | None = None,
+    df: pd.DataFrame, label_col: str, text_col: str, figs_dir: Path, font_path: str | None = None
 ) -> None:
     """
     Compute and save a word cloud image for each cluster, based on `text_col`.
@@ -306,7 +292,7 @@ def make_cluster_wordclouds(
 
     grouped = df.groupby(label_col, observed=True)[text_col]
 
-    for cluster_label, texts in tqdm.tqdm(grouped, desc=f"Generating word clouds ({label_col})"):
+    for cluster_label, texts in tqdm(grouped, desc=f"Generating word clouds ({label_col})"):
         pieces: list[str] = []
 
         for raw in texts.astype(str):

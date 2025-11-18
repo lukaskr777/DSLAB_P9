@@ -1,7 +1,7 @@
 """
 Clustering script for swiss-ai/apertus-sft-mixture.
 
-This script assumes that conversation-level embeddings have already been computed and stored in a .npy file 
+This script assumes that conversation-level embeddings have already been computed and stored in a .npy file
 (one row per conversation, in the same order as the DataFrame after parsing messages).
 
 Pipeline:
@@ -27,7 +27,7 @@ To use different embeddings (e.g., from different models), just change the globa
 """
 
 from pathlib import Path
-from typing import Any
+from typing import cast
 import warnings
 
 # Silence sklearn 'force_all_finite' deprecation warning used inside HDBSCAN
@@ -44,19 +44,19 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 
-import tqdm
-import hdbscan
 import joblib
 import numpy as np
 import pandas as pd
+from tqdm.auto import tqdm
 
-from scipy import sparse
+from scipy.sparse import csr_matrix
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from sklearn.preprocessing import StandardScaler
-import umap
+import hdbscan
 import igraph as ig
 import leidenalg as la
+import umap
 
 from utility_scripts.clustering_utils import ensure_list_of_dicts, extract_text_from_content, flatten_messages_to_text
 
@@ -108,26 +108,41 @@ CLUSTERED_DF_PATH = OUT_DIR / f"{TAG}_clustered.parquet"
 SCORES_TXT_PATH = OUT_DIR / f"{TAG}_cluster_scores.txt"
 
 
+# ---------- Small helpers ----------
+
+EMPTY_METRICS = {
+    "silhouette": float("nan"),
+    "davies_bouldin": float("nan"),
+    "calinski_harabasz": float("nan"),
+}
+
+
+def _format_metric(value: float) -> str:
+    """Format a metric as '%.6f' or 'nan' if not finite."""
+    return f"{value:.6f}" if not np.isnan(value) else "nan"
+
+
 # ---------- Data preparation ----------
 
 def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Parse `messages` column into:
-    - conversation_text
-    - n_turns
-    - user_msg_len
-    - assistant_msg_len
-    - text_length
+    Parse `messages` into conversation-level text and simple features.
+
+    Adds:
+        - conversation_text
+        - n_turns
+        - user_msg_len
+        - assistant_msg_len
+        - text_length
+
+    Drops conversations where conversation_text is empty/whitespace.
     """
-    parsed_messages: list[list[dict[str, Any]]] = []
-    for msgs in df["messages"]:
-        parsed_messages.append(ensure_list_of_dicts(msgs))
+    parsed_messages = [ensure_list_of_dicts(msgs) for msgs in df["messages"]]
+
+    empty_ratio = sum(len(m) == 0 for m in parsed_messages) / max(len(parsed_messages), 1)
+    print(f"Fraction of conversations with 0 parsed messages: {empty_ratio:.3f}")
 
     df = df.copy()
-    df["messages_parsed"] = parsed_messages
-
-    empty_ratio = (df["messages_parsed"].str.len() == 0).mean()
-    print(f"Fraction of conversations with 0 parsed messages: {empty_ratio:.3f}")
 
     conversation_texts: list[str] = []
     n_turns: list[int] = []
@@ -158,10 +173,8 @@ def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
     df["assistant_msg_len"] = assistant_msg_len
     df["text_length"] = df["conversation_text"].str.len().fillna(0).astype(int)
 
-    df = df[df["conversation_text"].str.strip().astype(bool)].reset_index(drop=True)
-
-    # Drop heavy intermediate column if not needed later
-    df = df.drop(columns=["messages_parsed"])
+    mask_nonempty = df["conversation_text"].str.strip().astype(bool)
+    df = df.loc[mask_nonempty].reset_index(drop=True)
 
     return df
 
@@ -169,9 +182,7 @@ def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
 # ---------- Metrics helpers ----------
 
 def evaluate_clustering_metrics(
-    X: np.ndarray,
-    labels: np.ndarray,
-    max_silhouette_samples: int | None = MAX_SILHOUETTE_SAMPLES,
+    X: np.ndarray, labels: np.ndarray, max_silhouette_samples: int | None = MAX_SILHOUETTE_SAMPLES,
 ) -> dict[str, float]:
     """
     Compute internal clustering metrics on X for the given labels.
@@ -187,11 +198,7 @@ def evaluate_clustering_metrics(
 
     unique_labels = np.unique(labels)
     if unique_labels.size <= 1:
-        return {
-            "silhouette": float("nan"),
-            "davies_bouldin": float("nan"),
-            "calinski_harabasz": float("nan"),
-        }
+        return EMPTY_METRICS.copy()
 
     n_samples = X.shape[0]
 
@@ -247,7 +254,7 @@ def sweep_kmeans(
     n_samples = X.shape[0]
     results: dict[int, dict[str, float]] = {}
 
-    for k in tqdm.tqdm(k_values, desc="Sweeping k for KMeans"):
+    for k in tqdm(k_values, desc="Sweeping k for KMeans"):
         k_eff = min(k, n_samples)  # guard against k > n_samples
         if k_eff <= 1:
             results[k] = {
@@ -263,39 +270,24 @@ def sweep_kmeans(
         inertia = float(km.inertia_)
 
         metrics = evaluate_clustering_metrics(X, labels, max_silhouette_samples)
-        results[k] = {
-            "inertia": inertia,
-            **metrics,
-        }
+        results[k] = {"inertia": inertia, **metrics}
 
     # Selection: prefer max silhouette if any is finite, else min inertia
-    valid_sil = {
-        k: r["silhouette"]
-        for k, r in results.items()
-        if not np.isnan(r["silhouette"])
-    }
+    valid_sil = {k: r["silhouette"] for k, r in results.items() if not np.isnan(r["silhouette"])}
 
     if valid_sil:
-        best_k = max(valid_sil, key=lambda kv: valid_sil[kv])
+        best_k = max(valid_sil.items(), key=lambda kv: kv[1])[0]
     else:
-        valid_inertia = {
-            k: r["inertia"]
-            for k, r in results.items()
-            if not np.isnan(r["inertia"])
-        }
-        if not valid_inertia:
-            best_k = min(k_values)
+        valid_inertia = {k: r["inertia"] for k, r in results.items() if not np.isnan(r["inertia"])}
+        if valid_inertia:
+            best_k = min(valid_inertia.items(), key=lambda kv: kv[1])[0]
         else:
-            best_k = min(valid_inertia, key=lambda kv: valid_inertia[kv])
+            best_k = min(k_values)
 
     return best_k, results
 
 
-def cluster_kmeans(
-    X: np.ndarray,
-    n_clusters: int,
-    random_state: int = KMEANS_RANDOM_STATE,
-) -> np.ndarray:
+def cluster_kmeans(X: np.ndarray, n_clusters: int, random_state: int = KMEANS_RANDOM_STATE) -> np.ndarray:
     """Cluster with KMeans for a given k and return the label array."""
     n_samples = X.shape[0]
     if n_samples <= 1:
@@ -308,7 +300,7 @@ def cluster_kmeans(
 
 
 def cluster_leiden_from_umap_graph(
-    umap_graph: sparse.spmatrix,
+    umap_graph: csr_matrix,
     resolution: float = LEIDEN_RESOLUTION,
     *,
     seed: int = LEIDEN_RANDOM_STATE,
@@ -318,23 +310,24 @@ def cluster_leiden_from_umap_graph(
 
     Uses igraph + leidenalg on the fuzzy simplicial set graph produced by UMAP.
     """
-    # Non-zero entries of the sparse graph give us edges
-    sources, targets = umap_graph.nonzero()  # type: ignore
-    weights = np.asarray(umap_graph[sources, targets]).ravel()  # type: ignore
+    graph_csr = umap_graph
+
+    sources, targets = graph_csr.nonzero()
+    weights = graph_csr.data
+
+    shape = graph_csr.shape
+    assert shape is not None
+    n_vertices = shape[0]
 
     g = ig.Graph(
-        n=umap_graph.shape[0],
+        n=n_vertices,
         edges=list(zip(sources, targets)),
         directed=False,
     )
     g.es["weight"] = weights.tolist()
 
     partition = la.find_partition(
-        g,
-        la.RBConfigurationVertexPartition,
-        weights=g.es["weight"],
-        resolution_parameter=resolution,
-        seed=seed,
+        g, la.RBConfigurationVertexPartition, weights=g.es["weight"], resolution_parameter=resolution, seed=seed
     )
 
     labels = np.asarray(partition.membership, dtype=int)
@@ -344,11 +337,7 @@ def cluster_leiden_from_umap_graph(
 # ---------- Scores file ----------
 
 def write_scores_file(
-    df: pd.DataFrame,
-    X_red: np.ndarray,
-    kmeans_results: dict[int, dict[str, float]],
-    best_k: int,
-    scores_path: Path,
+    df: pd.DataFrame, X_red: np.ndarray, kmeans_results: dict[int, dict[str, float]], best_k: int, scores_path: Path
 ) -> None:
     """Write clustering statistics and scores to a TXT file."""
     counts_hdb = df["cluster_hdbscan"].value_counts(dropna=False).sort_index()
@@ -367,11 +356,7 @@ def write_scores_file(
         labels_hdb = labels_all_hdb[mask_hdb].astype(int)
         metrics_hdb = evaluate_clustering_metrics(X_hdb, labels_hdb)
     else:
-        metrics_hdb = {
-            "silhouette": float("nan"),
-            "davies_bouldin": float("nan"),
-            "calinski_harabasz": float("nan"),
-        }
+        metrics_hdb = EMPTY_METRICS.copy()
 
     # Final KMeans metrics
     labels_k_best = df["cluster_kmeans"].to_numpy().astype(int)
@@ -384,11 +369,7 @@ def write_scores_file(
         metrics_leiden = evaluate_clustering_metrics(X_red, labels_leiden)
         counts_leiden = df["cluster_leiden"].value_counts(dropna=False).sort_index()
     else:
-        metrics_leiden = {
-            "silhouette": float("nan"),
-            "davies_bouldin": float("nan"),
-            "calinski_harabasz": float("nan"),
-        }
+        metrics_leiden = EMPTY_METRICS.copy()
         counts_leiden = pd.Series(dtype=int)
 
     with scores_path.open("w", encoding="utf-8") as f:
@@ -410,9 +391,9 @@ def write_scores_file(
         f.write(f"noise_fraction: {noise_frac:.4f}\n")
         f.write(
             "internal_metrics_on_non_noise: "
-            f"silhouette={metrics_hdb['silhouette']:.6f}, "
-            f"davies_bouldin={metrics_hdb['davies_bouldin']:.6f}, "
-            f"calinski_harabasz={metrics_hdb['calinski_harabasz']:.6f}\n"
+            f"silhouette={_format_metric(metrics_hdb['silhouette'])}, "
+            f"davies_bouldin={_format_metric(metrics_hdb['davies_bouldin'])}, "
+            f"calinski_harabasz={_format_metric(metrics_hdb['calinski_harabasz'])}\n"
         )
         f.write("cluster_sizes (including noise):\n")
         for label, cnt in counts_hdb.items():
@@ -425,9 +406,9 @@ def write_scores_file(
             f.write(f"resolution: {LEIDEN_RESOLUTION}\n")
             f.write(
                 "internal_metrics: "
-                f"silhouette={metrics_leiden['silhouette']:.6f}, "
-                f"davies_bouldin={metrics_leiden['davies_bouldin']:.6f}, "
-                f"calinski_harabasz={metrics_leiden['calinski_harabasz']:.6f}\n"
+                f"silhouette={_format_metric(metrics_leiden['silhouette'])}, "
+                f"davies_bouldin={_format_metric(metrics_leiden['davies_bouldin'])}, "
+                f"calinski_harabasz={_format_metric(metrics_leiden['calinski_harabasz'])}\n"
             )
             f.write("cluster_sizes:\n")
             for label, cnt in counts_leiden.items():
@@ -440,19 +421,16 @@ def write_scores_file(
         for k in sorted(kmeans_results):
             r = kmeans_results[k]
             inertia = r["inertia"]
-            sil = r["silhouette"]
-            db = r["davies_bouldin"]
-            ch = r["calinski_harabasz"]
-            sil_str = f"{sil:.6f}" if not np.isnan(sil) else "nan"
-            db_str = f"{db:.6f}" if not np.isnan(db) else "nan"
-            ch_str = f"{ch:.6f}" if not np.isnan(ch) else "nan"
+            sil_str = _format_metric(r["silhouette"])
+            db_str = _format_metric(r["davies_bouldin"])
+            ch_str = _format_metric(r["calinski_harabasz"])
             f.write(f"{k}, {inertia:.6e}, {sil_str}, {db_str}, {ch_str}\n")
         f.write(f"\nSelected k (best_k): {best_k}\n")
         f.write(
             "Final KMeans internal_metrics: "
-            f"silhouette={metrics_k_best['silhouette']:.6f}, "
-            f"davies_bouldin={metrics_k_best['davies_bouldin']:.6f}, "
-            f"calinski_harabasz={metrics_k_best['calinski_harabasz']:.6f}\n\n"
+            f"silhouette={_format_metric(metrics_k_best['silhouette'])}, "
+            f"davies_bouldin={_format_metric(metrics_k_best['davies_bouldin'])}, "
+            f"calinski_harabasz={_format_metric(metrics_k_best['calinski_harabasz'])}\n\n"
         )
 
         # Final KMeans cluster sizes
@@ -493,16 +471,14 @@ def main() -> None:
     n_bad_rows = int((~mask_finite_rows).sum())
     if n_bad_rows > 0:
         bad_idx = np.where(~mask_finite_rows)[0]
-        print(
-            f"Dropping {n_bad_rows} rows with non-finite embeddings "
-            f"(out of {emb.shape[0]} total rows)."
-        )
+        print(f"Dropping {n_bad_rows} rows with non-finite embeddings (out of {emb.shape[0]} total rows).")
         bad_idx_path = OUT_DIR / f"{TAG}_nonfinite_embedding_rows.txt"
         np.savetxt(bad_idx_path, bad_idx, fmt="%d")
         print(f"Saved indices of dropped rows to: {bad_idx_path}")
 
         emb = emb[mask_finite_rows]
         df = df.loc[mask_finite_rows].reset_index(drop=True)
+        print(f"After dropping non-finite embeddings: emb={emb.shape}, df={df.shape}")
 
     # L2-normalize embeddings (cosine geometry)
     norms = np.linalg.norm(emb, axis=1, keepdims=True)
@@ -550,7 +526,11 @@ def main() -> None:
 
     # Leiden on UMAP graph
     print("Clustering with Leiden on UMAP k-NN graph...")
-    labels_leiden = cluster_leiden_from_umap_graph(umap_model.graph_)  # type: ignore
+    graph_attr = getattr(umap_model, "graph_", None)
+    if not isinstance(graph_attr, csr_matrix):
+        raise TypeError("umap_model.graph_ is not a scipy.sparse.csr_matrix as expected.")
+    graph_csr = cast(csr_matrix, graph_attr)
+    labels_leiden = cluster_leiden_from_umap_graph(graph_csr)
     df["cluster_leiden"] = labels_leiden
 
     # KMeans sweep + final clustering on reduced space
@@ -575,13 +555,7 @@ def main() -> None:
 
     # Scores file
     print(f"\nWriting clustering scores to: {SCORES_TXT_PATH}")
-    write_scores_file(
-        df=df,
-        X_red=X_red,
-        kmeans_results=kmeans_results,
-        best_k=best_k,
-        scores_path=SCORES_TXT_PATH,
-    )
+    write_scores_file( df=df, X_red=X_red, kmeans_results=kmeans_results, best_k=best_k, scores_path=SCORES_TXT_PATH)
     print("Done.")
 
 

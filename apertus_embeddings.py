@@ -1,199 +1,92 @@
 """
 Conversation-level embeddings for swiss-ai/apertus-sft-mixture.
 
-Pipeline:
-1. Load sampled Parquet.
-2. Parse/flatten `messages` into a single `conversation_text` string.
-3. Compute L2-normalized sentence embeddings for each conversation, once per model.
-4. Save one .npy file per model (same conversation order for all models).
+Pipeline (single model, multiple parquet files):
+1. Load each Parquet file (only needed columns: conversation_id, messages).
+2. Parse/flatten `messages` into a single `conversation_text` string per row.
+3. Compute L2-normalized sentence embeddings for each conversation using
+   "sentence-transformers/paraphrase-multilingual-mpnet-base-v2".
+4. Save, for each input file:
+   - one .npy file with embeddings (same row order as the resulting DataFrame),
+   - one Parquet file with (conversation_id, conversation_text).
+
+To process the full train set, split `train.parquet` into several smaller parquet files 
+(e.g. train_part_00.parquet, train_part_01.parquet, ...) and list them in INPUT_PATHS.
+The script keeps one model in memory and processesone DataFrame per iteration to avoid cumulative memory growth.
 """
 
-import json
 from pathlib import Path
-from typing import Any, Iterable
+import gc
 
 import numpy as np
 import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer
 
+from utility_scripts.clustering_utils import ensure_list_of_dicts, flatten_messages_to_text
+
 
 # ---------- CONFIG ----------
 
-DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled_enriched.parquet")
-OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
+DATA_DIR = Path("data/swiss-ai_apertus-sft-mixture")
+OUT_DIR = DATA_DIR
 
-# Models for which we want one embedding matrix each
-MODEL_NAMES = [
-    # "sentence-transformers/all-MiniLM-L6-v2",
-    "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-    # "sentence-transformers/stsb-xlm-r-multilingual",
-    # "sentence-transformers/gtr-t5-base",
+# List of parquet files to process.
+INPUT_PATHS: list[Path] = [
+    DATA_DIR / "train_sampled.parquet",
+    # DATA_DIR / "train_part_00.parquet",
+    # DATA_DIR / "train_part_01.parquet",
 ]
 
-# Base name for saved embedding arrays; the model name will be appended
-EMBEDDINGS_BASENAME = "train_sampled_conversation_embeddings"
+# Single model used for all embeddings
+MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 
-# Whether to split the data into parts to avoid OOM; if True, set N_PARTS and PART
-USE_PARTS = False 
-N_PARTS = 8  # total number of splits
-PART = 1
+# Default batch size for encoding
+DEFAULT_BATCH_SIZE = 32
 
 
-# ---------- Helpers for messages parsing ----------
-
-def _ensure_list_of_dicts(obj: Any) -> list[dict[str, Any]]:
-    """Best-effort conversion of `obj` to a list of message dicts."""
-    # numpy array of dicts
-    if isinstance(obj, np.ndarray):
-        return [m for m in obj.tolist() if isinstance(m, dict)]
-
-    # plain list
-    if isinstance(obj, list):
-        return [m for m in obj if isinstance(m, dict)]
-
-    # single dict
-    if isinstance(obj, dict):
-        return [obj]
-
-    # JSON string (if ever needed)
-    if isinstance(obj, str):
-        try:
-            parsed = json.loads(obj)
-            return _ensure_list_of_dicts(parsed)
-        except Exception:
-            return []
-
-    # generic iterable fallback
-    try:
-        it = list(obj)
-        return [m for m in it if isinstance(m, dict)]
-    except Exception:
-        return []
-
-
-def _extract_text_from_content(content: Any) -> str:
-    """
-    Extract human-readable text from the nested `content` structure.
-
-    Priority:
-    - content["text"] if non-empty
-    - join all parts[i]["text"] in content["parts"]
-    - join all blocks[i]["text"] in content["blocks"]
-    """
-    if content is None:
-        return ""
-
-    if not isinstance(content, dict):
-        return str(content)
-
-    texts: list[str] = []
-
-    # 1) direct text field
-    txt = content.get("text")
-    if isinstance(txt, str) and txt.strip():
-        texts.append(txt.strip())
-
-    # 2) parts -> [{'text': ..., 'type': ...}, ...]
-    parts = content.get("parts")
-    if parts is not None:
-        try:
-            parts_iter = list(parts)
-        except TypeError:
-            parts_iter = [parts]
-        for p in parts_iter:
-            if isinstance(p, dict):
-                t = p.get("text")
-                if isinstance(t, str) and t.strip():
-                    texts.append(t.strip())
-
-    # 3) blocks -> [{'text': ..., 'type': 'response', ...}, ...]
-    blocks = content.get("blocks")
-    if blocks is not None:
-        try:
-            blocks_iter = list(blocks)
-        except TypeError:
-            blocks_iter = [blocks]
-        for b in blocks_iter:
-            if isinstance(b, dict):
-                t = b.get("text")
-                if isinstance(t, str) and t.strip():
-                    texts.append(t.strip())
-
-    return "\n".join(texts)
-
-
-def _flatten_messages_to_text(messages: Iterable[dict[str, Any]]) -> str:
-    """Join a list of message dicts into a single conversation string."""
-    parts: list[str] = []
-    for m in messages:
-        if not isinstance(m, dict):
-            continue
-        role = str(m.get("role", "")).strip()
-        content_text = _extract_text_from_content(m.get("content"))
-
-        if not content_text:
-            continue
-
-        if role:
-            parts.append(f"{role}: {content_text}")
-        else:
-            parts.append(content_text)
-
-    return "\n".join(parts)
-
+# ---------- Helpers ----------
 
 def add_conversation_text(df: pd.DataFrame) -> pd.DataFrame:
     """
     Parse `messages` column into a single `conversation_text` string.
 
-    - `messages` is converted to a list[dict] per row.
-    - For each message, we extract human-readable text from `content`.
-    - We prefix with the role (user/assistant/system) when available.
-    - Rows with empty conversation_text are dropped.
+    - `messages` is converted to a list[dict] per row via ensure_list_of_dicts.
+    - For each row, we flatten all messages into a single text string
+      (with roles prefixed where available) using flatten_messages_to_text.
+    - Rows with empty/whitespace-only conversation_text are dropped.
     """
-    parsed_messages: list[list[dict[str, Any]]] = []
-    for msgs in df["messages"]:
-        parsed_messages.append(_ensure_list_of_dicts(msgs))
+    if "messages" not in df.columns:
+        raise KeyError("Expected a 'messages' column in the input DataFrame.")
+
+    parsed_messages = [ensure_list_of_dicts(msgs) for msgs in df["messages"]]
+
+    n_rows = len(parsed_messages)
+    empty_ratio = sum(len(m) == 0 for m in parsed_messages) / max(n_rows, 1)
+    print(f"Fraction of conversations with 0 parsed messages: {empty_ratio:.3f}")
 
     df = df.copy()
-    df["messages_parsed"] = parsed_messages
-
-    empty_ratio = (df["messages_parsed"].str.len() == 0).mean()
-    print(f"Fraction of conversations with 0 parsed messages: {empty_ratio:.3f}")
 
     conversation_texts: list[str] = []
     for msgs in parsed_messages:
-        conversation_texts.append(_flatten_messages_to_text(msgs))
+        conversation_texts.append(flatten_messages_to_text(msgs))
 
     df["conversation_text"] = conversation_texts
 
     # Keep only rows with non-empty text
-    df = df[df["conversation_text"].str.strip().astype(bool)].reset_index(drop=True)
-
-    # Drop heavy intermediate column
-    df = df.drop(columns=["messages_parsed"])
+    mask_nonempty = df["conversation_text"].str.strip().astype(bool)
+    df = df.loc[mask_nonempty].reset_index(drop=True)
 
     return df
 
 
-# ---------- Embeddings ----------
-
-def compute_embeddings(
-    texts: list[str],
-    model_name: str,
-    batch_size: int = 32,
+def compute_embeddings_for_texts(
+    texts: list[str], model: SentenceTransformer, batch_size: int = DEFAULT_BATCH_SIZE
 ) -> np.ndarray:
     """Compute L2-normalized sentence embeddings for each conversation text."""
-    device = (
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-    )
-    print(f"Loading sentence-transformer model {model_name!r} on device: {device}")
-    model = SentenceTransformer(model_name, device=device)
+    if not texts:
+        raise ValueError("No texts provided for embedding computation.")
+
     emb = model.encode(
         texts,
         batch_size=batch_size,
@@ -209,16 +102,25 @@ def _model_name_to_suffix(model_name: str) -> str:
     return model_name.replace("/", "__").replace(":", "_")
 
 
-# ---------- Main ----------
+def process_file(
+    data_path: Path, out_dir: Path, model: SentenceTransformer, batch_size: int = DEFAULT_BATCH_SIZE
+) -> None:
+    """
+    Process a single parquet file:
+    - Load (conversation_id, messages),
+    - add conversation_text,
+    - compute embeddings,
+    - save embeddings .npy and text-only parquet.
+    """
+    print(f"\n=== Processing file: {data_path} ===")
+    if not data_path.exists():
+        raise FileNotFoundError(f"Input parquet not found: {data_path}")
 
-def main() -> None:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    print(f"Loading sampled data from: {DATA_PATH}")
-    df = pd.read_parquet(DATA_PATH)
+    # Load only the columns we actually need
+    df = pd.read_parquet(data_path, columns=["conversation_id", "messages"])
     print(f"Loaded shape: {df.shape}")
 
-    # Step 1: add conversation_text
+    # Add conversation_text and drop empty conversations
     print("Parsing `messages` into `conversation_text`...")
     df = add_conversation_text(df)
     print(f"After dropping empty conversations: {df.shape}")
@@ -226,39 +128,57 @@ def main() -> None:
     texts = df["conversation_text"].fillna("").astype(str).tolist()
     n = len(texts)
     print(f"Number of conversations with text: {n}")
+    if n == 0:
+        print("No non-empty conversation texts found after parsing; skipping file.")
+        return
 
-    if USE_PARTS and not (1 <= PART <= N_PARTS):
-        raise ValueError(f"PART must be in [1, {N_PARTS}], got {PART}")
-    
-    if USE_PARTS:
-        chunk_size = (n + N_PARTS - 1) // N_PARTS  # ceiling division
-        start = (PART - 1) * chunk_size
-        end = min(start + chunk_size, n)
-        print(f"Processing PART {PART}/{N_PARTS}: indices [{start}, {end})")
-        part_texts = texts[start:end]
+    input_stem = data_path.stem
+    suffix = _model_name_to_suffix(MODEL_NAME)
+
+    emb_path = out_dir / f"{input_stem}_conversation_embeddings__{suffix}.npy"
+    conv_path = out_dir / f"{input_stem}_conversations_text_only.parquet"
+
+    if emb_path.exists():
+        print(f"Loading precomputed embeddings from: {emb_path}")
+        emb = np.load(emb_path)
     else:
-        part_texts = texts
+        print(f"Computing embeddings for conversations with model {MODEL_NAME!r}...")
+        emb = compute_embeddings_for_texts(texts, model=model, batch_size=batch_size)
+        np.save(emb_path, emb)
+        print(f"Saved embeddings to: {emb_path}")
 
-    # Step 2: compute and save embeddings once per model
-    for model_name in MODEL_NAMES:
-        suffix = _model_name_to_suffix(model_name)
-        second_suffix = f"__part{PART}" if USE_PARTS else ""
-        emb_path = OUT_DIR / f"{EMBEDDINGS_BASENAME}__{suffix}{second_suffix}.npy"
+    print(f"Embeddings shape: {emb.shape}")
 
-        if emb_path.exists():
-            print(f"[{model_name}] Loading precomputed embeddings from: {emb_path}")
-            emb = np.load(emb_path)
-        else:
-            print(f"[{model_name}] Computing embeddings for conversations...")
-            emb = compute_embeddings(part_texts, model_name=model_name)
-            np.save(emb_path, emb)
-            print(f"[{model_name}] Saved embeddings to: {emb_path}")
+    # Save text-only parquet (id + text)
+    df[["conversation_id", "conversation_text"]].to_parquet(conv_path, index=False)
+    print(f"Saved conversation texts to: {conv_path}")
 
-        print(f"[{model_name}] Embeddings shape: {emb.shape}")
+    # Explicitly drop large objects and run GC to minimize cumulative memory
+    del df, texts, emb
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
-    conversations_path = OUT_DIR / "train_sampled_conversations_text_only.parquet"
-    df[["conversation_id", "conversation_text"]].to_parquet(conversations_path, index=False)
-    print(f"Saved conversation texts to: {conversations_path}")
+
+# ---------- Main ----------
+
+def main() -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+    print(f"Loading sentence-transformer model {MODEL_NAME!r} on device: {device}")
+    model = SentenceTransformer(MODEL_NAME, device=device)
+
+    for data_path in INPUT_PATHS:
+        process_file(data_path=data_path, out_dir=OUT_DIR, model=model, batch_size=DEFAULT_BATCH_SIZE)
+
+    print("\nAll files processed.")
 
 
 if __name__ == "__main__":

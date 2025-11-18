@@ -1,9 +1,11 @@
 from pathlib import Path
-import pandas as pd
 import json
+
+import pandas as pd
 
 from utility_scripts.file_utils import ensure_empty_dir
 from utility_scripts.plot_utils import hist, bar, line, scatter
+from utility_scripts.df_reading_utils import ensure_date_column
 
 
 DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled.parquet")
@@ -11,7 +13,7 @@ OUTDIR = Path("figs/apertus_overview")
 
 
 def load_df(path: Path) -> pd.DataFrame:
-    """Load DataFrame from Parquet."""
+    """Load a DataFrame from a Parquet file and print its shape."""
     print("\n=== Loading DataFrame ===")
     df = pd.read_parquet(path)
     print(f"Loaded shape: {df.shape}")
@@ -19,7 +21,7 @@ def load_df(path: Path) -> pd.DataFrame:
 
 
 def basic_eda(df: pd.DataFrame) -> pd.DataFrame:
-    """Perform basic exploratory data analysis on the DataFrame."""
+    """Print basic EDA information and add simple *_len features for object/string columns."""
     print("\n=== Column names ===")
     print(list(df.columns))
 
@@ -37,17 +39,18 @@ def basic_eda(df: pd.DataFrame) -> pd.DataFrame:
 
     # ---- Light text-derived features ----
     print("\n=== Computing text length features ===")
-    text_cols = [c for c in df.columns if df[c].dtype == object]
-
+    text_cols = df.select_dtypes(include=["object", "string"]).columns
     for col in text_cols:
-        # len of each string; errors=ignore covers NaN
-        df[f"{col}_len"] = df[col].str.len()
+        # String length per row; nulls → NaN
+        df[f"{col}_len"] = df[col].astype("string").str.len()
 
-    # Numeric columns for safe describe
+    # Numeric columns for describe
     num_cols = df.select_dtypes(include=["number"]).columns
-
-    print("\n=== describe() on numeric columns ===")
-    print(df[num_cols].describe())
+    if len(num_cols):
+        print("\n=== describe() on numeric columns ===")
+        print(df[num_cols].describe())
+    else:
+        print("\n=== No numeric columns to describe() ===")
 
     return df
 
@@ -57,6 +60,7 @@ def basic_eda(df: pd.DataFrame) -> pd.DataFrame:
 # -------------------------------------------------------------------
 
 def plot_messages_per_conversation(df: pd.DataFrame, outdir: Path) -> None:
+    """Histogram of messages_len per conversation."""
     hist(
         series=df["messages_len"],
         title="Messages per Conversation",
@@ -70,6 +74,7 @@ def plot_messages_per_conversation(df: pd.DataFrame, outdir: Path) -> None:
 
 
 def plot_id_length_distribution(df: pd.DataFrame, outdir: Path) -> None:
+    """Histogram of conversation_id string lengths."""
     hist(
         series=df["conversation_id_len"],
         title="Length of conversation_id",
@@ -82,6 +87,7 @@ def plot_id_length_distribution(df: pd.DataFrame, outdir: Path) -> None:
 
 
 def plot_dataset_source_length(df: pd.DataFrame, outdir: Path) -> None:
+    """Histogram of dataset_source string lengths."""
     hist(
         series=df["dataset_source_len"],
         title="Length of dataset_source strings",
@@ -98,6 +104,7 @@ def plot_dataset_source_length(df: pd.DataFrame, outdir: Path) -> None:
 # -------------------------------------------------------------------
 
 def plot_dataset_source_counts(df: pd.DataFrame, outdir: Path) -> None:
+    """Bar chart of dataset_source frequencies."""
     counts = df["dataset_source"].value_counts(dropna=False)
     bar(
         series=counts,
@@ -114,14 +121,11 @@ def plot_original_metadata_top(df: pd.DataFrame, outdir: Path) -> None:
     """
     Bar chart of the most common original_metadata values.
 
-    original_metadata can be dict-like, so we convert it to a stable string
-    representation (JSON) before counting.
+    original_metadata can be dict-like, so we convert it to a stable JSON string representation before counting.
     """
-    # Convert dicts (and other types) to JSON / string so they become hashable
     meta_str = df["original_metadata"].apply(
         lambda x: json.dumps(x, sort_keys=True) if isinstance(x, dict) else str(x)
     )
-
     counts = meta_str.value_counts(dropna=False)
 
     bar(
@@ -135,26 +139,38 @@ def plot_original_metadata_top(df: pd.DataFrame, outdir: Path) -> None:
     )
 
 
-
 # -------------------------------------------------------------------
 # 3. Temporal structure
 # -------------------------------------------------------------------
 
+def _with_created_dt(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a UTC-normalized created_dt column using ensure_date_column.
+    The output is always sorted and NaN timestamps removed.
+    """
+    return ensure_date_column(
+        df,
+        time_col="created_timestamp",
+        out_col="created_dt",
+        floor=None,       # => normalized UTC date
+        dropna=True,
+        sort=True,
+    )
+
+
 def plot_conversations_over_time(df: pd.DataFrame, outdir: Path) -> None:
-    tmp = df.copy()
-    tmp["created_dt"] = pd.to_datetime(tmp["created_timestamp"], errors="coerce", utc=True)
-    tmp = tmp.dropna(subset=["created_dt"])
-    tmp["day"] = tmp["created_dt"].dt.floor("D")
+    """Line plot of unique conversations per calendar day."""
+    tmp = _with_created_dt(df)
 
     counts = (
-        tmp.groupby("day", observed=True)["conversation_id"]
+        tmp.groupby("created_dt", observed=True)["conversation_id"]
         .nunique()
         .reset_index(name="n_conversations")
-        .sort_values("day")
+        .sort_values("created_dt")
     )
 
     line(
-        x="day",
+        x="created_dt",
         y="n_conversations",
         data=counts,
         title="Conversations per Day",
@@ -166,12 +182,15 @@ def plot_conversations_over_time(df: pd.DataFrame, outdir: Path) -> None:
 
 
 def plot_day_of_week_hist(df: pd.DataFrame, outdir: Path) -> None:
-    tmp = df.copy()
-    tmp["created_dt"] = pd.to_datetime(tmp["created_timestamp"], errors="coerce", utc=True)
-    tmp = tmp.dropna(subset=["created_dt"])
+    """Bar chart of conversations by weekday."""
+    tmp = _with_created_dt(df)
     tmp["weekday"] = tmp["created_dt"].dt.day_name()
 
-    counts = tmp["weekday"].value_counts()
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    tmp["weekday"] = pd.Categorical(tmp["weekday"], categories=weekdays, ordered=True)
+
+    counts = tmp["weekday"].value_counts().sort_index()
+
     bar(
         series=counts,
         title="Conversations by Day of Week",
@@ -187,6 +206,7 @@ def plot_day_of_week_hist(df: pd.DataFrame, outdir: Path) -> None:
 # -------------------------------------------------------------------
 
 def plot_messages_vs_source_length(df: pd.DataFrame, outdir: Path) -> None:
+    """Scatter of messages_len vs dataset_source_len."""
     scatter(
         x=df["dataset_source_len"],
         y=df["messages_len"],
@@ -199,6 +219,7 @@ def plot_messages_vs_source_length(df: pd.DataFrame, outdir: Path) -> None:
 
 
 def plot_timestamp_len_vs_messages(df: pd.DataFrame, outdir: Path) -> None:
+    """Scatter of messages_len vs created_timestamp_len."""
     scatter(
         x=df["created_timestamp_len"],
         y=df["messages_len"],
@@ -215,6 +236,7 @@ def plot_timestamp_len_vs_messages(df: pd.DataFrame, outdir: Path) -> None:
 # -------------------------------------------------------------------
 
 def plot_mean_messages_per_source(df: pd.DataFrame, outdir: Path) -> None:
+    """Bar chart of mean messages_len per dataset_source."""
     means = (
         df.groupby("dataset_source", observed=True)["messages_len"]
         .mean()
@@ -229,10 +251,6 @@ def plot_mean_messages_per_source(df: pd.DataFrame, outdir: Path) -> None:
         outdir=outdir,
     )
 
-
-# -------------------------------------------------------------------
-#  MAIN
-# -------------------------------------------------------------------
 
 def main() -> None:
     ensure_empty_dir(OUTDIR)

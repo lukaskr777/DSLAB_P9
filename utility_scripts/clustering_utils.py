@@ -1,98 +1,103 @@
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 import json
 
 import numpy as np
 
 
 def ensure_list_of_dicts(obj: Any) -> list[dict[str, Any]]:
-    """Best-effort conversion of `obj` to a list of message dicts."""
-    # numpy array of dicts
+    """Best-effort conversion of `obj` to a list of dicts."""
+    # Numpy array of dicts
     if isinstance(obj, np.ndarray):
+        if obj.dtype != object:
+            return []
         return [m for m in obj.tolist() if isinstance(m, dict)]
 
-    # plain list
+    # Plain list
     if isinstance(obj, list):
         return [m for m in obj if isinstance(m, dict)]
 
-    # single dict
+    # Single dict
     if isinstance(obj, dict):
         return [obj]
 
-    # JSON string (if ever needed)
+    # JSON string
     if isinstance(obj, str):
         try:
             parsed = json.loads(obj)
-            return ensure_list_of_dicts(parsed)
-        except Exception:
+        except json.JSONDecodeError:
             return []
+        return ensure_list_of_dicts(parsed)
 
-    # generic iterable fallback
+    # Generic iterable fallback
     try:
         it = list(obj)
-        return [m for m in it if isinstance(m, dict)]
-    except Exception:
+    except TypeError:
         return []
+    return [m for m in it if isinstance(m, dict)]
+
+
+def _as_iter(obj: Any) -> list[Any]:
+    if obj is None:
+        return []
+    try:
+        return list(obj)
+    except TypeError:
+        return [obj]
 
 
 def extract_text_from_content(content: Any) -> str:
     """
-    Extract human-readable text from the nested `content` structure.
+    Extract human-readable text from a nested `content` structure.
 
-    Priority:
-    - content["text"] if non-empty
-    - join all parts[i]["text"] in content["parts"]
-    - join all blocks[i]["text"] in content["blocks"]
+    Collects text from, in order:
+    - content["text"]
+    - content["parts"][i]["text"]
+    - content["blocks"][i]["text"]
     """
     if content is None:
         return ""
 
-    if not isinstance(content, dict):
+    if not isinstance(content, Mapping):
         return str(content)
 
     texts: list[str] = []
 
-    # 1) direct text field
     txt = content.get("text")
-    if isinstance(txt, str) and txt.strip():
-        texts.append(txt.strip())
+    if isinstance(txt, str):
+        txt = txt.strip()
+        if txt:
+            texts.append(txt)
 
-    # 2) parts -> [{'text': ..., 'type': ...}, ...]
-    parts = content.get("parts")
-    if parts is not None:
-        try:
-            parts_iter = list(parts)
-        except TypeError:
-            parts_iter = [parts]
-        for p in parts_iter:
-            if isinstance(p, dict):
-                t = p.get("text")
-                if isinstance(t, str) and t.strip():
-                    texts.append(t.strip())
+    for p in _as_iter(content.get("parts")):
+        if isinstance(p, Mapping):
+            t = p.get("text")
+            if isinstance(t, str):
+                t = t.strip()
+                if t:
+                    texts.append(t)
 
-    # 3) blocks -> [{'text': ..., 'type': 'response', ...}, ...]
-    blocks = content.get("blocks")
-    if blocks is not None:
-        try:
-            blocks_iter = list(blocks)
-        except TypeError:
-            blocks_iter = [blocks]
-        for b in blocks_iter:
-            if isinstance(b, dict):
-                t = b.get("text")
-                if isinstance(t, str) and t.strip():
-                    texts.append(t.strip())
+    for b in _as_iter(content.get("blocks")):
+        if isinstance(b, Mapping):
+            t = b.get("text")
+            if isinstance(t, str):
+                t = t.strip()
+                if t:
+                    texts.append(t)
 
     return "\n".join(texts)
 
 
-def flatten_messages_to_text(messages: Iterable[dict[str, Any]]) -> str:
-    """Join a list of message dicts into a single conversation string."""
+def flatten_messages_to_text(messages: Iterable[Mapping[str, Any]]) -> str:
+    """Join a sequence of message dicts into a single conversation string."""
     parts: list[str] = []
+
     for m in messages:
-        if not isinstance(m, dict):
+        if not isinstance(m, Mapping):
             continue
+
         role = str(m.get("role", "")).strip()
         content_text = extract_text_from_content(m.get("content"))
+        content_text = content_text.strip()
 
         if not content_text:
             continue
