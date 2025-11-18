@@ -1,5 +1,6 @@
 from pathlib import Path
-from collections.abc import Sequence 
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,37 @@ from matplotlib.ticker import FixedLocator, FixedFormatter
 
 from utility_scripts.file_utils import PathLike, make_outpath, save_text
 
+
+# ---------- Global plotting defaults ----------
+
+DEFAULT_FIGSIZE: tuple[float, float] = (7.0, 4.2)
+DEFAULT_DPI: int = 160
+DEFAULT_TITLE_FONTSIZE: int = 12
+DEFAULT_LABEL_FONTSIZE: int = 10
+DEFAULT_TICK_FONTSIZE: int = 8
+
+LINE_WIDTH: float = 1.8
+LINE_WIDTH_THIN: float = 1.2
+MARKER_SIZE: float = 4.0
+
+COLOR_PRIMARY = "#1f77b4"    # blue
+COLOR_SECONDARY = "#ff7f0e"  # orange
+COLOR_TERTIARY = "#2ca02c"   # green
+COLOR_MUTED = "#7f7f7f"      # grey
+
+
+def _new_fig_ax(
+    figsize: tuple[float, float] | None = None,
+) -> tuple[Figure, Axes]:
+    """Create a new figure/axes with library-wide defaults."""
+    fig, ax = plt.subplots(figsize=figsize or DEFAULT_FIGSIZE)
+    # Light background for axes; keep figure white
+    ax.set_facecolor("#f8f9fb")
+    fig.patch.set_facecolor("white")
+    return fig, ax
+
+
+# ---------- Tick label utilities ----------
 
 def _tilt_and_crop_ticklabels(
     ax: Axes,
@@ -30,18 +62,21 @@ def _tilt_and_crop_ticklabels(
         crop_thresh: Crop labels whose length >= this.
         rotation: Rotation angle in degrees.
     """
+    # Ensure tick labels exist before reading them
     ax.figure.canvas.draw()
 
     if x_axis:
         x_ticks = [float(t) for t in ax.get_xticks()]
         x_texts = [t.get_text() for t in ax.get_xticklabels()]
         any_long_x = any(len(s or "") >= tilt_thresh for s in x_texts)
+
         x_labels: list[str] = []
         for s in x_texts:
-            if len("" if s is None else str(s)) < crop_thresh:
-                x_labels.append("" if s is None else str(s))
+            s_str = "" if s is None else str(s)
+            if len(s_str) < crop_thresh:
+                x_labels.append(s_str)
             else:
-                x_labels.append(("" if s is None else str(s))[: max(1, crop_thresh - 1)] + "…")
+                x_labels.append(s_str[: max(1, crop_thresh - 1)] + "…")
 
         ax.xaxis.set_major_locator(FixedLocator(x_ticks))
         ax.xaxis.set_major_formatter(FixedFormatter(x_labels))
@@ -55,12 +90,14 @@ def _tilt_and_crop_ticklabels(
         y_ticks = [float(t) for t in ax.get_yticks()]
         y_texts = [t.get_text() for t in ax.get_yticklabels()]
         any_long_y = any(len(s or "") >= tilt_thresh for s in y_texts)
+
         y_labels: list[str] = []
         for s in y_texts:
-            if len("" if s is None else str(s)) < crop_thresh:
-                y_labels.append("" if s is None else str(s))
+            s_str = "" if s is None else str(s)
+            if len(s_str) < crop_thresh:
+                y_labels.append(s_str)
             else:
-                y_labels.append(("" if s is None else str(s))[: max(1, crop_thresh - 1)] + "…")
+                y_labels.append(s_str[: max(1, crop_thresh - 1)] + "…")
 
         ax.yaxis.set_major_locator(FixedLocator(y_ticks))
         ax.yaxis.set_major_formatter(FixedFormatter(y_labels))
@@ -74,48 +111,70 @@ def _tilt_and_crop_ticklabels(
     ax.figure.canvas.draw()
 
 
+# ---------- Common finalization helper ----------
+
 def _final_plotting(
-        ax: Axes, 
-        fig: Figure, 
-        title: str, 
-        xlabel: str, 
-        ylabel: str, 
-        out_path: PathLike, 
-        *,
-        x_axis: bool = True,
-        y_axis: bool = False,
-        xgrid: bool = True,
-        ygrid: bool = True,
-    ) -> None:
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    _tilt_and_crop_ticklabels(ax, x_axis=x_axis, y_axis=y_axis)
+    ax: Axes,
+    fig: Figure,
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    out_path: PathLike,
+    *,
+    x_axis: bool = True,
+    y_axis: bool = False,
+    xgrid: bool = True,
+    ygrid: bool = True,
+    tick_tilt: bool = True,
+    title_fontsize: int = DEFAULT_TITLE_FONTSIZE,
+    label_fontsize: int = DEFAULT_LABEL_FONTSIZE,
+    tick_fontsize: int = DEFAULT_TICK_FONTSIZE,
+    dpi: int = DEFAULT_DPI,
+) -> None:
+    ax.set_title(title, fontsize=title_fontsize, loc="left")
+    ax.set_xlabel(xlabel, fontsize=label_fontsize)
+    ax.set_ylabel(ylabel, fontsize=label_fontsize)
+    ax.tick_params(axis="both", labelsize=tick_fontsize)
+
+    # Cleaner spines
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_alpha(0.6)
+    ax.spines["bottom"].set_alpha(0.6)
+
+    if tick_tilt:
+        _tilt_and_crop_ticklabels(ax, x_axis=x_axis, y_axis=y_axis)
+
     if xgrid or ygrid:
-        ax.grid(
-            which="major", 
-            axis="x" if xgrid and not ygrid else "y" if ygrid and not xgrid else "both", 
-            linestyle="--", 
-            alpha=0.7
-        )
+        if xgrid and ygrid:
+            axis = "both"
+        elif xgrid:
+            axis = "x"
+        else:
+            axis = "y"
+        ax.set_axisbelow(True)
+        ax.grid(which="major", axis=axis, linestyle="--", linewidth=0.6, alpha=0.4)
 
     fig.tight_layout()
-    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    fig.savefig(out_path, dpi=dpi, bbox_inches="tight", pad_inches=0.1)
     plt.close(fig)
 
 
+# ---------- Plotting functions ----------
+
 def line(
-    x: str, 
-    y: str, 
-    data: pd.DataFrame, 
-    title: str, 
-    xlabel: str, 
-    ylabel: str, 
-    fname: PathLike, 
+    x: str,
+    y: str,
+    data: pd.DataFrame,
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    fname: PathLike,
     outdir: PathLike,
     *,
     xgrid: bool = True,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> Path:
     """Save a line plot from DataFrame columns `x` and `y`."""
     if x not in data.columns or y not in data.columns:
@@ -125,12 +184,35 @@ def line(
     df = data[[x, y]].copy().dropna()
     if df.empty:
         raise ValueError("DataFrame is empty after dropping NaNs for plotting.")
-    
+
     out_path = make_outpath(fname, outdir, ext=".png")
 
-    fig, ax = plt.subplots()
-    df.plot(x=x, y=y, kind="line", legend=False, ax=ax)
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+    fig, ax = _new_fig_ax()
+    df.plot(
+        x=x,
+        y=y,
+        kind="line",
+        legend=False,
+        ax=ax,
+        color=COLOR_PRIMARY,
+        linewidth=LINE_WIDTH,
+        marker="o",
+        markersize=MARKER_SIZE,
+    )
+
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
     return out_path
 
 
@@ -148,6 +230,7 @@ def lines_quantiles(
     plot_extrema: bool = False,
     xgrid: bool = True,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> Path:
     """
     Save a multi-line plot with min, Q1, median, Q3, mean, and max of `y` grouped by `x`.
@@ -163,7 +246,9 @@ def lines_quantiles(
         raise ValueError("DataFrame is empty after cleaning for quantile plotting.")
 
     grouped = df.groupby(x, observed=True, sort=False)[y]
-    qvals = grouped.quantile(np.array(q)).unstack().rename(columns={q[0]: "Q1", q[1]: "Median", q[2]: "Q3"})
+    qvals = grouped.quantile(np.array(q)).unstack().rename(
+        columns={q[0]: "Q1", q[1]: "Median", q[2]: "Q3"}
+    )
     qvals["Mean"] = grouped.mean()
     if plot_extrema:
         qvals["Min"] = grouped.min()
@@ -171,17 +256,79 @@ def lines_quantiles(
     qvals = qvals.sort_index(kind="stable")
 
     out_path = make_outpath(fname, outdir, ext=".png")
-    fig, ax = plt.subplots()
+    fig, ax = _new_fig_ax()
 
-    ax.plot(qvals.index, qvals["Q1"], label="Q1")
-    ax.plot(qvals.index, qvals["Median"], label="Median")
-    ax.plot(qvals.index, qvals["Q3"], label="Q3")
-    ax.plot(qvals.index, qvals["Mean"], label="Mean")
+    ax.plot(
+        qvals.index,
+        qvals["Q1"],
+        label="Q1",
+        color=COLOR_MUTED,
+        linestyle="--",
+        linewidth=LINE_WIDTH_THIN,
+        marker="",
+    )
+    ax.plot(
+        qvals.index,
+        qvals["Median"],
+        label="Median",
+        color=COLOR_PRIMARY,
+        linewidth=LINE_WIDTH,
+        marker="o",
+        markersize=MARKER_SIZE,
+    )
+    ax.plot(
+        qvals.index,
+        qvals["Q3"],
+        label="Q3",
+        color=COLOR_MUTED,
+        linestyle="--",
+        linewidth=LINE_WIDTH_THIN,
+        marker="",
+    )
+    ax.plot(
+        qvals.index,
+        qvals["Mean"],
+        label="Mean",
+        color=COLOR_SECONDARY,
+        linewidth=LINE_WIDTH,
+        linestyle=":",
+    )
+
     if plot_extrema:
-        ax.plot(qvals.index, qvals["Min"], "--", alpha=0.5, label="Min")
-        ax.plot(qvals.index, qvals["Max"], "--", alpha=0.5, label="Max")
-    ax.legend()
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+        ax.plot(
+            qvals.index,
+            qvals["Min"],
+            "--",
+            alpha=0.5,
+            label="Min",
+            color="#bbbbbb",
+            linewidth=LINE_WIDTH_THIN,
+        )
+        ax.plot(
+            qvals.index,
+            qvals["Max"],
+            "--",
+            alpha=0.5,
+            label="Max",
+            color="#bbbbbb",
+            linewidth=LINE_WIDTH_THIN,
+        )
+
+    ax.legend(frameon=False)
+
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
     return out_path
 
 
@@ -197,14 +344,15 @@ def bar(
     order: Sequence[str | float | int] | None = None,
     sort_values: bool = True,
     ascending: bool = False,
-    xgrid: bool = True,
+    xgrid: bool = False,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> Path:
     """
     Save a bar chart from a Series aggregated by index.
 
-    If `order` is given, the Series is reindexed accordingly. Otherwise, it is sorted by values (descending by default).
-    Only the top-N entries are kept if `top` is specified.
+    If `order` is given, the Series is reindexed accordingly. Otherwise, it is sorted by values
+    (descending by default). Only the top-N entries are kept if `top` is specified.
     """
     s = series.groupby(series.index).sum() if series.index.has_duplicates else series.copy()
     s = s.dropna()
@@ -222,9 +370,29 @@ def bar(
 
     out_path = make_outpath(fname, outdir, ext=".png")
 
-    fig, ax = plt.subplots()
-    s.plot(kind="bar", ax=ax)
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+    fig, ax = _new_fig_ax()
+    s.plot(
+        kind="bar",
+        ax=ax,
+        color=COLOR_PRIMARY,
+        edgecolor="white",
+        linewidth=0.5,
+        alpha=0.9,
+    )
+
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
     return out_path
 
 
@@ -240,6 +408,7 @@ def hist(
     log_scale: bool = False,
     xgrid: bool = True,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> Path:
     """
     Save a histogram from a numeric Series.
@@ -248,18 +417,31 @@ def hist(
     """
     if not isinstance(bins, int) or bins <= 0:
         raise ValueError(f"`bins` must be a positive int, got {bins}.")
-    
+
     s = pd.to_numeric(series, errors="coerce").dropna()
     if s.empty:
         raise ValueError("Series is empty after converting to numeric and dropping NaNs.")
 
     out_path = make_outpath(fname, outdir, ext=".png")
 
-    fig, ax = plt.subplots()
-    s.plot(kind="hist", bins=bins, ax=ax)
+    fig, ax = _new_fig_ax()
+    s.plot(kind="hist", bins=bins, ax=ax, color=COLOR_PRIMARY, alpha=0.75, edgecolor="white", linewidth=0.4)
     if log_scale:
         ax.set_yscale("log")
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
     return out_path
 
 
@@ -277,6 +459,7 @@ def grouped_hist(
     log_scale: bool = False,
     xgrid: bool = True,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> Path:
     """
     Stacked histogram by group with common bin edges.
@@ -308,12 +491,33 @@ def grouped_hist(
     cmap = plt.colormaps.get_cmap("tab10")
     colors = [cmap(i) for i in range(len(cats))]
 
-    fig, ax = plt.subplots()
+    fig, ax = _new_fig_ax()
     ax.hist(
-        data, bins=edges, stacked=stacked, color=colors, label=[str(c) for c in cats], edgecolor="none", log=log_scale
+        data,
+        bins=edges,
+        stacked=stacked,
+        color=colors,
+        label=[str(c) for c in cats],
+        edgecolor="white",
+        linewidth=0.4,
+        log=log_scale,
+        alpha=0.85,
     )
-    ax.legend()
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+    ax.legend(frameon=False)
+
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
     return out_path
 
 
@@ -329,6 +533,7 @@ def bin_and_quantiles(
     plot_extrema: bool = False,
     xgrid: bool = True,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> None:
     """
     Plot min, Q1, median, Q3, mean, and max of `y` across quantile bins of `x`.
@@ -356,22 +561,79 @@ def bin_and_quantiles(
     )
 
     out_path = make_outpath(fname, out, ext=".png")
-    fig, ax = plt.subplots()
+    fig, ax = _new_fig_ax()
 
-    ax.plot(g["avg_x"], g["q1"], label="Q1")
-    ax.plot(g["avg_x"], g["med"], label="Median")
-    ax.plot(g["avg_x"], g["q3"], label="Q3")
-    ax.plot(g["avg_x"], g["mean_y"], label="Mean")
+    ax.plot(
+        g["avg_x"],
+        g["q1"],
+        label="Q1",
+        color=COLOR_MUTED,
+        linestyle="--",
+        linewidth=LINE_WIDTH_THIN,
+    )
+    ax.plot(
+        g["avg_x"],
+        g["med"],
+        label="Median",
+        color=COLOR_PRIMARY,
+        linewidth=LINE_WIDTH,
+        marker="o",
+        markersize=MARKER_SIZE,
+    )
+    ax.plot(
+        g["avg_x"],
+        g["q3"],
+        label="Q3",
+        color=COLOR_MUTED,
+        linestyle="--",
+        linewidth=LINE_WIDTH_THIN,
+    )
+    ax.plot(
+        g["avg_x"],
+        g["mean_y"],
+        label="Mean",
+        color=COLOR_SECONDARY,
+        linewidth=LINE_WIDTH,
+        linestyle=":",
+    )
 
     if plot_extrema:
-        ax.plot(g["avg_x"], g["min_y"], "--", alpha=0.5, label="Min")
-        ax.plot(g["avg_x"], g["max_y"], "--", alpha=0.5, label="Max")
+        ax.plot(
+            g["avg_x"],
+            g["min_y"],
+            "--",
+            alpha=0.5,
+            label="Min",
+            color="#bbbbbb",
+            linewidth=LINE_WIDTH_THIN,
+        )
+        ax.plot(
+            g["avg_x"],
+            g["max_y"],
+            "--",
+            alpha=0.5,
+            label="Max",
+            color="#bbbbbb",
+            linewidth=LINE_WIDTH_THIN,
+        )
 
-    ax.legend()
+    ax.legend(frameon=False)
+
     title_suffix = "Q1 / Median / Q3 / Mean" + (" / Min / Max" if plot_extrema else "")
     title = f"{xlabel}: {title_suffix}"
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
-    plt.close(fig)
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
 
 
 def scatter(
@@ -386,6 +648,10 @@ def scatter(
     annotate: pd.Series | Sequence[str] | None = None,
     xgrid: bool = True,
     ygrid: bool = True,
+    point_size: float = 16.0,
+    alpha: float = 0.6,
+    annotation_fontsize: int = 6,
+    **style_kwargs: Any,
 ) -> Path:
     """
     Save a scatter plot from two Series.
@@ -398,16 +664,37 @@ def scatter(
     if annotate is not None and len(annotate) != len(x):
         raise ValueError(f"Length mismatch: len(annotate)={len(annotate)} != len(x)={len(x)}")
 
-    out_path = make_outpath(fname, outdir)
-    fig, ax = plt.subplots()
-    ax.scatter(x, y, s=12)
+    out_path = make_outpath(fname, outdir, ext=".png")
+    fig, ax = _new_fig_ax()
+
+    ax.scatter(
+        x,
+        y,
+        s=point_size,
+        alpha=alpha,
+        linewidths=0.3,
+        edgecolors="white",
+        c=COLOR_PRIMARY,
+    )
 
     if annotate is not None:
         for xi, yi, lab in zip(x, y, annotate):
             if pd.notna(xi) and pd.notna(yi):
-                ax.annotate(str(lab), (xi, yi), fontsize=6, alpha=0.7)
+                ax.annotate(str(lab), (xi, yi), fontsize=annotation_fontsize, alpha=0.8)
 
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
     return out_path
 
 
@@ -421,13 +708,13 @@ def scatter_with_fit(
     outdir: PathLike,
     *,
     write_params_path: PathLike | None = None,
-    x_scale: float = 1.0,   # divide x by this before plotting/fitting (e.g., 1e6 for “tokens (M)”)
-    y_scale: float = 1.0,   # divide y by this before plotting/fitting (e.g., 1e3 for “spend (k$)”)
+    x_scale: float = 1.0,  # divide x by this before plotting/fitting (e.g., 1e6 for “tokens (M)”)
+    y_scale: float = 1.0,  # divide y by this before plotting/fitting (e.g., 1e3 for “spend (k$)”)
     xgrid: bool = True,
     ygrid: bool = True,
+    **style_kwargs: Any,
 ) -> Path:
     """Scatter with least-squares line y = a*x + b in *displayed* units."""
-
     x_arr = np.asarray(x, dtype=np.float64).ravel()
     y_arr = np.asarray(y, dtype=np.float64).ravel()
     if x_arr.size != y_arr.size:
@@ -451,17 +738,45 @@ def scatter_with_fit(
     ss_tot = float(np.sum((yv - np.mean(yv)) ** 2))
     r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else np.nan
 
-    out_path = make_outpath(fname, outdir)
-    fig, ax = plt.subplots()
-    ax.scatter(xv, yv, s=12)
+    out_path = make_outpath(fname, outdir, ext=".png")
+    fig, ax = _new_fig_ax()
+
+    ax.scatter(
+        xv,
+        yv,
+        s=16,
+        alpha=0.7,
+        linewidths=0.3,
+        edgecolors="white",
+        c=COLOR_PRIMARY,
+    )
 
     xs = np.linspace(xv.min(), xv.max(), 200)
-    ax.plot(xs, a_disp * xs + b_disp, linestyle="--", color="red",
-            label=f"Fit: y = {a_disp:.6g} x + {b_disp:.6g}  (R²={r2:.3f}, n={xv.size})")
-    ax.legend(loc="best")
+    ax.plot(
+        xs,
+        a_disp * xs + b_disp,
+        linestyle="--",
+        color=COLOR_SECONDARY,
+        linewidth=LINE_WIDTH,
+        label=f"Fit: y = {a_disp:.6g} x + {b_disp:.6g}  (R²={r2:.3f}, n={xv.size})",
+    )
+    ax.legend(loc="best", frameon=False)
 
     ax.ticklabel_format(style="plain", useOffset=False, axis="both")
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=False, xgrid=xgrid, ygrid=ygrid)
+
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=False,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
 
     if write_params_path is not None:
         # Also record raw-units params for programmatic use
@@ -479,16 +794,19 @@ def scatter_with_fit(
 
 
 def heatmap(
-        pivot: pd.DataFrame, 
-        title: str, 
-        xlabel: str, 
-        ylabel: str, 
-        fname: PathLike, 
-        outdir: PathLike,
-        *,
-        xgrid: bool = True,
-        ygrid: bool = True,
-    ) -> Path:
+    pivot: pd.DataFrame,
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    fname: PathLike,
+    outdir: PathLike,
+    *,
+    annotate: bool = False,
+    fmt: str = ".2g",
+    xgrid: bool = False,
+    ygrid: bool = False,
+    **style_kwargs: Any,
+) -> Path:
     """
     Save a heatmap from a pivoted DataFrame.
 
@@ -497,23 +815,50 @@ def heatmap(
     """
     if pivot.empty:
         raise ValueError("Input DataFrame for heatmap is empty.")
-    
-    out_path = make_outpath(fname, outdir)
-    fig, ax = plt.subplots()
+
+    out_path = make_outpath(fname, outdir, ext=".png")
+    fig, ax = _new_fig_ax()
 
     M = pivot.apply(pd.to_numeric, errors="coerce")
     if M.isna().all().all():
         raise ValueError("Heatmap has only NaNs after numeric coercion.")
     A = M.to_numpy(dtype=float)  # real float array, no object dtype
 
-    im = ax.imshow(A, aspect="auto")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    im = ax.imshow(A, aspect="auto", cmap="viridis")
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.ax.tick_params(labelsize=DEFAULT_TICK_FONTSIZE)
 
     ax.set_xticks(np.arange(pivot.shape[1]))
-    ax.set_xticklabels(pivot.columns)
+    ax.set_xticklabels(pivot.columns, rotation=35, ha="right")
     ax.set_yticks(np.arange(pivot.shape[0]))
     ax.set_yticklabels(pivot.index)
 
-    _final_plotting(ax, fig, title, xlabel, ylabel, out_path, x_axis=True, y_axis=True, xgrid=xgrid, ygrid=ygrid)
-    return out_path
+    if annotate:
+        nrows, ncols = A.shape
+        for i in range(nrows):
+            for j in range(ncols):
+                val = A[i, j]
+                if np.isfinite(val):
+                    ax.text(
+                        j,
+                        i,
+                        format(val, fmt),
+                        ha="center",
+                        va="center",
+                        fontsize=DEFAULT_TICK_FONTSIZE,
+                    )
 
+    _final_plotting(
+        ax,
+        fig,
+        title,
+        xlabel,
+        ylabel,
+        out_path,
+        x_axis=True,
+        y_axis=True,
+        xgrid=xgrid,
+        ygrid=ygrid,
+        **style_kwargs,
+    )
+    return out_path
