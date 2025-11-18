@@ -1,0 +1,23 @@
+[
+  {
+    "cluster": 0,
+    "n_users": 596,
+    "median_requests": 1.0,
+    "median_total_spend": 0.0,
+    "median_req_per_active_day": 1.0
+  },
+  {
+    "cluster": 1,
+    "n_users": 36,
+    "median_requests": 96.5,
+    "median_total_spend": 0.0,
+    "median_req_per_active_day": 96.5
+  },
+  {
+    "cluster": 2,
+    "n_users": 46,
+    "median_requests": 5.0,
+    "median_total_spend": 0.0,
+    "median_req_per_active_day": 2.0
+  }
+]

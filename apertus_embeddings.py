@@ -25,10 +25,10 @@ OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
 
 # Models for which we want one embedding matrix each
 MODEL_NAMES = [
-    "sentence-transformers/all-MiniLM-L6-v2",
+    # "sentence-transformers/all-MiniLM-L6-v2",
     "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-    "sentence-transformers/stsb-xlm-r-multilingual",
-    "sentence-transformers/gtr-t5-base",
+    # "sentence-transformers/stsb-xlm-r-multilingual",
+    # "sentence-transformers/gtr-t5-base",
 ]
 
 # Base name for saved embedding arrays; the model name will be appended

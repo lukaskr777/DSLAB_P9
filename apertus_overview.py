@@ -2,17 +2,53 @@ from pathlib import Path
 import pandas as pd
 import json
 
-
-# Your helpers
+from utility_scripts.file_utils import ensure_empty_dir
 from utility_scripts.plot_utils import hist, bar, line, scatter
-from utility_scripts.file_utils import ensure_outdir
 
-DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled_enriched.parquet")
-OUTDIR = Path("figs/apertus_full_overview")
+
+DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled.parquet")
+OUTDIR = Path("figs/apertus_overview")
 
 
 def load_df(path: Path) -> pd.DataFrame:
+    """Load DataFrame from Parquet."""
+    print("\n=== Loading DataFrame ===")
     df = pd.read_parquet(path)
+    print(f"Loaded shape: {df.shape}")
+    return df
+
+
+def basic_eda(df: pd.DataFrame) -> pd.DataFrame:
+    """Perform basic exploratory data analysis on the DataFrame."""
+    print("\n=== Column names ===")
+    print(list(df.columns))
+
+    print("\n=== Dtypes ===")
+    print(df.dtypes)
+
+    print("\n=== Memory usage (MB) ===")
+    print(df.memory_usage(deep=True).sum() / 1024**2)
+
+    # Group columns by dtype (useful for deciding next steps)
+    dtype_groups = df.columns.to_series().groupby(df.dtypes).apply(list)
+    print("\n=== Columns grouped by dtype ===")
+    for dtype, cols in dtype_groups.items():
+        print(f"{dtype}: {cols}")
+
+    # ---- Light text-derived features ----
+    print("\n=== Computing text length features ===")
+    text_cols = [c for c in df.columns if df[c].dtype == object]
+
+    for col in text_cols:
+        # len of each string; errors=ignore covers NaN
+        df[f"{col}_len"] = df[col].str.len()
+
+    # Numeric columns for safe describe
+    num_cols = df.select_dtypes(include=["number"]).columns
+
+    print("\n=== describe() on numeric columns ===")
+    print(df[num_cols].describe())
+
     return df
 
 
@@ -199,8 +235,9 @@ def plot_mean_messages_per_source(df: pd.DataFrame, outdir: Path) -> None:
 # -------------------------------------------------------------------
 
 def main() -> None:
-    ensure_outdir(OUTDIR)
+    ensure_empty_dir(OUTDIR)
     df = load_df(DATA_PATH)
+    df = basic_eda(df)
 
     # Structural
     plot_messages_per_conversation(df, OUTDIR)

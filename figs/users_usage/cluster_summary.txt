@@ -1,0 +1,60 @@
+[
+  {
+    "cluster": 0,
+    "n_users": 15168,
+    "median_requests": 8.0,
+    "median_total_spend": 0.00142519,
+    "median_req_per_active_day": 8.0,
+    "top_3_models": [
+      "eu.meta.llama3-2-3b-instruct-v1:0",
+      "apertus-70b-instruct",
+      "cohere.embed-multilingual-v3"
+    ]
+  },
+  {
+    "cluster": 1,
+    "n_users": 5893,
+    "median_requests": 30.0,
+    "median_total_spend": 0.00693443,
+    "median_req_per_active_day": 13.75,
+    "top_3_models": [
+      "eu.meta.llama3-2-3b-instruct-v1:0",
+      "cohere.embed-multilingual-v3",
+      "apertus-70b-instruct"
+    ]
+  },
+  {
+    "cluster": 2,
+    "n_users": 1,
+    "median_requests": 1.0,
+    "median_total_spend": 0.0,
+    "median_req_per_active_day": 1.0,
+    "top_3_models": [
+      "apertus-70b-instruct"
+    ]
+  },
+  {
+    "cluster": 3,
+    "n_users": 204,
+    "median_requests": 1.0,
+    "median_total_spend": 0.0,
+    "median_req_per_active_day": 1.0,
+    "top_3_models": [
+      "Cohere/Cohere-embed-multilingual-v3.0",
+      "swiss-ai/apertus-70b-instruct",
+      "cohere.embed-multilingual-v3"
+    ]
+  },
+  {
+    "cluster": 4,
+    "n_users": 1,
+    "median_requests": 245589.0,
+    "median_total_spend": 4.50618266,
+    "median_req_per_active_day": 7442.090909090909,
+    "top_3_models": [
+      "apertus-8b-instruct",
+      "swiss-ai/Apertus-8B-Instruct-2509",
+      "apertus-70b-instruct"
+    ]
+  }
+]

@@ -1,9 +1,8 @@
 """
 Clustering script for swiss-ai/apertus-sft-mixture.
 
-This script assumes that conversation-level embeddings have already been
-computed and stored in a .npy file (one row per conversation, in the same
-order as the DataFrame after parsing messages).
+This script assumes that conversation-level embeddings have already been computed and stored in a .npy file 
+(one row per conversation, in the same order as the DataFrame after parsing messages).
 
 Pipeline:
 1. Load original Parquet and parse/flatten `messages` into:
@@ -11,34 +10,25 @@ Pipeline:
    - simple conversation-level features (n_turns, lengths, etc.).
 2. Load precomputed L2-normalized embeddings from EMBEDDINGS_PATH.
 3. Clean embeddings: drop rows with non-finite values.
-4. L2-normalize embeddings again (cosine geometry).
-5. Run UMAP (metric='cosine') to reduce to a low-dimensional space.
-6. Standardize UMAP coordinates.
-7. Run HDBSCAN on the reduced space.
-8. Run KMeans sweep over k on the same reduced space, select best k,
-   then run final KMeans.
-9. Save:
-   - UMAP embeddings and UMAP model
-   - clustered DataFrame
-   - HDBSCAN and KMeans models
-   - diagnostic plots
-   - a TXT file summarizing clustering scores/statistics.
+4. L2-normalize embeddings (cosine geometry).
+5. Run UMAP (metric='cosine') to reduce to a low-dimensional space; cache:
+   - UMAP-reduced embeddings (X_umap)
+   - UMAP model (for graph-based clustering such as Leiden).
+6. Standardize UMAP coordinates (X_red).
+7. Run HDBSCAN on X_red.
+8. Run Leiden clustering on the UMAP k-NN graph.
+9. Run KMeans sweep over k on X_red, select best k, then run final KMeans.
+10. Save:
+    - UMAP embeddings
+    - clustered DataFrame
+    - a TXT file summarizing clustering scores/statistics.
 
-To use different embeddings (e.g., from different models), just change the
-global EMBEDDINGS_PATH and rerun the script.
+To use different embeddings (e.g., from different models), just change the global EMBEDDINGS_PATH and rerun the script.
 """
 
-import json
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 import warnings
-
-# Silence stopwordsiso/pkg_resources deprecation warning
-warnings.filterwarnings(
-    "ignore",
-    message="pkg_resources is deprecated as an API",
-    category=UserWarning,
-)
 
 # Silence sklearn 'force_all_finite' deprecation warning used inside HDBSCAN
 warnings.filterwarnings(
@@ -47,46 +37,40 @@ warnings.filterwarnings(
     category=FutureWarning,
 )
 
+# Silence UMAP warning about fixed random state
+warnings.filterwarnings(
+    "ignore",
+    message="n_jobs value 1 overridden to 1 by setting random_state. Use no seed for parallelism.",
+    category=UserWarning,
+)
+
 import tqdm
 import hdbscan
 import joblib
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
+from scipy import sparse
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from sklearn.preprocessing import StandardScaler
-
-import re
-import stopwordsiso
-import langid
-from wordcloud import WordCloud
 import umap
+import igraph as ig
+import leidenalg as la
+
+from utility_scripts.clustering_utils import ensure_list_of_dicts, extract_text_from_content, flatten_messages_to_text
 
 
 # ---------- CONFIG ----------
 
-DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled_enriched.parquet")
+DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled.parquet")
 OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
 
-# Root directory for figures; a subdirectory will be created per embeddings file
-FIGS_ROOT = Path("figs/apertus_clustering")
-
 # ---- Embeddings to use for this run ----
-# Change this path to point to the embeddings file you want to cluster.
-# EMBEDDINGS_PATH = OUT_DIR / (
-#     "train_sampled_conversation_embeddings__sentence-transformers__all-MiniLM-L6-v2.npy"
-# )
+# Change this path to point to the desired embeddings file.
 EMBEDDINGS_PATH = OUT_DIR / (
     "train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
 )
-# EMBEDDINGS_PATH = OUT_DIR / (
-#     "train_sampled_conversation_embeddings__sentence-transformers__stsb-xlm-r-multilingual.npy"
-# )
-# EMBEDDINGS_PATH = OUT_DIR / (
-#     "train_sampled_conversation_embeddings__sentence-transformers__gtr-t5-base.npy"
-# )
 
 # UMAP settings
 UMAP_N_COMPONENTS = 15
@@ -106,152 +90,25 @@ HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
 KMEANS_K_VALUES = list(range(2, 42))
 KMEANS_RANDOM_STATE = 0
 
+# Leiden
+LEIDEN_RESOLUTION = 1.0
+LEIDEN_RANDOM_STATE = 0
+
 # Silhouette
 MAX_SILHOUETTE_SAMPLES: int | None = None  # None -> use all samples
-
-# Feature columns used in cluster summaries / plots
-FEATURE_COLUMNS = [
-    "n_turns",
-    "user_msg_len",
-    "assistant_msg_len",
-    "text_length",
-]
 
 
 # ---------- Derived paths (per-embeddings tag) ----------
 
-TAG = EMBEDDINGS_PATH.stem  # e.g. "train_sampled_conversation_embeddings__..."
+TAG = EMBEDDINGS_PATH.stem
 
 UMAP_EMBEDDINGS_PATH = OUT_DIR / f"{TAG}_umap.npy"
 UMAP_MODEL_PATH = OUT_DIR / f"{TAG}_umap_model.joblib"
 CLUSTERED_DF_PATH = OUT_DIR / f"{TAG}_clustered.parquet"
-HDBSCAN_MODEL_PATH = OUT_DIR / f"{TAG}_hdbscan_model.joblib"
-KMEANS_MODEL_PATH = OUT_DIR / f"{TAG}_kmeans_model.joblib"
 SCORES_TXT_PATH = OUT_DIR / f"{TAG}_cluster_scores.txt"
 
-FIGS_DIR = FIGS_ROOT / TAG
 
-FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
-
-
-# ---------- Multilingual stopwords for word clouds ----------
-
-EXTRA_STOPWORDS = {"user", "assistant", "system"}
-
-# Per-language and global stopwords from stopwordsiso
-STOPWORDS_PER_LANG: dict[str, set[str]] = {}
-GLOBAL_STOPWORDS: set[str] = set()
-
-for _lang in stopwordsiso.langs():
-    words = stopwordsiso.stopwords(_lang)
-    STOPWORDS_PER_LANG[_lang] = set(words)
-    GLOBAL_STOPWORDS |= STOPWORDS_PER_LANG[_lang]
-
-GLOBAL_STOPWORDS |= EXTRA_STOPWORDS
-
-
-# ---------- Helpers for messages parsing ----------
-
-def _ensure_list_of_dicts(obj: Any) -> list[dict[str, Any]]:
-    """Best-effort conversion of `obj` to a list of message dicts."""
-    # numpy array of dicts
-    if isinstance(obj, np.ndarray):
-        return [m for m in obj.tolist() if isinstance(m, dict)]
-
-    # plain list
-    if isinstance(obj, list):
-        return [m for m in obj if isinstance(m, dict)]
-
-    # single dict
-    if isinstance(obj, dict):
-        return [obj]
-
-    # JSON string (if ever needed)
-    if isinstance(obj, str):
-        try:
-            parsed = json.loads(obj)
-            return _ensure_list_of_dicts(parsed)
-        except Exception:
-            return []
-
-    # generic iterable fallback
-    try:
-        it = list(obj)
-        return [m for m in it if isinstance(m, dict)]
-    except Exception:
-        return []
-
-
-def _extract_text_from_content(content: Any) -> str:
-    """
-    Extract human-readable text from the nested `content` structure.
-
-    Priority:
-    - content["text"] if non-empty
-    - join all parts[i]["text"] in content["parts"]
-    - join all blocks[i]["text"] in content["blocks"]
-    """
-    if content is None:
-        return ""
-
-    if not isinstance(content, dict):
-        return str(content)
-
-    texts: list[str] = []
-
-    # 1) direct text field
-    txt = content.get("text")
-    if isinstance(txt, str) and txt.strip():
-        texts.append(txt.strip())
-
-    # 2) parts -> [{'text': ..., 'type': ...}, ...]
-    parts = content.get("parts")
-    if parts is not None:
-        try:
-            parts_iter = list(parts)
-        except TypeError:
-            parts_iter = [parts]
-        for p in parts_iter:
-            if isinstance(p, dict):
-                t = p.get("text")
-                if isinstance(t, str) and t.strip():
-                    texts.append(t.strip())
-
-    # 3) blocks -> [{'text': ..., 'type': 'response', ...}, ...]
-    blocks = content.get("blocks")
-    if blocks is not None:
-        try:
-            blocks_iter = list(blocks)
-        except TypeError:
-            blocks_iter = [blocks]
-        for b in blocks_iter:
-            if isinstance(b, dict):
-                t = b.get("text")
-                if isinstance(t, str) and t.strip():
-                    texts.append(t.strip())
-
-    return "\n".join(texts)
-
-
-def _flatten_messages_to_text(messages: Iterable[dict[str, Any]]) -> str:
-    """Join a list of message dicts into a single conversation string."""
-    parts: list[str] = []
-    for m in messages:
-        if not isinstance(m, dict):
-            continue
-        role = str(m.get("role", "")).strip()
-        content_text = _extract_text_from_content(m.get("content"))
-
-        if not content_text:
-            continue
-
-        if role:
-            parts.append(f"{role}: {content_text}")
-        else:
-            parts.append(content_text)
-
-    return "\n".join(parts)
-
+# ---------- Data preparation ----------
 
 def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -264,7 +121,7 @@ def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     parsed_messages: list[list[dict[str, Any]]] = []
     for msgs in df["messages"]:
-        parsed_messages.append(_ensure_list_of_dicts(msgs))
+        parsed_messages.append(ensure_list_of_dicts(msgs))
 
     df = df.copy()
     df["messages_parsed"] = parsed_messages
@@ -278,7 +135,7 @@ def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
     assistant_msg_len: list[int] = []
 
     for msgs in parsed_messages:
-        conversation_text = _flatten_messages_to_text(msgs)
+        conversation_text = flatten_messages_to_text(msgs)
         conversation_texts.append(conversation_text)
         n_turns.append(len(msgs))
 
@@ -286,7 +143,7 @@ def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
         a_len = 0
         for m in msgs:
             content = m.get("content")
-            text = _extract_text_from_content(content)
+            text = extract_text_from_content(content)
             role = m.get("role", "")
             if role == "user":
                 u_len += len(text)
@@ -324,13 +181,11 @@ def evaluate_clustering_metrics(
         - "davies_bouldin"
         - "calinski_harabasz"
     """
-    # Ensure 1D labels and consistent length
     labels = np.asarray(labels)
     if X.shape[0] != labels.shape[0]:
         raise ValueError("X and labels must have the same number of samples.")
 
     unique_labels = np.unique(labels)
-    # If all points are in one cluster, metrics are undefined
     if unique_labels.size <= 1:
         return {
             "silhouette": float("nan"),
@@ -440,272 +295,50 @@ def cluster_kmeans(
     X: np.ndarray,
     n_clusters: int,
     random_state: int = KMEANS_RANDOM_STATE,
-) -> tuple[np.ndarray, KMeans]:
-    """Cluster with KMeans for a given k. Returns label array and fitted KMeans model."""
+) -> np.ndarray:
+    """Cluster with KMeans for a given k and return the label array."""
     n_samples = X.shape[0]
     if n_samples <= 1:
-        return np.zeros(n_samples, dtype=int), KMeans(
-            n_clusters=1, random_state=random_state, n_init="auto"
-        )
+        return np.zeros(n_samples, dtype=int)
 
     n_clusters = min(n_clusters, n_samples)
     km = KMeans(n_clusters=n_clusters, random_state=random_state, n_init="auto")
     labels = km.fit_predict(X)
-    return labels, km
+    return labels
 
 
-# ---------- Plotting ----------
-
-def make_cluster_plots(
-    df: pd.DataFrame,
-    X_red: np.ndarray,
-    label_col: str,
-    figs_dir: Path,
+def cluster_leiden_from_umap_graph(
+    umap_graph: sparse.spmatrix,
+    resolution: float = LEIDEN_RESOLUTION,
     *,
-    use_robust_limits: bool = False,
-) -> None:
+    seed: int = LEIDEN_RANDOM_STATE,
+) -> np.ndarray:
     """
-    Diagnostic cluster plots:
-    - 2D scatter of reduced space (Dim 1 vs Dim 2)
-    - Cluster size bar chart
-    - Heatmap of per-cluster feature means (z-scored)
-    - Per-feature bar charts of per-cluster raw means
+    Run Leiden clustering on the UMAP k-NN graph and return cluster labels.
 
-    If use_robust_limits=True:
-        - The scatter plot uses 1%–99% quantile axis limits
-        - Output filename has "_robust" appended
+    Uses igraph + leidenalg on the fuzzy simplicial set graph produced by UMAP.
     """
-    figs_dir.mkdir(parents=True, exist_ok=True)
-    labels = df[label_col].to_numpy()
+    # Non-zero entries of the sparse graph give us edges
+    sources, targets = umap_graph.nonzero()  # type: ignore
+    weights = np.asarray(umap_graph[sources, targets]).ravel()  # type: ignore
 
-    # Drop HDBSCAN noise for per-cluster summaries
-    if label_col == "cluster_hdbscan":
-        mask = labels != -1
-        df = df[mask].reset_index(drop=True)
-        labels = labels[mask]
-        X_red = X_red[mask]
-
-    # -------------------------------
-    # Scatter plot (Dim 1 vs Dim 2)
-    # -------------------------------
-    if X_red.shape[1] >= 2:
-        x = X_red[:, 0]
-        y = X_red[:, 1]
-
-        suffix = "_robust" if use_robust_limits else ""
-
-        plt.figure(figsize=(8, 6))
-        scatter = plt.scatter(
-            x,
-            y,
-            c=labels,
-            s=5,
-            alpha=0.7,
-            cmap="tab20",
-        )
-        plt.xlabel("Dim 1")
-        plt.ylabel("Dim 2")
-        plt.title(f"Reduced-space scatter (colored by {label_col})")
-        cbar = plt.colorbar(scatter)
-        cbar.set_label(label_col)
-
-        if use_robust_limits:
-            # Focus on the central mass of points
-            x_lo, x_hi = np.quantile(x, [0.01, 0.99])
-            y_lo, y_hi = np.quantile(y, [0.01, 0.99])
-            x_m = 0.05 * (x_hi - x_lo)
-            y_m = 0.05 * (y_hi - y_lo)
-            plt.xlim(x_lo - x_m, x_hi + x_m)
-            plt.ylim(y_lo - y_m, y_hi + y_m)
-
-        plt.tight_layout()
-        out_path = figs_dir / f"scatter_dim1_dim2_{label_col}{suffix}.png"
-        plt.savefig(out_path, dpi=150)
-        plt.close()
-
-    # -------------------------------
-    # Cluster size bar chart
-    # -------------------------------
-    counts = df[label_col].value_counts(dropna=False).sort_index()
-    plt.figure(figsize=(8, 4))
-    counts.plot(kind="bar")
-    plt.xlabel("Cluster")
-    plt.ylabel("Number of items")
-    plt.title(f"Cluster sizes ({label_col})")
-    plt.tight_layout()
-    out_path = figs_dir / f"cluster_sizes_{label_col}.png"
-    plt.savefig(out_path, dpi=150)
-    plt.close()
-
-    # -------------------------------
-    # Feature summary heatmap + bar plots
-    # -------------------------------
-    FEATURE_COLUMNS = ["n_turns", "user_msg_len", "assistant_msg_len", "text_length"]
-    numeric_features = [c for c in FEATURE_COLUMNS if c in df.columns]
-    if not numeric_features:
-        return
-
-    cluster_means = (
-        df.groupby(label_col, observed=True)[numeric_features]
-        .mean()
-        .sort_index()
+    g = ig.Graph(
+        n=umap_graph.shape[0],
+        edges=list(zip(sources, targets)),
+        directed=False,
     )
-    if cluster_means.empty:
-        return
+    g.es["weight"] = weights.tolist()
 
-    scaler = StandardScaler()
-    cluster_means_z = pd.DataFrame(
-        scaler.fit_transform(cluster_means),
-        index=cluster_means.index,
-        columns=cluster_means.columns,
+    partition = la.find_partition(
+        g,
+        la.RBConfigurationVertexPartition,
+        weights=g.es["weight"],
+        resolution_parameter=resolution,
+        seed=seed,
     )
 
-    plt.figure(figsize=(1.5 * len(numeric_features) + 2, 0.4 * len(cluster_means_z) + 2))
-    im = plt.imshow(cluster_means_z.values, aspect="auto")
-    plt.colorbar(im, label="Mean z-score")
-    plt.xticks(
-        ticks=np.arange(len(numeric_features)),
-        labels=numeric_features,
-        rotation=45,
-        ha="right",
-    )
-    plt.yticks(
-        ticks=np.arange(len(cluster_means_z)),
-        labels=cluster_means_z.index.astype(str).tolist(),
-    )
-    plt.xlabel("Feature")
-    plt.ylabel("Cluster")
-    plt.title(f"Per-cluster feature z-score means ({label_col})")
-    plt.tight_layout()
-    out_path = figs_dir / f"cluster_feature_means_heatmap_{label_col}.png"
-    plt.savefig(out_path, dpi=150)
-    plt.close()
-
-    for feat in numeric_features:
-        plt.figure(figsize=(8, 4))
-        cluster_means[feat].plot(kind="bar")
-        plt.xlabel("Cluster")
-        plt.ylabel(f"Mean {feat}")
-        plt.title(f"Mean {feat} per cluster ({label_col})")
-        plt.tight_layout()
-        out_path = figs_dir / f"cluster_mean_{feat}_{label_col}.png"
-        plt.savefig(out_path, dpi=150)
-        plt.close()
-
-
-# ---------- Word clouds ----------
-
-def preprocess_text_for_wordcloud(text: str, lang: str | None = None) -> str:
-    """
-    Clean a conversation text for word cloud generation.
-
-    - Remove role prefixes like 'user:', 'assistant:', 'system:'.
-    - Lowercase.
-    - Tokenize on whitespace.
-    - Drop very short tokens (len < 3 for ASCII tokens).
-    - Remove multilingual stopwords (per-language if available, else global).
-    """
-    if not text:
-        return ""
-
-    # Remove role prefixes (case-insensitive)
-    text = re.sub(r"\b(user|assistant|system)\s*:", " ", text, flags=re.IGNORECASE)
-
-    # Normalize case
-    text = text.lower()
-
-    # Simple whitespace tokenization
-    tokens = text.split()
-
-    # Choose stopword set
-    if lang and lang in STOPWORDS_PER_LANG:
-        sw = STOPWORDS_PER_LANG[lang] | EXTRA_STOPWORDS
-    else:
-        sw = GLOBAL_STOPWORDS
-
-    # Filter tokens:
-    # - For ASCII tokens, require length >= 3
-    # - For non-ASCII (e.g. CJK), allow shorter tokens
-    filtered = []
-    for tok in tokens:
-        if tok in sw:
-            continue
-        if tok.isascii() and len(tok) < 3:
-            continue
-        filtered.append(tok)
-
-    return " ".join(filtered)
-
-
-def make_cluster_wordclouds(
-    df: pd.DataFrame,
-    label_col: str,
-    text_col: str,
-    figs_dir: Path,
-    font_path: str | None = None,
-) -> None:
-    """
-    Compute and save a word cloud image for each cluster, based on `text_col`.
-
-    - Uses multilingual stopwords via stopwordsiso.
-    - Detects language per conversation via langid and uses language-specific
-      stopwords when available.
-    - Removes role prefixes and very short tokens.
-
-    Saves PNG files into `figs_dir / "wordclouds" / label_col`.
-    """
-    if text_col not in df.columns:
-        return
-
-    wc_dir = figs_dir / "wordclouds" / label_col
-    wc_dir.mkdir(parents=True, exist_ok=True)
-
-    grouped = df.groupby(label_col, observed=True)[text_col]
-
-    for cluster_label, texts in tqdm.tqdm(grouped, desc="Generating word clouds"):
-        pieces: list[str] = []
-
-        for raw in texts.astype(str):
-            if not raw.strip():
-                continue
-
-            lang, _ = langid.classify(raw)
-            cleaned = preprocess_text_for_wordcloud(raw, lang=lang)
-            if not cleaned:
-                continue
-
-            if len(cleaned.split()) < 3:
-                # Skip extremely sparse texts for wordcloud purposes
-                continue
-
-            pieces.append(cleaned)
-
-        combined = "\n".join(pieces)
-        if not combined.strip():
-            print(f"Skipping cluster {cluster_label} (no usable text for wordcloud).")
-            continue
-
-        wc_kwargs: dict[str, Any] = {
-            "width": 1600,
-            "height": 900,
-            "background_color": "white",
-            "stopwords": set(),  # already applied our own
-            "max_words": 200,
-        }
-        if font_path is not None:
-            wc_kwargs["font_path"] = font_path
-
-        wc = WordCloud(**wc_kwargs).generate(combined)
-
-        plt.figure(figsize=(10, 6))
-        plt.imshow(wc, interpolation="bilinear")
-        plt.axis("off")
-        plt.title(f"Cluster {cluster_label}")
-        plt.tight_layout()
-
-        out_path = wc_dir / f"cluster_{cluster_label}_wordcloud.png"
-        plt.savefig(out_path, dpi=150)
-        plt.close()
+    labels = np.asarray(partition.membership, dtype=int)
+    return labels
 
 
 # ---------- Scores file ----------
@@ -744,6 +377,20 @@ def write_scores_file(
     labels_k_best = df["cluster_kmeans"].to_numpy().astype(int)
     metrics_k_best = evaluate_clustering_metrics(X_red, labels_k_best)
 
+    # Leiden metrics (if available)
+    has_leiden = "cluster_leiden" in df.columns
+    if has_leiden:
+        labels_leiden = df["cluster_leiden"].to_numpy().astype(int)
+        metrics_leiden = evaluate_clustering_metrics(X_red, labels_leiden)
+        counts_leiden = df["cluster_leiden"].value_counts(dropna=False).sort_index()
+    else:
+        metrics_leiden = {
+            "silhouette": float("nan"),
+            "davies_bouldin": float("nan"),
+            "calinski_harabasz": float("nan"),
+        }
+        counts_leiden = pd.Series(dtype=int)
+
     with scores_path.open("w", encoding="utf-8") as f:
         f.write(f"Embeddings file: {EMBEDDINGS_PATH}\n")
         f.write(f"TAG: {TAG}\n")
@@ -771,6 +418,21 @@ def write_scores_file(
         for label, cnt in counts_hdb.items():
             f.write(f"  label={label}: count={cnt}\n")
         f.write("\n")
+
+        # Leiden summary (if present)
+        if has_leiden:
+            f.write("=== Leiden ===\n")
+            f.write(f"resolution: {LEIDEN_RESOLUTION}\n")
+            f.write(
+                "internal_metrics: "
+                f"silhouette={metrics_leiden['silhouette']:.6f}, "
+                f"davies_bouldin={metrics_leiden['davies_bouldin']:.6f}, "
+                f"calinski_harabasz={metrics_leiden['calinski_harabasz']:.6f}\n"
+            )
+            f.write("cluster_sizes:\n")
+            for label, cnt in counts_leiden.items():
+                f.write(f"  label={label}: count={cnt}\n")
+            f.write("\n")
 
         # KMeans sweep
         f.write("=== KMeans sweep ===\n")
@@ -803,7 +465,6 @@ def write_scores_file(
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    FIGS_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"Using embeddings from: {EMBEDDINGS_PATH}")
     if not EMBEDDINGS_PATH.exists():
@@ -848,13 +509,12 @@ def main() -> None:
     norms = np.maximum(norms, 1e-12)
     emb_norm = emb / norms
 
-        # UMAP reduction
-    X_umap: np.ndarray
+    # UMAP reduction (embeddings + model, so we can use the graph for Leiden)
     if UMAP_EMBEDDINGS_PATH.exists() and UMAP_MODEL_PATH.exists():
         print(f"Loading precomputed UMAP embeddings from: {UMAP_EMBEDDINGS_PATH}")
         X_umap = np.load(UMAP_EMBEDDINGS_PATH)
         print(f"Loading UMAP model from: {UMAP_MODEL_PATH}")
-        umap_model = joblib.load(UMAP_MODEL_PATH)
+        umap_model: umap.UMAP = joblib.load(UMAP_MODEL_PATH)
     else:
         print("Running UMAP on embeddings...")
         umap_model = umap.UMAP(
@@ -864,12 +524,12 @@ def main() -> None:
             metric=UMAP_METRIC,
             random_state=UMAP_RANDOM_STATE,
         )
-        # Force to numpy array so Pylance knows the type
         X_umap = np.asarray(umap_model.fit_transform(emb_norm), dtype=float)
         np.save(UMAP_EMBEDDINGS_PATH, X_umap)
         joblib.dump(umap_model, UMAP_MODEL_PATH)
         print(f"Saved UMAP-reduced embeddings to: {UMAP_EMBEDDINGS_PATH}")
         print(f"Saved UMAP model to: {UMAP_MODEL_PATH}")
+
     print(f"UMAP shape: {X_umap.shape}")
 
     # Standardize reduced space for clustering
@@ -887,18 +547,19 @@ def main() -> None:
     )
     labels_hdbscan = clusterer.fit_predict(X_red)
     df["cluster_hdbscan"] = labels_hdbscan
-    joblib.dump(clusterer, HDBSCAN_MODEL_PATH)
-    print(f"Saved HDBSCAN model to: {HDBSCAN_MODEL_PATH}")
+
+    # Leiden on UMAP graph
+    print("Clustering with Leiden on UMAP k-NN graph...")
+    labels_leiden = cluster_leiden_from_umap_graph(umap_model.graph_)  # type: ignore
+    df["cluster_leiden"] = labels_leiden
 
     # KMeans sweep + final clustering on reduced space
     print("Running KMeans sweep over k values...")
     best_k, kmeans_results = sweep_kmeans(X_red, KMEANS_K_VALUES)
     print(f"Selected k for KMeans: {best_k}")
     print(f"Clustering with KMeans using k={best_k} on UMAP-reduced embeddings...")
-    labels_kmeans, kmeans_model = cluster_kmeans(X_red, n_clusters=best_k)
+    labels_kmeans = cluster_kmeans(X_red, n_clusters=best_k)
     df["cluster_kmeans"] = labels_kmeans
-    joblib.dump(kmeans_model, KMEANS_MODEL_PATH)
-    print(f"Saved KMeans model to: {KMEANS_MODEL_PATH}")
 
     # Save clustered DataFrame
     df.to_parquet(CLUSTERED_DF_PATH, index=False)
@@ -907,32 +568,10 @@ def main() -> None:
     # Quick cluster summary to stdout
     print("\nCluster counts for HDBSCAN:")
     print(df["cluster_hdbscan"].value_counts(dropna=False).sort_index())
+    print("\nCluster counts for Leiden:")
+    print(df["cluster_leiden"].value_counts(dropna=False).sort_index())
     print("\nCluster counts for KMeans:")
     print(df["cluster_kmeans"].value_counts(dropna=False).sort_index())
-
-    # Plots
-    print("\nGenerating cluster plots...")
-    make_cluster_plots(df, X_red, label_col="cluster_hdbscan", figs_dir=FIGS_DIR)
-    make_cluster_plots(df, X_red, label_col="cluster_kmeans", figs_dir=FIGS_DIR)
-    make_cluster_plots(df, X_red, label_col="cluster_hdbscan", figs_dir=FIGS_DIR, use_robust_limits=True)
-    make_cluster_plots(df, X_red, label_col="cluster_kmeans", figs_dir=FIGS_DIR, use_robust_limits=True)
-
-    # Word clouds
-    print("\nGenerating word clouds per cluster...")
-    make_cluster_wordclouds(
-        df=df,
-        label_col="cluster_hdbscan",
-        text_col="conversation_text",
-        figs_dir=FIGS_DIR,
-        font_path=FONT_PATH,
-    )
-    make_cluster_wordclouds(
-        df=df,
-        label_col="cluster_kmeans",
-        text_col="conversation_text",
-        figs_dir=FIGS_DIR,
-        font_path=FONT_PATH,
-    )
 
     # Scores file
     print(f"\nWriting clustering scores to: {SCORES_TXT_PATH}")
