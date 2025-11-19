@@ -1,10 +1,23 @@
 import re
+from typing import Callable
 from pathlib import Path
+import os
 import shutil
+import stat
 
 import pandas as pd
 
 PathLike = str | Path
+
+
+def _handle_remove_readonly(func: Callable, path: PathLike, exc_info: tuple) -> None:
+    """Error handler for shutil.rmtree to handle read-only files."""
+    exc = exc_info[1]
+    if isinstance(exc, PermissionError):
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    else:
+        raise exc
 
 
 def ensure_outdir(outdir: PathLike) -> Path:
@@ -18,7 +31,7 @@ def ensure_empty_dir(outdir: PathLike) -> Path:
     """Ensure directory exists, then remove its contents. Return Path. Dangerous!"""
     p = Path(outdir)
     if p.exists():
-        shutil.rmtree(p)
+        shutil.rmtree(p, onerror=_handle_remove_readonly)
     p.mkdir(parents=True, exist_ok=False)
     return p
 

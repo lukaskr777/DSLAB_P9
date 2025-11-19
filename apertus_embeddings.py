@@ -32,11 +32,7 @@ DATA_DIR = Path("data/swiss-ai_apertus-sft-mixture")
 OUT_DIR = DATA_DIR
 
 # List of parquet files to process.
-INPUT_PATHS: list[Path] = [
-    DATA_DIR / "train_sampled.parquet",
-    # DATA_DIR / "train_part_00.parquet",
-    # DATA_DIR / "train_part_01.parquet",
-]
+INPUT_PATHS = [DATA_DIR / "split_train" / f"train_part_{i:02d}.parquet" for i in range(55)]
 
 # Single model used for all embeddings
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"

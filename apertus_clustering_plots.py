@@ -15,6 +15,7 @@ This script:
 Existing figures directory is cleared with `ensure_empty_dir` before plotting.
 """
 
+import sys
 from pathlib import Path
 from typing import Any
 import re
@@ -47,25 +48,20 @@ OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
 EMBEDDINGS_PATH = OUT_DIR / (
     "train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
 )
-
-# Root directory for figures; a subdirectory will be created per embeddings file
-FIGS_ROOT = Path("figs/apertus_clustering")
-
-TAG = EMBEDDINGS_PATH.stem  # e.g. "train_sampled_conversation_embeddings__..."
+TAG = EMBEDDINGS_PATH.stem
 UMAP_EMBEDDINGS_PATH = OUT_DIR / f"{TAG}_umap.npy"
 CLUSTERED_DF_PATH = OUT_DIR / f"{TAG}_clustered.parquet"
 
+# Root directory for figures; a subdirectory will be created per embeddings file
+FIGS_ROOT = Path("figs/apertus_clustering")
 FIGS_DIR = FIGS_ROOT / TAG
-
-FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
+if sys.platform == "win32":
+    FONT_PATH = r"C:\Windows\Fonts\NotoSans-Regular.ttf"
+else:
+    FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
 
 # Feature columns used in feature-summary plots
-FEATURE_COLUMNS = [
-    "n_turns",
-    "user_msg_len",
-    "assistant_msg_len",
-    "text_length",
-]
+FEATURE_COLUMNS = ["n_turns", "user_msg_len", "assistant_msg_len", "text_length"]
 
 
 # ---------- Multilingual stopwords for word clouds ----------
@@ -75,10 +71,10 @@ EXTRA_STOPWORDS = {"user", "assistant", "system"}
 STOPWORDS_PER_LANG: dict[str, set[str]] = {}
 GLOBAL_STOPWORDS: set[str] = set()
 
-for _lang in stopwordsiso.langs():
-    words = stopwordsiso.stopwords(_lang)
-    STOPWORDS_PER_LANG[_lang] = set(words)
-    GLOBAL_STOPWORDS |= STOPWORDS_PER_LANG[_lang]
+for lang in stopwordsiso.langs():
+    words = stopwordsiso.stopwords(lang)
+    STOPWORDS_PER_LANG[lang] = set(words)
+    GLOBAL_STOPWORDS |= STOPWORDS_PER_LANG[lang]
 
 GLOBAL_STOPWORDS |= EXTRA_STOPWORDS
 
@@ -101,7 +97,7 @@ def make_cluster_plots(
     - Per-feature bar charts of per-cluster raw means
 
     If use_robust_limits=True:
-        - The scatter plot uses 1%–99% quantile axis limits
+        - The scatter plot uses 1%-99% quantile axis limits
         - Output filename has "_robust" appended
 
     For HDBSCAN, points labeled -1 (noise) are dropped from all per-cluster plots.

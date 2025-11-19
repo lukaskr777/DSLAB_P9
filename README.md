@@ -1,6 +1,6 @@
 # Data Science Lab: Project 9
 
-This project requires **Python 3.11.14**.
+This project requires **Python 3.11**.
 
 ## Analysis of the data logs from Public AI Inference Utility
 

@@ -86,7 +86,7 @@ def summarize_tables_markdown(
         except Exception as e:
             cache[t] = (None, str(e))
 
-    toc = ["# Tables summary", "", "## Contents"]
+    toc = ["# Tables summary", "", "## Contents", ""]
     sections: list[str] = []
 
     # TOC
@@ -107,12 +107,15 @@ def summarize_tables_markdown(
         n_rows, n_cols = len(df), len(df.columns)
         sec = [
             f"## {t}",
+            "",
             f"*Rows*: **{n_rows}**  •  *Columns*: **{n_cols}**",
             "",
             "### Schema",
+            "",
             schema_markdown(df),
             "",
             "### Preview",
+            "",
             preview_markdown(df, max_preview_cols, max_preview_rows),
             "",
         ]
