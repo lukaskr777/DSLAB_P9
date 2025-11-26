@@ -61,9 +61,9 @@ def ensure_date_column(
     out = df.copy()
     ts = to_utc(out[time_col])
     if floor is None:
-        out[out_col] = ts.dt.normalize()
+        out[out_col] = ts.dt.normalize()  # type: ignore[assignment]
     else:
-        out[out_col] = ts.dt.floor(floor)
+        out[out_col] = ts.dt.floor(floor)  # type: ignore[assignment]
     if dropna:
         out = out.dropna(subset=[out_col])
     if sort:
@@ -151,7 +151,7 @@ def clean_table(
     - `schema`: column names. Only mapped columns are touched.
     - `success_predicate`: function taking the status Series -> boolean mask. If None, no status filter.
     - `add_date_key`: add `date_key` from `date_from_col or schema.t_start` using `date_freq` (e.g. 'D','h','min').
-    - `compute_durations`: create latency_s, ttfb_s, gen_s if the three timestamps exist.
+    - `compute_durations`: create latency_s, ttft_s, gen_s if the three timestamps exist.
     - `compute_ratios`: add completion_ratio = completion_tokens / total_tokens.
     - `strict=True`: raise if a requested transform lacks its input columns.
     """
@@ -185,12 +185,12 @@ def clean_table(
     # Durations
     if compute_durations and all(c and c in out.columns for c in time_cols):
         t0, tc, t1 = schema.t_start, schema.t_comp_start, schema.t_end
-        out["latency_s"] = (out[t1] - out[t0]).dt.total_seconds()
-        out["ttfb_s"] = (out[tc] - out[t0]).dt.total_seconds()
-        out["gen_s"] = (out[t1] - out[tc]).dt.total_seconds()
-        for c in ("latency_s", "ttfb_s", "gen_s"):
+        out["latency_s"] = (out[t1] - out[t0]).dt.total_seconds()  # type: ignore[assignment]
+        out["ttft_s"] = (out[tc] - out[t0]).dt.total_seconds()  # type: ignore[assignment]
+        out["gen_s"] = (out[t1] - out[tc]).dt.total_seconds()  # type: ignore[assignment]
+        for c in ("latency_s", "ttft_s", "gen_s"):
             out[c] = pd.to_numeric(out[c], errors="coerce").astype("Float64")
-            out[c] = out[c].where(out[c] >= 0, pd.NA)
+            out[c] = out[c].where(out[c] >= 0, pd.NA)  # type: ignore[assignment]
     elif compute_durations and strict:
         raise KeyError("Cannot compute durations: need t_start, t_comp_start, t_end")
 
@@ -221,7 +221,7 @@ def clean_table(
     if add_date_key:
         base = date_from_col or schema.t_start
         if base and base in out.columns:
-            out[date_key] = to_utc(out[base]).dt.floor(date_freq)
+            out[date_key] = to_utc(out[base]).dt.floor(date_freq)  # type: ignore[assignment]
             out = out.dropna(subset=[date_key])
         elif strict:
             raise KeyError(f"Cannot create '{date_key}': base time column missing")
@@ -252,7 +252,7 @@ def aggregate_by_time(
     """
     require(df, [time_col], strict=True)
     out = df.copy()
-    out[time_col] = to_utc(out[time_col]).dt.floor(freq)
+    out[time_col] = to_utc(out[time_col]).dt.floor(freq)  # type: ignore[assignment]
 
     agg_spec: dict[str, tuple[str, str | Callable[[pd.Series], object]]] = {}
     for c in sums:
@@ -414,3 +414,4 @@ def safe_quantile_cut(s: pd.Series, q: float) -> pd.Series:
     if s.empty:
         return s
     return s[s <= s.quantile(q, interpolation="linear")]
+

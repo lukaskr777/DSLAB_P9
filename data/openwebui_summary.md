@@ -1,6 +1,7 @@
 # Tables summary
 
 ## Contents
+
 - [alembic_version](#alembic_version)  (1x1)
 - [channel](#channel)  (0x10)
 - [channel_member](#channel_member)  (0x4)
@@ -22,55 +23,69 @@
 - [user](#user)  (23787x16)
 
 ## alembic_version
+
 *Rows*: **1**  •  *Columns*: **1**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | version_num | object | 100.0 | 1 | a5c220713937 |
 
 ### Preview
+
 | version_num   |
 |:--------------|
 | a5c220713937  |
 
 ## channel
+
 *Rows*: **0**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## channel_member
+
 *Rows*: **0**  •  *Columns*: **4**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## chatidtag
+
 *Rows*: **0**  •  *Columns*: **5**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## config
+
 *Rows*: **1**  •  *Columns*: **5**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | int32 | 100.0 | 1 | 1 |
@@ -80,25 +95,31 @@ _No rows._
 | updated_at | object | 100.0 | 1 | 2025-10-01 02:53:26.629453 |
 
 ### Preview
+
 |   id | data                                                                           |   version | created_at                 | updated_at                 |
 |-----:|:-------------------------------------------------------------------------------|----------:|:---------------------------|:---------------------------|
 |    1 | {"version": 0, "ui": {"prompt_suggestions": [{"title": ["Tell me about public… |         0 | 2025-08-30 07:33:30.292887 | 2025-10-01 02:53:26.629453 |
 
 ## document
+
 *Rows*: **0**  •  *Columns*: **8**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## document_chunk
+
 *Rows*: **27927**  •  *Columns*: **5**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 27927 | 079181ca-5f66-492f-856b-63f682709678 |
@@ -108,6 +129,7 @@ _No rows._
 | vmetadata | object | 100.0 | 27758 | {"hash":… |
 
 ### Preview
+
 | id                                   | vector                                                                       | collection_name                           | text                                                                             | vmetadata                                                                     |
 |:-------------------------------------|:-----------------------------------------------------------------------------|:------------------------------------------|:---------------------------------------------------------------------------------|:------------------------------------------------------------------------------|
 | 079181ca-5f66-492f-856b-63f682709678 | [-0.008598328,-0.0019521713,-0.056274414,-…                                  | file-0aad2bf8-a1f1-44c1-a24d-0668eb37eb05 | State of DAOs in Malaysia Shared Version 1\n\n\nState of DAOs in Malaysia…       | {"hash": "120961eda5f8db54126338a96f465f2485b6a098aad285a3d981a888942afa10",… |
@@ -117,9 +139,11 @@ _No rows._
 | c934deeb-587c-40fe-bd6f-479c9e12280c | [0.010093689,0.016448975,0.05444336,0.05807495,-0.040924072,0.017242432,-…   | file-0aad2bf8-a1f1-44c1-a24d-0668eb37eb05 | ASEAN Digital Economy Framework Agreement (DEFA) Report (2024): \n\nAs the…      | {"hash": "120961eda5f8db54126338a96f465f2485b6a098aad285a3d981a888942afa10",… |
 
 ## file
+
 *Rows*: **3584**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 3584 | 595630ca-3162-41d2-a61e-924bd1fb27a6 |
@@ -134,6 +158,7 @@ _No rows._
 | access_control | object | 100.0 | 1 | null |
 
 ### Preview
+
 | id                                   | user_id                              | filename             | meta                                                                         |   created_at | hash                                                             | data                                                                          |   updated_at | path            | access_control   |
 |:-------------------------------------|:-------------------------------------|:---------------------|:-----------------------------------------------------------------------------|-------------:|:-----------------------------------------------------------------|:------------------------------------------------------------------------------|-------------:|:----------------|:-----------------|
 | 595630ca-3162-41d2-a61e-924bd1fb27a6 | bc49bba7-3343-4f03-8601-a4c278228c24 | daos_in_malaysia.pdf | {"name": "daos_in_malaysia.pdf", "content_type": "application/pdf", "size":… |   1756711111 | 120961eda5f8db54126338a96f465f2485b6a098aad285a3d981a888942afa10 | {"status": "failed", "content": "State of DAOs in Malaysia Shared Version…    |   1756711111 | s3://publicai-… | null             |
@@ -143,9 +168,11 @@ _No rows._
 | 99326e9c-31bc-406c-84fb-337d98f4e819 | bc49bba7-3343-4f03-8601-a4c278228c24 | daos_in_malaysia.pdf | {"name": "daos_in_malaysia.pdf", "content_type": "application/pdf", "size":… |   1756709853 | 120961eda5f8db54126338a96f465f2485b6a098aad285a3d981a888942afa10 | {"status": "failed", "content": "State of DAOs in Malaysia Shared Version…    |   1756709853 | s3://publicai-… | null             |
 
 ## folder
+
 *Rows*: **58**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 58 | e924635d-2ccb-4cf7-b276-dddfdaaa2bbc |
@@ -160,6 +187,7 @@ _No rows._
 | data | object | 100.0 | 15 | {"system_prompt": "", "files": []} |
 
 ### Preview
+
 | id                                   | parent_id   | user_id                              | name                                     | items   | meta   | is_expanded   |   created_at |   updated_at | data                                                             |
 |:-------------------------------------|:------------|:-------------------------------------|:-----------------------------------------|:--------|:-------|:--------------|-------------:|-------------:|:-----------------------------------------------------------------|
 | e924635d-2ccb-4cf7-b276-dddfdaaa2bbc |             | 37e1e3a4-5a6c-41d8-b59f-e4f66ead2b46 | Progress & Change candidacies            | null    | null   | False         |   1756891621 |   1757573030 | {"system_prompt": "", "files": []}                               |
@@ -169,9 +197,11 @@ _No rows._
 | 541b2645-4068-49df-af11-b6f5238565b8 |             | 37e1e3a4-5a6c-41d8-b59f-e4f66ead2b46 | Campaign to End Repression in Azerbaijan | null    | null   | False         |   1756886180 |   1757573030 | {"system_prompt": "", "files": []}                               |
 
 ## function
+
 *Rows*: **5**  •  *Columns*: **11**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 5 | singlish_toggle |
@@ -187,6 +217,7 @@ _No rows._
 | is_global | bool | 100.0 | 2 | False |
 
 ### Preview
+
 | id                         | user_id                              | name                       | type   | content                                                                        | meta                                                                          |   created_at |   updated_at | valves   | is_active   | is_global   |
 |:---------------------------|:-------------------------------------|:---------------------------|:-------|:-------------------------------------------------------------------------------|:------------------------------------------------------------------------------|-------------:|-------------:|:---------|:------------|:------------|
 | singlish_toggle            | bc49bba7-3343-4f03-8601-a4c278228c24 | Singlish Toggle            | filter | from pydantic import BaseModel, Field\nfrom typing import Optional\nimport…    | {"description": " Enables Singlish responses with authentic Singaporean…      |   1756683098 |   1756683347 | null     | True        | False       |
@@ -196,9 +227,11 @@ _No rows._
 | debug_filter_v2            | bc49bba7-3343-4f03-8601-a4c278228c24 | Debug Filter V2            | filter | """\ntitle: debug_filter\nauthor: thiswillbeyourightub\nauthor_url:…           | {"description": "Debugging", "manifest": {"title": "debug_filter", "author":… |   1757518628 |   1758905955 | null     | False       | False       |
 
 ## group
+
 *Rows*: **1**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 1 | 88fb4519-541f-48ca-b8f5-b5f3c58c00e8 |
@@ -213,14 +246,17 @@ _No rows._
 | updated_at | int64 | 100.0 | 1 | 1759007241 |
 
 ### Preview
+
 | id                                   | user_id                              | name   | description                   | data   | meta   | permissions                                                                  | user_ids                                  |   created_at |   updated_at |
 |:-------------------------------------|:-------------------------------------|:-------|:------------------------------|:-------|:-------|:-----------------------------------------------------------------------------|:------------------------------------------|-------------:|-------------:|
 | 88fb4519-541f-48ca-b8f5-b5f3c58c00e8 | bc49bba7-3343-4f03-8601-a4c278228c24 | Plus   | The Public AI Plus Experience | null   | null   | {"workspace": {"models": true, "knowledge": true, "prompts": true, "tools":… | ["574bcca6-4e1a-46b1-ac4c-731398842e21",… |   1757942843 |   1759007241 |
 
 ## knowledge
+
 *Rows*: **1**  •  *Columns*: **9**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 1 | 2b566631-f8e1-4c25-b7dd-8b3bcb116107 |
@@ -234,25 +270,31 @@ _No rows._
 | access_control | object | 100.0 | 1 | {"read": {"group_ids": [], "user_ids": []}, "write":… |
 
 ### Preview
+
 | id                                   | user_id                              | name           | description   | data                                                   | meta   |   created_at |   updated_at | access_control                                                          |
 |:-------------------------------------|:-------------------------------------|:---------------|:--------------|:-------------------------------------------------------|:-------|-------------:|-------------:|:------------------------------------------------------------------------|
 | 2b566631-f8e1-4c25-b7dd-8b3bcb116107 | bc49bba7-3343-4f03-8601-a4c278228c24 | Test Knowledge | Testing       | {"file_ids": ["0aad2bf8-a1f1-44c1-a24d-0668eb37eb05",… | null   |   1756562078 |   1759287401 | {"read": {"group_ids": [], "user_ids": []}, "write": {"group_ids": [],… |
 
 ## message_reaction
+
 *Rows*: **0**  •  *Columns*: **5**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## migratehistory
+
 *Rows*: **18**  •  *Columns*: **3**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | int32 | 100.0 | 18 | 1 |
@@ -260,6 +302,7 @@ _No rows._
 | migrated_at | object | 100.0 | 18 | 2025-08-30 03:57:21.818791 |
 
 ### Preview
+
 |   id | name                  | migrated_at                |
 |-----:|:----------------------|:---------------------------|
 |    1 | 001_initial_schema    | 2025-08-30 03:57:21.818791 |
@@ -269,9 +312,11 @@ _No rows._
 |    5 | 005_add_updated_at    | 2025-08-30 03:57:21.852714 |
 
 ## model
+
 *Rows*: **33**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 33 | aisingapore/Gemma-SEA-LION-v4-27B-IT-quantized |
@@ -286,6 +331,7 @@ _No rows._
 | is_active | bool | 100.0 | 2 | False |
 
 ### Preview
+
 | id                                             | user_id                              | base_model_id   | name                                           | meta                                                               | params   |   created_at |   updated_at | access_control   | is_active   |
 |:-----------------------------------------------|:-------------------------------------|:----------------|:-----------------------------------------------|:-------------------------------------------------------------------|:---------|-------------:|-------------:|:-----------------|:------------|
 | aisingapore/Gemma-SEA-LION-v4-27B-IT-quantized | bc49bba7-3343-4f03-8601-a4c278228c24 |                 | aisingapore/Gemma-SEA-LION-v4-27B-IT-quantized | {"profile_image_url": "/static/favicon.png", "description": null,… | {}       |   1756526296 |   1756526296 | {}               | False       |
@@ -295,20 +341,25 @@ _No rows._
 | llama3-2-3b-instruct                           | bc49bba7-3343-4f03-8601-a4c278228c24 |                 | Task Model                                     | {"profile_image_url": "/static/favicon.png", "description": null,… | {}       |   1756526309 |   1756526309 | null             | True        |
 
 ## prompt
+
 *Rows*: **0**  •  *Columns*: **7**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## tag
+
 *Rows*: **120202**  •  *Columns*: **4**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 25747 | technology |
@@ -317,6 +368,7 @@ _No rows._
 | meta | object | 100.0 | 1 | null |
 
 ### Preview
+
 | id                      | name                    | user_id                              | meta   |
 |:------------------------|:------------------------|:-------------------------------------|:-------|
 | technology              | Technology              | bc49bba7-3343-4f03-8601-a4c278228c24 | null   |
@@ -326,9 +378,11 @@ _No rows._
 | artificial_intelligence | Artificial Intelligence | bc49bba7-3343-4f03-8601-a4c278228c24 | null   |
 
 ## tool
+
 *Rows*: **7**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 7 | test_smo |
@@ -343,6 +397,7 @@ _No rows._
 | access_control | object | 100.0 | 2 | {} |
 
 ### Preview
+
 | id               | user_id                              | name             | content                                                                          | specs                                                                           | meta                                                                        |   created_at |   updated_at | valves   | access_control                                                          |
 |:-----------------|:-------------------------------------|:-----------------|:---------------------------------------------------------------------------------|:--------------------------------------------------------------------------------|:----------------------------------------------------------------------------|-------------:|-------------:|:---------|:------------------------------------------------------------------------|
 | test_smo         | 375cf9f4-6ae2-4e3a-86b5-820b86f97f43 | Test SMO         | import os\nimport requests\nfrom datetime import datetime\nfrom pydantic import… | [{"name": "calculator", "description": "Calculate the result of an equation.",… | {"description": "Premier outil de test", "manifest": {}}                    |   1758784656 |   1758905970 | null     | {}                                                                      |
@@ -352,9 +407,11 @@ _No rows._
 | test             | f7f2534a-011b-4351-891b-199136ac9a41 | test             | import os\nimport requests\nfrom datetime import datetime\nfrom pydantic import… | [{"name": "calculator", "description": "Calculate the result of an equation.",… | {"description": "test", "manifest": {}}                                     |   1758718880 |   1759168357 | null     | {}                                                                      |
 
 ## user
+
 *Rows*: **23787**  •  *Columns*: **16**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 23787 | f36f7210-61da-443b-9028-acb1660428bb |
@@ -375,6 +432,7 @@ _No rows._
 | date_of_birth | object | 0.0 | 0 | — |
 
 ### Preview
+
 | id                                   | name          | email          | role   | profile_image_url   | api_key   |   created_at |   updated_at |   last_active_at | settings   | info   | oauth_sub   | username   | bio   | gender   | date_of_birth   |
 |:-------------------------------------|:--------------|:---------------|:-------|:--------------------|:----------|-------------:|-------------:|-----------------:|:-----------|:-------|:------------|:-----------|:------|:---------|:----------------|
 | f36f7210-61da-443b-9028-acb1660428bb | name_8bd8bf70 | email_ec3bdc04 | user   |                     |           |   1756833300 |   1756833300 |       1756838966 |            |        |             |            |       |          |                 |

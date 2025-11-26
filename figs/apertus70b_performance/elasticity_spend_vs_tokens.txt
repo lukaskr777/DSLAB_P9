@@ -1,0 +1,8 @@
+# displayed_units
+slope=-0
+intercept=0
+# raw_units
+slope=-0
+intercept=0
+R2=nan
+n=30

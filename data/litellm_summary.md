@@ -1,6 +1,7 @@
 # Tables summary
 
 ## Contents
+
 - [LiteLLM_AuditLog](#litellm_auditlog)  (0x9)
 - [LiteLLM_BudgetTable](#litellm_budgettable)  (6x13)
 - [LiteLLM_Config](#litellm_config)  (1x2)
@@ -30,20 +31,25 @@
 - [_prisma_migrations](#_prisma_migrations)  (35x8)
 
 ## LiteLLM_AuditLog
+
 *Rows*: **0**  •  *Columns*: **9**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_BudgetTable
+
 *Rows*: **6**  •  *Columns*: **13**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | budget_id | object | 100.0 | 6 | Public AI Free Tier |
@@ -61,6 +67,7 @@ _No rows._
 | updated_by | object | 100.0 | 1 | default_user_id |
 
 ### Preview
+
 | budget_id                            |   max_budget |   soft_budget |   max_parallel_requests |   tpm_limit |   rpm_limit | model_max_budget   | budget_duration   | budget_reset_at         | created_at              | created_by      | updated_at              | updated_by      |
 |:-------------------------------------|-------------:|--------------:|------------------------:|------------:|------------:|:-------------------|:------------------|:------------------------|:------------------------|:----------------|:------------------------|:----------------|
 | Public AI Free Tier                  |          nan |           nan |                     nan |         nan |           5 |                    |                   |                         | 2025-08-31 03:11:43.065 | default_user_id | 2025-08-31 03:11:43.065 | default_user_id |
@@ -70,34 +77,42 @@ _No rows._
 | public_ai_free                       |            1 |           nan |                     nan |       25000 |          30 |                    | 24h               | 2025-10-01 06:25:55.976 | 2025-08-31 05:04:18.394 | default_user_id | 2025-09-06 11:13:49.038 | default_user_id |
 
 ## LiteLLM_Config
+
 *Rows*: **1**  •  *Columns*: **2**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | param_name | object | 100.0 | 1 | model_cost_map_reload_config |
 | param_value | object | 100.0 | 1 | {"force_reload": true, "interval_hours": null} |
 
 ### Preview
+
 | param_name                   | param_value                                    |
 |:-----------------------------|:-----------------------------------------------|
 | model_cost_map_reload_config | {"force_reload": true, "interval_hours": null} |
 
 ## LiteLLM_CronJob
+
 *Rows*: **0**  •  *Columns*: **5**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_DailyTagSpend
+
 *Rows*: **2945**  •  *Columns*: **18**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 2945 | cce6c2d8-5f87-4e11-bf5d-c9e0c5518ecb |
@@ -120,6 +135,7 @@ _No rows._
 | mcp_namespaced_tool_name | object | 100.0 | 1 |  |
 
 ### Preview
+
 | id                                   | tag                                     | date       | api_key                                                          | model                        | model_group                   | custom_llm_provider   |   prompt_tokens |   completion_tokens |   cache_read_input_tokens |   cache_creation_input_tokens |      spend |   api_requests |   successful_requests |   failed_requests | created_at              | updated_at              | mcp_namespaced_tool_name   |
 |:-------------------------------------|:----------------------------------------|:-----------|:-----------------------------------------------------------------|:-----------------------------|:------------------------------|:----------------------|----------------:|--------------------:|--------------------------:|------------------------------:|-----------:|---------------:|----------------------:|------------------:|:------------------------|:------------------------|:---------------------------|
 | cce6c2d8-5f87-4e11-bf5d-c9e0c5518ecb | User-Agent: Python/3.11 aiohttp/3.12.15 | 2025-08-30 | 95400db676f8aaabee0a3c934a5a9ed46d90dfc0c910f9ffd48d6542839115ff | openai/gpt-oss-120b          | gpt-oss-120b                  | together_ai           |           19189 |                4452 |                         0 |                             0 | 0.00554955 |             21 |                    21 |                 0 | 2025-08-30 08:08:34.806 | 2025-08-30 15:00:23.866 |                            |
@@ -129,9 +145,11 @@ _No rows._
 | 096c10f8-e652-49fa-badc-fe02d62ab8c5 | User-Agent: HTTPie/3.2.4                | 2025-09-04 | 4a7651ea3be2bcc55cff899fb5609fb3614046a8913a30b060f652291cc1797a | apertus-70b-instruct         | swiss-ai/apertus-70b-instruct | openai                |              72 |                 480 |                         0 |                             0 | 0          |              1 |                     1 |                 0 | 2025-09-04 22:56:16.715 | 2025-09-04 22:56:16.715 |                            |
 
 ## LiteLLM_DailyTeamSpend
+
 *Rows*: **717**  •  *Columns*: **18**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 717 | ca681794-86b9-4e07-9fc8-8d0818dc9483 |
@@ -154,6 +172,7 @@ _No rows._
 | mcp_namespaced_tool_name | object | 100.0 | 1 |  |
 
 ### Preview
+
 | id                                   | team_id                              | date       | api_key                                                          | model                               | model_group             | custom_llm_provider   |   prompt_tokens |   completion_tokens |   spend |   api_requests |   successful_requests |   failed_requests | created_at              | updated_at              |   cache_creation_input_tokens |   cache_read_input_tokens | mcp_namespaced_tool_name   |
 |:-------------------------------------|:-------------------------------------|:-----------|:-----------------------------------------------------------------|:------------------------------------|:------------------------|:----------------------|----------------:|--------------------:|--------:|---------------:|----------------------:|------------------:|:------------------------|:------------------------|------------------------------:|--------------------------:|:---------------------------|
 | ca681794-86b9-4e07-9fc8-8d0818dc9483 | 78524c15-3112-4bee-9fb0-ec5ae9453241 | 2025-08-31 |                                                                  | gpt-oss-120b                        |                         |                       |               0 |                   0 |       0 |              6 |                     0 |                 6 | 2025-08-31 03:20:29.119 | 2025-08-31 20:33:56.371 |                             0 |                         0 |                            |
@@ -163,9 +182,11 @@ _No rows._
 | 6ca21167-fb39-46e5-ac55-9a79b408574f |                                      | 2025-08-31 | 95400db676f8aaabee0a3c934a5a9ed46d90dfc0c910f9ffd48d6542839115ff | aisingapore/Gemma-SEA-LION-v3-9B-IT | gemma-sea-lion-v3-9b-it | openai                |             432 |                  42 |       0 |              2 |                     2 |                 0 | 2025-08-31 02:56:36.365 | 2025-08-31 02:58:12.36  |                             0 |                         0 |                            |
 
 ## LiteLLM_DailyUserSpend
+
 *Rows*: **704**  •  *Columns*: **18**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 704 | 7c4303ee-8359-4c12-87d6-4f2090631b70 |
@@ -188,6 +209,7 @@ _No rows._
 | mcp_namespaced_tool_name | object | 100.0 | 1 |  |
 
 ### Preview
+
 | id                                   | user_id                              | date       | api_key                                                          | model                   | model_group          | custom_llm_provider   |   prompt_tokens |   completion_tokens |     spend | created_at              | updated_at              |   api_requests |   failed_requests |   successful_requests |   cache_creation_input_tokens |   cache_read_input_tokens | mcp_namespaced_tool_name   |
 |:-------------------------------------|:-------------------------------------|:-----------|:-----------------------------------------------------------------|:------------------------|:---------------------|:----------------------|----------------:|--------------------:|----------:|:------------------------|:------------------------|---------------:|------------------:|----------------------:|------------------------------:|--------------------------:|:---------------------------|
 | 7c4303ee-8359-4c12-87d6-4f2090631b70 | default_user_id                      | 2025-08-31 |                                                                  | apertus-70b-instruct    | apertus-70b-instruct |                       |               0 |                   0 | 0         | 2025-08-31 13:53:27.578 | 2025-08-31 23:38:04.416 |              7 |                 7 |                     0 |                             0 |                         0 |                            |
@@ -197,9 +219,11 @@ _No rows._
 | d0b02521-570b-4ca9-b4d6-8d96b0bf9f7a | f7f2534a-011b-4351-891b-199136ac9a41 | 2025-08-31 | 95400db676f8aaabee0a3c934a5a9ed46d90dfc0c910f9ffd48d6542839115ff | openai/gpt-oss-120b     | gpt-oss-120b         | together_ai           |             203 |                  15 | 3.945e-05 | 2025-08-31 02:11:19.179 | 2025-08-31 02:11:19.179 |              1 |                 0 |                     1 |                             0 |                         0 |                            |
 
 ## LiteLLM_EndUserTable
+
 *Rows*: **23805**  •  *Columns*: **7**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | user_id | object | 100.0 | 23805 | enduser_23698314 |
@@ -211,6 +235,7 @@ _No rows._
 | blocked | bool | 100.0 | 2 | False |
 
 ### Preview
+
 | user_id          | alias   |      spend | allowed_model_region   | default_model   | budget_id                            | blocked   |
 |:-----------------|:--------|-----------:|:-----------------------|:----------------|:-------------------------------------|:----------|
 | enduser_23698314 |         | 0.00111492 |                        |                 | public_ai_free                       | False     |
@@ -220,86 +245,109 @@ _No rows._
 | enduser_8f18a31e |         | 0          |                        |                 | bc49bba7-3343-4f03-8601-a4c278228c24 | False     |
 
 ## LiteLLM_GuardrailsTable
+
 *Rows*: **0**  •  *Columns*: **6**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_HealthCheckTable
+
 *Rows*: **0**  •  *Columns*: **13**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_MCPServerTable
+
 *Rows*: **0**  •  *Columns*: **19**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_ManagedFileTable
+
 *Rows*: **0**  •  *Columns*: **9**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_ManagedObjectTable
+
 *Rows*: **0**  •  *Columns*: **10**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_ManagedVectorStoresTable
+
 *Rows*: **0**  •  *Columns*: **9**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_ModelTable
+
 *Rows*: **0**  •  *Columns*: **6**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_ObjectPermissionTable
+
 *Rows*: **1**  •  *Columns*: **4**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | object_permission_id | object | 100.0 | 1 | 10c1571c-b409-418d-86c7-a2c0bf3e5be0 |
@@ -308,58 +356,73 @@ _No rows._
 | mcp_access_groups | object | 100.0 | 1 | {} |
 
 ### Preview
+
 | object_permission_id                 | mcp_servers   | vector_stores   | mcp_access_groups   |
 |:-------------------------------------|:--------------|:----------------|:--------------------|
 | 10c1571c-b409-418d-86c7-a2c0bf3e5be0 | {}            | {}              | {}                  |
 
 ## LiteLLM_OrganizationMembership
+
 *Rows*: **0**  •  *Columns*: **7**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_OrganizationTable
+
 *Rows*: **0**  •  *Columns*: **12**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_PromptTable
+
 *Rows*: **0**  •  *Columns*: **6**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_ProxyModelTable
+
 *Rows*: **0**  •  *Columns*: **8**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_SpendLogs
+
 *Rows*: **713244**  •  *Columns*: **29**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | request_id | object | 100.0 | 713244 | chatcmpl-07b28b64-5158-4c65-8897-769b5ddf4cbb |
@@ -393,6 +456,7 @@ _No rows._
 | mcp_namespaced_tool_name | object | 0.0 | 0 | — |
 
 ### Preview
+
 | request_id                                    | call_type   | api_key   |     spend |   total_tokens |   prompt_tokens |   completion_tokens | startTime               | endTime                 | completionStartTime     | model                             | model_id                                                         | model_group          | custom_llm_provider   | api_base                     | user          | metadata   | cache_hit   | cache_key   | request_tags                                                      | team_id   | end_user         | requester_ip_address   | messages   | response   | proxy_server_request   | session_id                           | status   | mcp_namespaced_tool_name   |
 |:----------------------------------------------|:------------|:----------|----------:|---------------:|----------------:|--------------------:|:------------------------|:------------------------|:------------------------|:----------------------------------|:-----------------------------------------------------------------|:---------------------|:----------------------|:-----------------------------|:--------------|:-----------|:------------|:------------|:------------------------------------------------------------------|:----------|:-----------------|:-----------------------|:-----------|:-----------|:-----------------------|:-------------------------------------|:---------|:---------------------------|
 | chatcmpl-07b28b64-5158-4c65-8897-769b5ddf4cbb | acompletion |           | 6.213e-05 |            327 |             291 |                  36 | 2025-08-30 03:59:21.616 | 2025-08-30 03:59:23.435 | 2025-08-30 03:59:23.434 | eu.meta.llama3-2-3b-instruct-v1:0 | 47c6656d6ded3d6a8d138c46acd420797c8cd019ad07e7d3231f1dc327bbeb13 | llama3-2-3b-instruct | bedrock               | https://bedrock-runtime.eu-… | user_a9ec9a5b |            | None        | Cache OFF   | ["User-Agent: Python", "User-Agent: Python/3.11 aiohttp/3.12.15"] |           | enduser_d41d8cd9 |                        |            |            |                        | d67ab01f-d871-45b3-8a11-44faef043f47 | success  |                            |
@@ -402,20 +466,25 @@ _No rows._
 | chatcmpl-587d7cc6-afb5-456b-aacd-c4ad4744f868 | acompletion |           | 6.916e-05 |            364 |             351 |                  13 | 2025-08-30 03:59:33.945 | 2025-08-30 03:59:34.33  | 2025-08-30 03:59:34.329 | eu.meta.llama3-2-3b-instruct-v1:0 | 47c6656d6ded3d6a8d138c46acd420797c8cd019ad07e7d3231f1dc327bbeb13 | llama3-2-3b-instruct | bedrock               | https://bedrock-runtime.eu-… | user_a9ec9a5b |            | None        | Cache OFF   | ["User-Agent: Python", "User-Agent: Python/3.11 aiohttp/3.12.15"] |           | enduser_d41d8cd9 |                        |            |            |                        | 35eff4ee-043c-4fa1-b73e-b1537ad1d7f4 | success  |                            |
 
 ## LiteLLM_TeamMembership
+
 *Rows*: **0**  •  *Columns*: **4**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_TeamTable
+
 *Rows*: **1**  •  *Columns*: **23**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | team_id | object | 100.0 | 1 | 78524c15-3112-4bee-9fb0-ec5ae9453241 |
@@ -443,25 +512,31 @@ _No rows._
 | object_permission_id | object | 0.0 | 0 | — |
 
 ### Preview
+
 | team_id                              | team_alias   | organization_id   | admins   | members   | members_with_roles                                                              | metadata                          |   max_budget |   spend | models             |   max_parallel_requests |   tpm_limit |   rpm_limit | budget_duration   | budget_reset_at   | blocked   | created_at              | updated_at              | model_spend   | model_max_budget   |   model_id | team_member_permissions   | object_permission_id   |
 |:-------------------------------------|:-------------|:------------------|:---------|:----------|:--------------------------------------------------------------------------------|:----------------------------------|-------------:|--------:|:-------------------|------------------------:|------------:|------------:|:------------------|:------------------|:----------|:------------------------|:------------------------|:--------------|:-------------------|-----------:|:--------------------------|:-----------------------|
 | 78524c15-3112-4bee-9fb0-ec5ae9453241 | Open WebUI   |                   | {}       | {}        | [{"role": "admin", "user_id": "default_user_id", "user_email": null}, {"role":… | {"logging": [], "guardrails": []} |          nan |  95.183 | {all-proxy-models} |                     nan |         nan |         nan |                   |                   | False     | 2025-08-31 03:00:30.757 | 2025-10-01 03:34:57.976 | {}            | {}                 |        nan | {}                        |                        |
 
 ## LiteLLM_UserNotifications
+
 *Rows*: **0**  •  *Columns*: **5**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | — | — | 0 | 0 | — |
 
 ### Preview
+
 _No rows._
 
 ## LiteLLM_UserTable
+
 *Rows*: **4**  •  *Columns*: **24**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | user_id | object | 100.0 | 4 | be66e41e-b2d7-45f6-ab43-e79785b034aa |
@@ -490,6 +565,7 @@ _No rows._
 | object_permission_id | object | 0.0 | 0 | — |
 
 ### Preview
+
 | user_id                              | user_alias   | team_id                              | sso_user_id   | organization_id   | password   | teams                                  | user_role          |   max_budget |   spend | user_email     | models              | metadata   |   max_parallel_requests |   tpm_limit |   rpm_limit | budget_duration   | budget_reset_at   | allowed_cache_controls   | model_spend   | model_max_budget   | created_at              | updated_at              | object_permission_id   |
 |:-------------------------------------|:-------------|:-------------------------------------|:--------------|:------------------|:-----------|:---------------------------------------|:-------------------|-------------:|--------:|:---------------|:--------------------|:-----------|------------------------:|------------:|------------:|:------------------|:------------------|:-------------------------|:--------------|:-------------------|:------------------------|:------------------------|:-----------------------|
 | be66e41e-b2d7-45f6-ab43-e79785b034aa |              | 78524c15-3112-4bee-9fb0-ec5ae9453241 |               |                   |            | {78524c15-3112-4bee-9fb0-ec5ae9453241} | proxy_admin_viewer |          nan |  0      | email_0d99935a | {no-default-models} |            |                     nan |         nan |         nan |                   |                   | {}                       | {}            | {}                 | 2025-09-13 16:24:55.742 | 2025-09-16 08:35:13.055 |                        |
@@ -498,9 +574,11 @@ _No rows._
 | default_user_id                      |              |                                      |               |                   |            | {78524c15-3112-4bee-9fb0-ec5ae9453241} | proxy_admin        |          nan | 96.9894 |                |                     |            |                     nan |         nan |         nan |                   |                   | {}                       | {}            | {}                 | 2025-08-30 04:04:23.382 | 2025-10-01 03:34:57.957 |                        |
 
 ## LiteLLM_VerificationToken
+
 *Rows*: **65**  •  *Columns*: **31**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | token | object | 100.0 | 65 | … |
@@ -536,6 +614,7 @@ _No rows._
 | object_permission_id | object | 1.5 | 1 | 10c1571c-b409-418d-86c7-a2c0bf3e5be0 |
 
 ### Preview
+
 | token                                                            | key_name   | key_alias   | soft_budget_cooldown   |   spend | expires                 | models              | aliases   | config   | user_id                              | team_id           | permissions   |   max_parallel_requests | metadata   | blocked   |   tpm_limit |   rpm_limit |   max_budget | budget_duration   | budget_reset_at   | allowed_cache_controls   | model_spend   | model_max_budget   | budget_id   | organization_id   | created_at              | created_by   | updated_at              | updated_by   | allowed_routes   |
 |:-----------------------------------------------------------------|:-----------|:------------|:-----------------------|--------:|:------------------------|:--------------------|:----------|:---------|:-------------------------------------|:------------------|:--------------|------------------------:|:-----------|:----------|------------:|------------:|-------------:|:------------------|:------------------|:-------------------------|:--------------|:-------------------|:------------|:------------------|:------------------------|:-------------|:------------------------|:-------------|:-----------------|
 | 38b5148c3bb2578e3120f4b4f7df62e62d94813e5209b19a2ad2ff03882d3b1f | sk-...tT0g |             | False                  |       0 | 2025-08-31 04:04:23.394 | {}                  | {}        | {}       | default_user_id                      | litellm-dashboard | {}            |                     nan | {}         |           |         nan |         nan |           10 |                   |                   | {}                       | {}            | {}                 |             |                   | 2025-08-30 04:04:23.399 |              | 2025-08-30 04:04:23.399 |              | {}               |
@@ -545,9 +624,11 @@ _No rows._
 | 110df83905b2ae9e1b0119306ec3442578316c870ab15a95307c9c6c46f7f2cc | sk-...Ypxg |             | False                  |       0 | 2025-09-01 02:54:59.315 | {}                  | {}        | {}       | default_user_id                      | litellm-dashboard | {}            |                     nan | {}         |           |         nan |         nan |           10 |                   |                   | {}                       | {}            | {}                 |             |                   | 2025-08-31 02:54:59.322 |              | 2025-08-31 02:57:22.503 |              | {}               |
 
 ## _prisma_migrations
+
 *Rows*: **35**  •  *Columns*: **8**
 
 ### Schema
+
 | column | dtype | non-null % | unique | example |
 |:--|:--|--:|--:|:--|
 | id | object | 100.0 | 35 | df17cff0-657b-43ab-a0d1-1b402e9a3034 |
@@ -560,6 +641,7 @@ _No rows._
 | applied_steps_count | int32 | 100.0 | 1 | 1 |
 
 ### Preview
+
 | id                                   | checksum                                                         | finished_at                   | migration_name                                         | logs   | rolled_back_at   | started_at                    |   applied_steps_count |
 |:-------------------------------------|:-----------------------------------------------------------------|:------------------------------|:-------------------------------------------------------|:-------|:-----------------|:------------------------------|----------------------:|
 | df17cff0-657b-43ab-a0d1-1b402e9a3034 | f5a4569816cb7fb1166c231789f0e5e732fd6c0c34b8f5c9badd405cd2ab4931 | 2025-08-30 03:51:34.361161+00 | 20250326162113_baseline                                |        |                  | 2025-08-30 03:51:34.116635+00 |                     1 |

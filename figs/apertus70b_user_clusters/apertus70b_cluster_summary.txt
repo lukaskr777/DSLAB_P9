@@ -1,0 +1,20 @@
+{
+  "k_selected": "2",
+  "silhouette": "0.384",
+  "clusters": [
+    {
+      "cluster": 0,
+      "n_users": 4147,
+      "median_requests": 9.0,
+      "median_total_spend": 0.0,
+      "median_req_per_active_day": 4.0
+    },
+    {
+      "cluster": 1,
+      "n_users": 15949,
+      "median_requests": 3.0,
+      "median_total_spend": 0.0,
+      "median_req_per_active_day": 2.0
+    }
+  ]
+}

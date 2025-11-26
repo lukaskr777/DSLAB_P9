@@ -104,6 +104,8 @@ TAG = EMBEDDINGS_PATH.stem
 
 UMAP_EMBEDDINGS_PATH = OUT_DIR / f"{TAG}_umap.npy"
 UMAP_MODEL_PATH = OUT_DIR / f"{TAG}_umap_model.joblib"
+SCALER_PATH = OUT_DIR / f"{TAG}_umap_scaler.joblib"
+KMEANS_MODEL_PATH = OUT_DIR / f"{TAG}_kmeans_model.joblib"
 CLUSTERED_DF_PATH = OUT_DIR / f"{TAG}_clustered.parquet"
 SCORES_TXT_PATH = OUT_DIR / f"{TAG}_cluster_scores.txt"
 
@@ -287,16 +289,18 @@ def sweep_kmeans(
     return best_k, results
 
 
-def cluster_kmeans(X: np.ndarray, n_clusters: int, random_state: int = KMEANS_RANDOM_STATE) -> np.ndarray:
-    """Cluster with KMeans for a given k and return the label array."""
+def cluster_kmeans(X: np.ndarray, n_clusters: int, random_state: int = KMEANS_RANDOM_STATE) -> KMeans:
+    """Cluster with KMeans for a given k and return the fitted KMeans object."""
     n_samples = X.shape[0]
     if n_samples <= 1:
-        return np.zeros(n_samples, dtype=int)
+        km = KMeans(n_clusters=1, random_state=random_state, n_init="auto")
+        km.fit(X)
+        return km
 
     n_clusters = min(n_clusters, n_samples)
     km = KMeans(n_clusters=n_clusters, random_state=random_state, n_init="auto")
-    labels = km.fit_predict(X)
-    return labels
+    km.fit(X)
+    return km
 
 
 def cluster_leiden_from_umap_graph(
@@ -511,6 +515,8 @@ def main() -> None:
     # Standardize reduced space for clustering
     scaler = StandardScaler()
     X_red = scaler.fit_transform(X_umap)
+    joblib.dump(scaler, SCALER_PATH)
+    print(f"Saved StandardScaler to: {SCALER_PATH}")
 
     # HDBSCAN on reduced space
     print("Clustering with HDBSCAN on UMAP-reduced embeddings...")
@@ -537,9 +543,14 @@ def main() -> None:
     print("Running KMeans sweep over k values...")
     best_k, kmeans_results = sweep_kmeans(X_red, KMEANS_K_VALUES)
     print(f"Selected k for KMeans: {best_k}")
-    print(f"Clustering with KMeans using k={best_k} on UMAP-reduced embeddings...")
-    labels_kmeans = cluster_kmeans(X_red, n_clusters=best_k)
+
+    print(f"Fitting final KMeans with k={best_k} on sample...")
+    kmeans_model = cluster_kmeans(X_red, n_clusters=best_k)
+    labels_kmeans = kmeans_model.labels_.astype(int)
     df["cluster_kmeans"] = labels_kmeans
+
+    joblib.dump(kmeans_model, KMEANS_MODEL_PATH)
+    print(f"Saved KMeans model to: {KMEANS_MODEL_PATH}")
 
     # Save clustered DataFrame
     df.to_parquet(CLUSTERED_DF_PATH, index=False)
