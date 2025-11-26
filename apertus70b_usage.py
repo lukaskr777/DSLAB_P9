@@ -5,15 +5,14 @@ based on LiteLLM_SpendLogs.
 Produces plots in figs/apertus70b_usage:
 
 - Volume over time (requests / tokens / spend for this model group)
-- Distinct users and API keys over time
+- Distinct users over time
 - Hour-of-day and weekday usage patterns (+ weekday x hour heatmap)
-- Top users / teams / API keys by request volume
+- Top users by request volume
 - Session-level usage (requests per session)
-- Request type mix and its evolution
 - Concentration of usage across users ("whale" curve)
 - User activity span (active days per user)
 
-Requires the helper utilities:
+Helper utilities required:
   - utility_scripts.file_utils
   - utility_scripts.plot_utils
   - utility_scripts.df_reading_utils
@@ -45,10 +44,12 @@ from utility_scripts.df_reading_utils import (
     aggregate_by_time,
     cumulative_share,
 )
-from apertus70b_user_clusters import remove_extreme_apertus70b_users
 
 
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
+
+# Leave as None to include everyone.
+DEFAULT_USER_TO_EXCLUDE_FROM_WHALE: str | None = "enduser_d41d8cd9"
 
 
 def plot_apertus70b_usage(
@@ -56,7 +57,11 @@ def plot_apertus70b_usage(
     dataset: str = "litellm",
     outdir: PathLike = "figs/apertus70b_usage",
     top: int = 20,
+    exclude_users_from_whale: list[str] | None = None,
 ) -> None:
+    if exclude_users_from_whale is None and DEFAULT_USER_TO_EXCLUDE_FROM_WHALE is not None:
+        exclude_users_from_whale = [DEFAULT_USER_TO_EXCLUDE_FROM_WHALE]
+
     out = ensure_empty_dir(outdir)
 
     # ------------------------------------------------------------------
@@ -75,28 +80,19 @@ def plot_apertus70b_usage(
         "model_group",
         "model",
         "end_user",
-        "api_key",
-        "call_type",
         "session_id",
-        "team_id",
     }
-    # Non-strict: missing optional columns will just be reported
     miss = require(df, needed, strict=False)
     if "model_group" in miss:
         raise SystemExit("Missing required column 'model_group'.")
 
-    # Canonical cleaning (also adds latency columns, date, etc.)
+    # Canonical cleaning (adds latency columns, date, etc.)
     df = clean_table(df)
 
     # Filter to the single model_group we care about
     df = df[df["model_group"] == TARGET_MODEL_GROUP].copy()
     if df.empty:
         raise SystemExit(f"No rows for model_group={TARGET_MODEL_GROUP!r}.")
-    
-    # Remove extreme power users (shared helper)
-    df, removed_users = remove_extreme_apertus70b_users(df)
-    if not removed_users.empty:
-        save_csv(removed_users, "removed_extreme_users.csv", out)
 
     # ------------------------------------------------------------------
     # Time features
@@ -108,7 +104,6 @@ def plot_apertus70b_usage(
     df["dow"] = ts.dt.dayofweek  # 0 = Monday  # type: ignore[attr-defined]
     df["datehour"] = ts.dt.floor("h")  # type: ignore[attr-defined]
 
-    # Ensure a clean daily index
     df = ensure_date_column(df, time_col="startTime", out_col="date", floor="D", dropna=True, sort=True)
     df["__count__"] = 1
 
@@ -128,30 +123,53 @@ def plot_apertus70b_usage(
         },
     ).sort_values("date", kind="stable")
 
-    # Distinct users and API keys per day
+    # Distinct users  per day
     users_per_day = df.groupby("date")["end_user"].nunique().reset_index(name="distinct_users")
     daily = daily.merge(users_per_day, on="date", how="left")
 
-    if "api_key" in df.columns:
-        apikeys_per_day = df.groupby("date")["api_key"].nunique().reset_index(name="distinct_api_keys")
-        daily = daily.merge(apikeys_per_day, on="date", how="left")
-    else:
-        daily["distinct_api_keys"] = np.nan
-
     # Lines: requests, tokens, spend
-    line("date", "requests", daily, "Requests per day (Apertus 70B)", "date", "requests",
-         "daily_requests.png", out)
-    line("date", "total_tokens", daily, "Total tokens per day (Apertus 70B)", "date", "tokens",
-         "daily_tokens.png", out)
-    line("date", "spend", daily, "Spend per day (Apertus 70B)", "date", "spend",
-         "daily_spend.png", out)
+    line(
+        "date",
+        "requests",
+        daily,
+        "Requests per day (Apertus 70B)",
+        "date",
+        "requests",
+        "daily_requests.png",
+        out,
+    )
+    line(
+        "date",
+        "total_tokens",
+        daily,
+        "Total tokens per day (Apertus 70B)",
+        "date",
+        "tokens",
+        "daily_tokens.png",
+        out,
+    )
+    line(
+        "date",
+        "spend",
+        daily,
+        "Spend per day (Apertus 70B)",
+        "date",
+        "spend",
+        "daily_spend.png",
+        out,
+    )
 
-    # Lines: distinct users / API keys
-    line("date", "distinct_users", daily, "Distinct end_users per day (Apertus 70B)", "date", "distinct users",
-         "daily_distinct_users.png", out)
-    if daily["distinct_api_keys"].notna().any():
-        line("date", "distinct_api_keys", daily, "Distinct API keys per day (Apertus 70B)",
-             "date", "distinct API keys", "daily_distinct_apikeys.png", out)
+    # Lines: distinct users 
+    line(
+        "date",
+        "distinct_users",
+        daily,
+        "Distinct end_users per day (Apertus 70B)",
+        "date",
+        "distinct users",
+        "daily_distinct_users.png",
+        out,
+    )
 
     save_csv(daily, "daily_usage_stats.csv", out)
 
@@ -285,20 +303,15 @@ def plot_apertus70b_usage(
                 top=len(s),
             )
 
-    # Top end_users / teams / API keys by requests
+    # Top end_users by requests
     requests_by_user = df.groupby("end_user")["request_id"].count()
-    _top_bar(requests_by_user, "Top end_users by requests (Apertus 70B)", "end_user",
-             "top_users_requests.png", top)
-
-    if "team_id" in df.columns:
-        requests_by_team = df.groupby("team_id")["request_id"].count()
-        _top_bar(requests_by_team, "Top teams by requests (Apertus 70B)", "team_id",
-                 "top_teams_requests.png", top)
-
-    if "api_key" in df.columns:
-        requests_by_apikey = df.groupby("api_key")["request_id"].count()
-        _top_bar(requests_by_apikey, "Top API keys by requests (Apertus 70B)", "api_key",
-                 "top_apikeys_requests.png", top)
+    _top_bar(
+        requests_by_user,
+        "Top end_users by requests (Apertus 70B)",
+        "end_user",
+        "top_users_requests.png",
+        top,
+    )
 
     # ------------------------------------------------------------------
     # Session-level usage
@@ -318,62 +331,24 @@ def plot_apertus70b_usage(
             save_csv(session_stats.reset_index(), "session_stats.csv", out)
 
     # ------------------------------------------------------------------
-    # Request type mix and evolution
-    # ------------------------------------------------------------------
-    call_mix = df["call_type"].astype("string").value_counts()
-    if not call_mix.empty:
-        bar(
-            call_mix,
-            "Request type mix (Apertus 70B)",
-            "call_type",
-            "requests",
-            "call_type_counts.png",
-            out,
-            top=len(call_mix),
-        )
-
-    call_daily = (
-        df.groupby(["date", "call_type"], as_index=False)
-        .agg(requests=("request_id", "count"))
-        .sort_values(["date", "call_type"], kind="stable")
-    )
-    total_daily = (
-        df.groupby("date", as_index=False)["request_id"]
-        .count()
-        .rename(columns={"request_id": "total"})
-    )  # type: ignore[attr-defined]
-    call_daily = call_daily.merge(total_daily, on="date", how="left")
-    call_daily["share"] = call_daily["requests"] / call_daily["total"].where(call_daily["total"] > 0)
-
-    for ct in call_daily["call_type"].unique():
-        sub = call_daily[call_daily["call_type"] == ct]
-        safe = sanitize_fname(f"daily_share_calltype_{ct}.png")
-        line(
-            "date",
-            "share",
-            sub,
-            f"Daily share of call_type={ct} (Apertus 70B)",
-            "date",
-            "share",
-            safe,
-            out,
-        )
-    save_csv(call_daily, "daily_calltype_share.csv", out)
-
-    # ------------------------------------------------------------------
     # User concentration / activity
     # ------------------------------------------------------------------
-    # Whale curve: share of requests vs user rank
+    # Whale curve: share of requests vs user rank (optionally excluding some users)
     req_by_user = df.groupby("end_user", dropna=True)["request_id"].count()
-    whale = cumulative_share(
-        df=pd.DataFrame({"end_user": req_by_user.index, "requests": req_by_user.values}),
-        key="end_user",
-        value_col="requests",
-        positive_only=True,
-        normalize_rank=True,
-        dropna_key=True,
-    ).rename(columns={"rank": "user_rank_frac", "cum_share": "cum_share"})
-    if not whale.empty:
+    if exclude_users_from_whale:
+        to_drop = [u for u in exclude_users_from_whale if u in req_by_user.index]
+        if to_drop:
+            req_by_user = req_by_user.drop(labels=to_drop)
+
+    if not req_by_user.empty:
+        whale = cumulative_share(
+            df=pd.DataFrame({"end_user": req_by_user.index, "requests": req_by_user.values}),
+            key="end_user",
+            value_col="requests",
+            positive_only=True,
+            normalize_rank=True,
+            dropna_key=True,
+        ).rename(columns={"rank": "user_rank_frac", "cum_share": "cum_share"})
         save_csv(whale, "whale_requests.csv", out)
         line(
             "user_rank_frac",

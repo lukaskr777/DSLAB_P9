@@ -3,20 +3,19 @@ User-level clustering for swiss-ai/apertus-70b-instruct usage.
 
 This script:
 - Restricts LiteLLM_SpendLogs to model_group == "swiss-ai/apertus-70b-instruct".
-- Removes "extreme power users" that would form singleton clusters.
+- Optionally removes "extreme power users" that would form singleton clusters.
 - Builds per-user feature vectors capturing:
-    * volume & activity (requests, active days, span, density),
-    * efficiency (tokens/request, spend per token),
-    * diversity (model/provider entropy, dominant model share),
+    * volume & activity (requests, active days, span, etc.),
+    * efficiency (tokens/request, prompt/completion ratios),
     * temporal behavior (mean inter-request time, most active hour, weekday fraction),
-    * performance & reliability proxies (latency, cache hit rate, success rate),
-    * stability across days (CV of daily spend/requests).
+    * performance & reliability proxies (latency, success rate),
 - Runs KMeans with automatic k-selection via silhouette, while rejecting
   degenerate solutions where a cluster is too small.
 - Runs PCA for visualization (if possible).
 
 Outputs in figs/apertus70b_user_clusters:
     - apertus70b_user_stats.csv
+    - apertus70b_feature_summary.csv  <-- per-feature stats for columns used in clustering
     - apertus70b_user_clusters.csv
     - apertus70b_cluster_profiles.csv
     - apertus70b_cluster_summary.json
@@ -59,68 +58,39 @@ from utility_scripts.df_reading_utils import (
 
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 
-# Base and extended feature lists (user-level)
-FEATURE_COLS_BASE = [
-    "total_spend",
+# Single list of user-level features used for clustering and profile plots
+FEATURE_COLS = [
+    # Volume & heterogeneity
     "request_count",
-    "avg_spend_per_req",
     "n_unique_models",
-    "requests_per_active_day",
-    "completion_ratio_mean",
-    "mean_inter_req_s",
-    "n_unique_model_groups",
     "n_unique_providers",
+    "n_unique_sessions",
     "active_days",
-]
-
-FEATURE_COLS_EXTRA = [
-    # Temporal activity
     "activity_span_days",
-    "activity_density",
+    "requests_per_active_day",
+    # Temporal behavior
+    "mean_inter_req_s",
     "most_active_hour",
     "weekday_fraction",
-
-    # Token- and cost-efficiency
+    # Token / usage structure
     "avg_tokens_per_req",
     "avg_completion_tokens",
+    "completion_ratio_mean",
     "prompt_to_completion_ratio_mean",
-    "spend_per_token_mean",
-
-    # Diversity / specialization
-    "model_entropy",
-    "provider_entropy",
-    "dominant_model_share",
-
-    # Performance / latency
+    # Latency / performance
     "mean_latency_s",
     "latency_std_s",
     "mean_completion_latency_s",
-
-    # Cache and session behavior
-    "cache_hit_rate",
-    "n_unique_sessions",
-    "avg_requests_per_session",
-
-    # Quality / reliability proxies
+    # Reliability proxy
     "success_rate",
-    "median_spend_per_active_day",
-
-    # Aggregate stability metrics
-    "spend_cv",
-    "requests_cv",
 ]
-
-FEATURE_COLS_GLOBAL = FEATURE_COLS_BASE + FEATURE_COLS_EXTRA
 
 # Heavy-tailed features to log1p-transform before clustering
 LOG_COLS = (
-    "total_spend",
     "request_count",
-    "avg_spend_per_req",
     "requests_per_active_day",
     "mean_inter_req_s",
     "avg_tokens_per_req",
-    "spend_per_token_mean",
 )
 
 
@@ -136,17 +106,6 @@ def _mean_inter_request_seconds_from_series(s: pd.Series) -> float:
         return float("nan")
     d = t.diff().dropna().dt.total_seconds()
     return float(d.mean()) if len(d) else float("nan")
-
-
-def _shannon_entropy_from_counts(counts: pd.Series) -> float:
-    """Shannon entropy in nats from a vector of nonnegative counts."""
-    c = pd.to_numeric(counts, errors="coerce").fillna(0).astype(float)
-    tot = c.sum()
-    if tot <= 0:
-        return 0.0
-    p = c / tot
-    p = p[p > 0]
-    return float(-(p * np.log(p)).sum())
 
 
 def _as_int(x: Any) -> int:
@@ -196,14 +155,12 @@ def _cluster_and_plot(
     min_cluster_size_abs: int = 5,
 ) -> tuple[np.ndarray, str, str]:
     """
-    Fit KMeans with k in [2..min(5, n)], select by silhouette, add PCA for viz,
+    Fit KMeans with k in [2..min(9, n)], select by silhouette, add PCA for viz,
     make cluster size + profile plots, write clustered CSVs.
 
     Degenerate solutions with very small clusters (e.g. 1 heavy outlier)
     are rejected: for a candidate k, we require
-
-        min_cluster_size >= max(min_cluster_size_abs,
-                                min_cluster_fraction * n_samples)
+        min_cluster_size >= max(min_cluster_size_abs, min_cluster_fraction * n_samples)
 
     Returns (labels, k_str, sil_str).
     """
@@ -241,7 +198,7 @@ def _cluster_and_plot(
 
     # KMeans model selection with degeneracy check
     best_k, best_score, best_labels = None, -np.inf, None
-    k_max = min(5, n_samples)
+    k_max = min(9, n_samples)
     min_allowed_size = max(min_cluster_size_abs, int(np.ceil(min_cluster_fraction * n_samples)))
 
     for k in range(2, max(3, k_max + 1)):
@@ -273,7 +230,7 @@ def _cluster_and_plot(
     # Save clustered table (keep PCA columns if present)
     keep_pca = [c for c in ("pca1", "pca2", "pca3") if c in stats_df.columns]
     cols_to_save = [*stats_df.columns.intersection(["end_user"]), "cluster_kmeans", *keep_pca]
-    cols_to_save += [c for c in FEATURE_COLS_GLOBAL if c in stats_df.columns]
+    cols_to_save += [c for c in FEATURE_COLS if c in stats_df.columns]
     save_csv(stats_df[cols_to_save], "apertus70b_user_clusters.csv", out_dir)
 
     # PCA scatter if ≥ 2 PCs
@@ -304,7 +261,7 @@ def _cluster_and_plot(
 
     # Cluster profiles: z-scored feature means (numeric-only)
     numeric_cols = [
-        c for c in FEATURE_COLS_GLOBAL
+        c for c in FEATURE_COLS
         if c in stats_df.columns and pd.api.types.is_numeric_dtype(stats_df[c])
     ]
     if numeric_cols:
@@ -339,10 +296,12 @@ def _cluster_and_plot(
 
     # Cluster profile table with mean/median of raw features
     cols_for_table = [
-        c for c in FEATURE_COLS_GLOBAL if c in stats_df.columns and pd.api.types.is_numeric_dtype(stats_df[c])
+        c for c in FEATURE_COLS if c in stats_df.columns and pd.api.types.is_numeric_dtype(stats_df[c])
     ]
     if cols_for_table:
-        cluster_profiles = stats_df.groupby("cluster_kmeans", observed=True)[cols_for_table].agg(["mean", "median"])
+        cluster_profiles = stats_df.groupby("cluster_kmeans", observed=True)[cols_for_table].agg(
+            ["mean", "median"]
+        )
         save_csv(cluster_profiles, "apertus70b_cluster_profiles.csv", out_dir)
     else:
         save_text(
@@ -369,7 +328,6 @@ def _cluster_and_plot(
                 "cluster": cid_int,
                 "n_users": int(len(subc)),
                 "median_requests": _safe_median(subc, "request_count"),
-                "median_total_spend": _safe_median(subc, "total_spend"),
                 "median_req_per_active_day": _safe_median(subc, "requests_per_active_day"),
             }
         )
@@ -380,7 +338,7 @@ def _cluster_and_plot(
 
 
 # --------------------------------------------------------------------
-# Extreme-user filter (reusable)
+# Extreme-user filter
 # --------------------------------------------------------------------
 
 
@@ -456,7 +414,6 @@ def analyze_apertus70b_user_clusters(
 
     needed = {
         "request_id",
-        "spend",
         "startTime",
         "endTime",
         "completionStartTime",
@@ -471,7 +428,6 @@ def analyze_apertus70b_user_clusters(
         "call_type",
         "status",
         "session_id",
-        "cache_hit",
     }
     miss = require(df, needed, strict=False)
     if "model_group" in miss:
@@ -500,44 +456,6 @@ def analyze_apertus70b_user_clusters(
     # ----------------------------------------------------------------
     # Per-user aggregates (within Apertus 70B only)
     # ----------------------------------------------------------------
-
-    # Model concentration (still useful if multiple underlying models exist in the group)
-    user_model_counts = (
-        df.groupby(["end_user", "model"], observed=True)["request_id"]
-        .count()
-        .rename("model_req_count")
-        .reset_index()
-    )
-    top_model_share = (
-        user_model_counts.sort_values(["end_user", "model_req_count"], ascending=[True, False])
-        .groupby("end_user", observed=True)["model_req_count"]
-        .agg(["sum", "max"])
-        .assign(dominant_model_share=lambda x: safe_div(x["max"], x["sum"]).fillna(0.0))
-        [["dominant_model_share"]]
-        .reset_index()
-    )
-
-    # Model entropy
-    model_entropy = (
-        user_model_counts.groupby("end_user", observed=True)["model_req_count"]
-        .apply(_shannon_entropy_from_counts)
-        .rename("model_entropy")
-        .reset_index()
-    )
-
-    # Provider entropy
-    user_provider_counts = (
-        df.groupby(["end_user", "custom_llm_provider"], observed=True)["request_id"]
-        .count()
-        .rename("prov_req_count")
-        .reset_index()
-    )
-    provider_entropy = (
-        user_provider_counts.groupby("end_user", observed=True)["prov_req_count"]
-        .apply(_shannon_entropy_from_counts)
-        .rename("provider_entropy")
-        .reset_index()
-    )
 
     # Temporal gaps
     temporal = (
@@ -574,17 +492,6 @@ def analyze_apertus70b_user_clusters(
             latency_std_s=("latency_s", "std"),
             mean_completion_latency_s=("completion_latency_s", "mean"),
         )
-        .reset_index()
-    )
-
-    # Cache hit rate (robust truthy parsing)
-    cache_hit_norm = df["cache_hit"].astype(str).str.strip().str.lower()
-    truthy = {"true", "1", "yes", "y", "t"}
-    cache_bool = df.assign(cache_hit_bool=cache_hit_norm.isin(truthy))
-    cache_hit_rate = (
-        cache_bool.groupby("end_user", observed=True)["cache_hit_bool"]
-        .mean()
-        .rename("cache_hit_rate")
         .reset_index()
     )
 
@@ -635,8 +542,6 @@ def analyze_apertus70b_user_clusters(
         df.groupby("end_user", observed=True)
         .agg(
             request_count=("request_id", "count"),
-            total_spend=("spend", "sum"),
-            avg_spend_per_req=("spend", "mean"),
             total_tokens_sum=("total_tokens", "sum"),
             total_tokens_mean=("total_tokens", "mean"),
             total_tokens_std=("total_tokens", "std"),
@@ -661,51 +566,18 @@ def analyze_apertus70b_user_clusters(
         .reset_index()
     )
 
-    # Daily aggregates for stability metrics
-    daily = (
-        df.dropna(subset=["date"])
-        .groupby(["end_user", "date"], observed=True)
-        .agg(
-            day_spend=("spend", "sum"),
-            day_requests=("request_id", "count"),
-        )
-        .reset_index()
-    )
-    daily_stats = (
-        daily.groupby("end_user", observed=True)
-        .agg(
-            day_spend_mean=("day_spend", "mean"),
-            day_spend_std=("day_spend", "std"),
-            day_req_mean=("day_requests", "mean"),
-            day_req_std=("day_requests", "std"),
-            median_spend_per_active_day=("day_spend", "median"),
-        )
-        .reset_index()
-    )
-    daily_stats["spend_cv"] = safe_div(daily_stats["day_spend_std"], daily_stats["day_spend_mean"]).fillna(0.0)
-    daily_stats["requests_cv"] = safe_div(daily_stats["day_req_std"], daily_stats["day_req_mean"]).fillna(0.0)
-
     # Assemble user-level table for Apertus 70B
     user_stats = (
         base_agg
-        .merge(top_model_share, on="end_user", how="left")
-        .merge(model_entropy, on="end_user", how="left")
-        .merge(provider_entropy, on="end_user", how="left")
         .merge(active_days, on="end_user", how="left")
         .merge(temporal, on="end_user", how="left")
         .merge(user_first_last, on="end_user", how="left")
         .merge(latency_agg, on="end_user", how="left")
-        .merge(cache_hit_rate, on="end_user", how="left")
         .merge(sess_agg, on="end_user", how="left")
         .merge(success_rate, on="end_user", how="left")
         .merge(weekday_frac, on="end_user", how="left")
         .merge(most_active_hour, on="end_user", how="left")
         .merge(prc_agg, on="end_user", how="left")
-        .merge(
-            daily_stats[["end_user", "median_spend_per_active_day", "spend_cv", "requests_cv"]],
-            on="end_user",
-            how="left",
-        )
     )
 
     # Derived features
@@ -723,10 +595,6 @@ def analyze_apertus70b_user_clusters(
         / (3600 * 24)
     )
     user_stats["activity_span_days"] = user_stats["activity_span_days"].clip(lower=0).fillna(0.0)
-    user_stats["activity_density"] = safe_div(
-        user_stats["active_days"],
-        user_stats["activity_span_days"],
-    ).fillna(0.0)
 
     # Efficiency metrics
     user_stats["avg_tokens_per_req"] = safe_div(
@@ -737,32 +605,17 @@ def analyze_apertus70b_user_clusters(
         user_stats["completion_tokens_mean"],
         errors="coerce",
     ).fillna(0.0)
-    user_stats["spend_per_token_mean"] = safe_div(
-        user_stats["total_spend"],
-        user_stats["total_tokens_sum"],
-    ).fillna(0.0)
-
-    # Ensure concentration feature is present
-    if "dominant_model_share" not in user_stats.columns and "top_model_share" in user_stats.columns:
-        user_stats["dominant_model_share"] = user_stats["top_model_share"]
 
     # Avg requests per session
     user_stats["n_unique_sessions"] = pd.to_numeric(
         user_stats["n_unique_sessions"],
         errors="coerce",
     ).fillna(0).astype(int)
-    user_stats["avg_requests_per_session"] = safe_div(
-        user_stats["request_count"],
-        user_stats["n_unique_sessions"],
-    ).fillna(0.0)
 
-    # Ensure numeric for all feature columns we care about
-    for c in FEATURE_COLS_GLOBAL + [
-        "first_seen",
-        "last_seen",
+    # Ensure numeric for all feature columns we care about and some auxiliary columns
+    for c in FEATURE_COLS + [
         "total_tokens_sum",
         "completion_tokens_mean",
-        "dominant_model_share",
     ]:
         if c in user_stats.columns:
             user_stats[c] = pd.to_numeric(user_stats[c], errors="coerce").fillna(0.0)
@@ -771,9 +624,54 @@ def analyze_apertus70b_user_clusters(
     save_csv(user_stats, "apertus70b_user_stats.csv", out)
 
     # ----------------------------------------------------------------
-    # Clustering on global feature set
+    # Feature summary for columns actually used in clustering
     # ----------------------------------------------------------------
-    feats_global = _build_features(user_stats, FEATURE_COLS_GLOBAL)
+    # Build feature matrix once to know which columns survived _build_features
+    feats_global = _build_features(user_stats, FEATURE_COLS)
+    used_feature_cols = list(feats_global.columns)
+
+    summary_rows: list[dict[str, float | int | str]] = []
+    for col in used_feature_cols:
+        s = pd.to_numeric(user_stats[col], errors="coerce")
+        s_non_na = s.dropna()
+        if s_non_na.empty:
+            summary_rows.append(
+                {
+                    "feature": col,
+                    "mean": float("nan"),
+                    "min": float("nan"),
+                    "q1": float("nan"),
+                    "median": float("nan"),
+                    "q3": float("nan"),
+                    "max": float("nan"),
+                    "n_nonzero": 0,
+                    "n_total": int(len(s)),
+                    "n_missing": int(s.isna().sum()),
+                }
+            )
+            continue
+
+        summary_rows.append(
+            {
+                "feature": col,
+                "mean": float(s_non_na.mean()),
+                "min": float(s_non_na.min()),
+                "q1": float(s_non_na.quantile(0.25)),
+                "median": float(s_non_na.quantile(0.50)),
+                "q3": float(s_non_na.quantile(0.75)),
+                "max": float(s_non_na.max()),
+                "n_nonzero": int((s_non_na != 0).sum()),
+                "n_total": int(len(s)),
+                "n_missing": int(s.isna().sum()),
+            }
+        )
+
+    feature_summary_df = pd.DataFrame(summary_rows).sort_values("feature", kind="stable")
+    save_csv(feature_summary_df, "apertus70b_feature_summary.csv", out)
+
+    # ----------------------------------------------------------------
+    # Clustering on selected feature set
+    # ----------------------------------------------------------------
     labels_global, k_str_global, sil_str_global = _cluster_and_plot(
         feats=feats_global,
         stats_df=user_stats.copy(),
@@ -784,7 +682,7 @@ def analyze_apertus70b_user_clusters(
     # Additional raw-mean per-cluster bar plots (one per feature)
     if len(np.unique(labels_global)) > 1:
         numeric_cols = [
-            c for c in FEATURE_COLS_GLOBAL
+            c for c in FEATURE_COLS
             if c in user_stats.columns and pd.api.types.is_numeric_dtype(user_stats[c])
         ]
         raw_cluster_means = (
@@ -807,17 +705,16 @@ def analyze_apertus70b_user_clusters(
             )
 
     # Compact JSON summary (add k / silhouette)
-    summary_rows: list[dict[str, Any]] = []
+    summary_rows_json: list[dict[str, Any]] = []
     user_stats_with_labels = user_stats.copy()
     user_stats_with_labels["cluster_kmeans"] = labels_global if labels_global is not None else -1
     for c_id, subc in user_stats_with_labels.groupby("cluster_kmeans", observed=True):
         cluster_id = _as_int(c_id)
-        summary_rows.append(
+        summary_rows_json.append(
             {
                 "cluster": cluster_id,
                 "n_users": int(len(subc)),
                 "median_requests": float(np.asarray(subc["request_count"].median()).item()) if len(subc) else 0.0,
-                "median_total_spend": float(np.asarray(subc["total_spend"].median()).item()) if len(subc) else 0.0,
                 "median_req_per_active_day": float(
                     np.asarray(subc["requests_per_active_day"].median()).item()
                 )
@@ -829,7 +726,7 @@ def analyze_apertus70b_user_clusters(
     summary_meta = {
         "k_selected": k_str_global,
         "silhouette": sil_str_global,
-        "clusters": summary_rows,
+        "clusters": summary_rows_json,
     }
     save_text(json.dumps(summary_meta, indent=2), "apertus70b_cluster_summary.json", out)
 

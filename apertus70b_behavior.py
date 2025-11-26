@@ -10,10 +10,10 @@ Produces plots in figs/apertus70b_behavior, including:
 - Completion length / verbosity distributions and daily quantiles
 - Prompt vs completion length scatter
 - Token-composition (prompt/completion ratios) distributions + drift over time
-- Variability (CV) of completion lengths across users, API keys, call types, models
+- Variability (CV) of completion lengths across users
 - Inter-arrival / retry behavior within sessions or per user
-- Outliers in completion length
-- Correlations between completion length and latency / spend
+- Outliers and z-score drift in completion length
+- Correlations between completion length and latency (with sign)
 
 Requires helper utilities:
   - utility_scripts.file_utils
@@ -49,8 +49,6 @@ from utility_scripts.df_reading_utils import (
     safe_quantile_cut,
 )
 
-from apertus70b_user_clusters import remove_extreme_apertus70b_users
-
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 
 
@@ -72,15 +70,11 @@ def plot_apertus70b_behavior(
     needed = {
         "request_id",
         "startTime",
-        "spend",
         "total_tokens",
         "prompt_tokens",
         "completion_tokens",
         "model_group",
-        "model",
         "end_user",
-        "api_key",
-        "call_type",
         "session_id",
         "status",
     }
@@ -100,11 +94,6 @@ def plot_apertus70b_behavior(
     df = df[df["model_group"] == TARGET_MODEL_GROUP].copy()
     if df.empty:
         raise SystemExit(f"No rows for model_group={TARGET_MODEL_GROUP!r}.")
-    
-    # Remove extreme power users
-    df, removed_users = remove_extreme_apertus70b_users(df)
-    if not removed_users.empty:
-        save_csv(removed_users, "removed_extreme_users.csv", out)
 
     # ------------------------------------------------------------------
     # Canonical time columns
@@ -197,7 +186,7 @@ def plot_apertus70b_behavior(
 
     # Daily averages and quantiles of ratios
     if "prompt_ratio" in df.columns or "completion_ratio" in df.columns:
-        mean_aggs = {}
+        mean_aggs: dict[str, tuple[str, str]] = {}
         if "prompt_ratio" in df.columns:
             mean_aggs["prompt_ratio"] = ("prompt_ratio", "mean")
         if "completion_ratio" in df.columns:
@@ -252,18 +241,11 @@ def plot_apertus70b_behavior(
             )
 
     # ------------------------------------------------------------------
-    # 3. Variability across users / API keys / call types / models
+    # 3. Variability across users
     # ------------------------------------------------------------------
-    def _variability_table(
-        group_key: str,
-        min_reqs: int = 30,
-        label: str | None = None,
-        fname_prefix: str | None = None,
-    ) -> None:
-        if group_key not in df.columns:
-            return
+    def _variability_by_user(min_reqs: int = 30) -> None:
         grp = (
-            df.groupby(group_key, dropna=False)
+            df.groupby("end_user", dropna=False)
             .agg(
                 requests=("request_id", "count"),
                 mean_completion=("completion_tokens", "mean"),
@@ -276,41 +258,34 @@ def plot_apertus70b_behavior(
         if grp.empty:
             return
 
-        label = label or group_key
-        fname_prefix = fname_prefix or group_key
+        save_csv(grp, "user_completion_variability.csv", out)
 
-        save_csv(grp, f"{fname_prefix}_completion_variability.csv", out)
-
-        # Top by requests (most representative)
         top_by_reqs = grp.sort_values("requests", ascending=False).head(top)
-        s_mean = top_by_reqs.set_index(group_key)["mean_completion"]
-        s_cv = top_by_reqs.set_index(group_key)["cv_completion"]
+        s_mean = top_by_reqs.set_index("end_user")["mean_completion"]
+        s_cv = top_by_reqs.set_index("end_user")["cv_completion"]
 
         if not s_mean.empty:
             bar(
                 s_mean,
-                f"Mean completion tokens by {label} (Top {len(s_mean)} by requests)",
-                label,
+                f"Mean completion tokens by end_user (Top {len(s_mean)} by requests)",
+                "end_user",
                 "mean completion tokens",
-                f"{fname_prefix}_mean_completion_top.png",
+                "user_mean_completion_top.png",
                 out,
                 top=len(s_mean),
             )
         if not s_cv.empty:
             bar(
                 s_cv,
-                f"CV of completion tokens by {label} (Top {len(s_cv)} by requests)",
-                label,
+                f"CV of completion tokens by end_user (Top {len(s_cv)} by requests)",
+                "end_user",
                 "CV(completion length)",
-                f"{fname_prefix}_cv_completion_top.png",
+                "user_cv_completion_top.png",
                 out,
                 top=len(s_cv),
             )
 
-    _variability_table("end_user", min_reqs=50, label="end_user", fname_prefix="user")
-    _variability_table("api_key", min_reqs=50, label="api_key", fname_prefix="apikey")
-    _variability_table("call_type", min_reqs=50, label="call_type", fname_prefix="calltype")
-    _variability_table("model", min_reqs=50, label="model", fname_prefix="model")
+    _variability_by_user(min_reqs=50)
 
     # ------------------------------------------------------------------
     # 4. Retry / inter-arrival behavior (stability in interaction)
@@ -357,26 +332,6 @@ def plot_apertus70b_behavior(
         )
         save_csv(daily_retry, "daily_rapid_retry_rate.csv", out)
 
-    # Retry propensity by call_type
-    if "call_type" in df.columns:
-        retry_call = (
-            df.groupby("call_type", as_index=False)["is_rapid_retry"]
-            .mean()
-            .rename(columns={"is_rapid_retry": "rapid_retry_rate"})
-        )  # type: ignore[attr-defined]
-        if not retry_call.empty:
-            s = retry_call.set_index("call_type")["rapid_retry_rate"]
-            bar(
-                s,
-                "Rapid retry rate by call_type (Apertus 70B)",
-                "call_type",
-                "rapid retry rate",
-                "rapid_retry_by_calltype.png",
-                out,
-                top=len(s),
-            )
-            save_csv(retry_call, "rapid_retry_by_calltype.csv", out)
-
     # ------------------------------------------------------------------
     # 5. Outliers and anomalies in completion length
     # ------------------------------------------------------------------
@@ -411,7 +366,7 @@ def plot_apertus70b_behavior(
     save_csv(daily_comp, "daily_avg_completion_tokens_zscore.csv", out)
 
     # ------------------------------------------------------------------
-    # 6. Correlations involving completion behavior
+    # 6. Correlations involving completion behavior (signed)
     # ------------------------------------------------------------------
     corr_cols = [
         "completion_tokens",
@@ -420,22 +375,21 @@ def plot_apertus70b_behavior(
         "latency_s",
         "ttft_s",
         "gen_s",
-        "spend",
     ]
     corr_df = df[corr_cols].replace([np.inf, -np.inf], np.nan).dropna()
     if not corr_df.empty:
         corr = corr_df.corr(method="pearson")
         save_csv(corr, "correlations_completion_behavior.csv", out)
 
-        # Absolute correlations with completion_tokens
-        v = corr["completion_tokens"].drop("completion_tokens", errors="ignore").abs().sort_values(ascending=False)
+        # Signed correlations with completion_tokens
+        v = corr["completion_tokens"].drop("completion_tokens", errors="ignore").sort_values(ascending=False)
         if not v.empty:
             bar(
                 v,
-                "|corr| with completion_tokens (Apertus 70B)",
+                "Correlation with completion_tokens (Apertus 70B)",
                 "feature",
-                "|corr|",
-                "corr_abs_with_completion_tokens.png",
+                "correlation",
+                "corr_with_completion_tokens.png",
                 out,
                 top=len(v),
             )
@@ -444,7 +398,6 @@ def plot_apertus70b_behavior(
     summary = {
         "n_rows": len(df),
         "distinct_users": int(df["end_user"].nunique()),
-        "distinct_models": int(df["model"].nunique()),
         "mean_completion_tokens": float(df["completion_tokens"].mean()),
         "p95_completion_tokens": float(df["completion_tokens"].quantile(0.95)),
         "rapid_retry_rate_overall": float(df["is_rapid_retry"].mean()),
