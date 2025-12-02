@@ -1,41 +1,41 @@
-cluster	word1	count1	word2	count2	word3	count3
--1	return	49386	function	35698	python	35562	def	35445	data	29080
-0	liste	1498	übersetze	1493	deutscher	757	begriffe	754	deutsche	737
-1	key	5290	input	4871	provide	4015	person	3446	focusing	3344
-2	project	3183	input	2822	hope	2713	rewrite	2586	re-writing	2567
-3	triangle	15914	angle	11831	circle	10262	equation	9311	distance	6943
-4	function	28465	equation	25881	sum	19419	f(x	16998	set	15926
-5	step	85617	equation	29120	answer	28899	solve	17016	cdot	13400
-6	access	4084	helpful	3890	questions	3338	tools	3188	answer	3103
-7	probability	3366	distribution	1502	random	1321	function	901	variable	608
-8	trip	3913	day	3101	visit	2425	time	2322	travel	2288
-9	satz	816	idiom	811	sag	810	igl	194	grischun	166
-10	lɛ	1840	kɛ	1306	daa	1270	awọn	986	nyɛla	795
-11	story	18679	character	15707	create	13495	characters	10508	time	8387
-12	music	368	і	298	jazz	232	album	189	metal	186
-13	detailed	932	thinking	868	provide	842	respectful	693	understanding	577
-14	vun	1951	huet	1029	ass	836	isch	687	vum	559
-15	tha	1298	ann	1072	a’	630	mae	530	bha	529
-16	við	611	sum	552	hann	417	eru	403	frá	313
-17	job	5022	career	4165	time	4099	skills	3293	company	2933
-18	sentence	5540	writing	4307	concise	2479	language	2321	clarity	2305
-19	create	8499	community	4628	social	4574	marketing	4517	business	4397
-20	probability	5149	game	2813	cards	2660	player	2556	step	2264
-21	times	11278	calculate	9174	hours	7469	time	6498	books	5942
-22	און	603	איז	591	די	590	א	419	פון	396
-23	learning	943	social	941	students	715	language	584	sentence	571
-24	data	4272	sales	3069	average	1734	product	1345	analysis	1265
-25	data	21722	analysis	5953	variables	5149	distribution	3920	values	3754
-26	political	254	government	239	public	222	president	213	rights	206
-27	roman	140	și	106	papa	104	të	98	roma	94
-28	fuit	314	quomodo	249	eius	157	sicut	126	propter	121
-29	ła	2440	l'è	530	sos	487	dô	425	comu	406
-30	python	7544	string	7532	return	7375	function	7091	def	4819
-31	return	12997	python	10866	list	10663	function	10304	def	7101
-32	code	5190	python	4810	return	3522	class	3478	function	3226
-33	reaction	4978	bond	3716	carbon	3619	acid	3588	times	3240
-34	energy	5082	field	4154	quantum	3740	time	3650	e.g	3358
-35	voltage	2263	current	1535	power	1299	circuit	1257	output	855
-36	і	210	guerra	133	ў	128	од	109	și	103
-37	cells	958	dna	618	blood	566	cell	526	health	513
-38	energy	2184	climate	1798	change	1483	water	1244	solar	944
+cluster	title	word1	count1	word2	count2	word3	count3	word4	count4	word5	count5
+-1	code	return	49386	function	35698	python	35562	def	35445	data	29080
+0	german	liste	1498	übersetze	1493	deutscher	757	begriffe	754	deutsche	737
+1	keys	key	5290	input	4871	provide	4015	person	3446	focusing	3344
+2	rewrite	project	3183	input	2822	hope	2713	rewrite	2586	re-writing	2567
+3	geometry	triangle	15914	angle	11831	circle	10262	equation	9311	distance	6943
+4	math	function	28465	equation	25881	sum	19419	f(x	16998	set	15926
+5	solve	step	85617	equation	29120	answer	28899	solve	17016	cdot	13400
+6	help	access	4084	helpful	3890	questions	3338	tools	3188	answer	3103
+7	stats	probability	3366	distribution	1502	random	1321	function	901	variable	608
+8	travel	trip	3913	day	3101	visit	2425	time	2322	travel	2288
+9	rumantsch	satz	816	idiom	811	sag	810	igl	194	grischun	166
+10	yoruba	lɛ	1840	kɛ	1306	daa	1270	awọn	986	nyɛla	795
+11	story	story	18679	character	15707	create	13495	characters	10508	time	8387
+12	music	music	368	і	298	jazz	232	album	189	metal	186
+13	explanation	detailed	932	thinking	868	provide	842	respectful	693	understanding	577
+14	luxembourgish	vun	1951	huet	1029	ass	836	isch	687	vum	559
+15	scottish	tha	1298	ann	1072	a’	630	mae	530	bha	529
+16	icelandic	við	611	sum	552	hann	417	eru	403	frá	313
+17	career	job	5022	career	4165	time	4099	skills	3293	company	2933
+18	writing	sentence	5540	writing	4307	concise	2479	language	2321	clarity	2305
+19	marketing	create	8499	community	4628	social	4574	marketing	4517	business	4397
+20	games	probability	5149	game	2813	cards	2660	player	2556	step	2264
+21	time	times	11278	calculate	9174	hours	7469	time	6498	books	5942
+22	yiddish	און	603	איז	591	די	590	א	419	פון	396
+23	education	learning	943	social	941	students	715	language	584	sentence	571
+24	sales	data	4272	sales	3069	average	1734	product	1345	analysis	1265
+25	stats	data	21722	analysis	5953	variables	5149	distribution	3920	values	3754
+26	politics	political	254	government	239	public	222	president	213	rights	206
+27	romanian	roman	140	și	106	papa	104	të	98	roma	94
+28	latin	fuit	314	quomodo	249	eius	157	sicut	126	propter	121
+29	ladin	ła	2440	l'è	530	sos	487	dô	425	comu	406
+30	python	python	7544	string	7532	return	7375	function	7091	def	4819
+31	lists	return	12997	python	10866	list	10663	function	10304	def	7101
+32	code	code	5190	python	4810	return	3522	class	3478	function	3226
+33	chemistry	reaction	4978	bond	3716	carbon	3619	acid	3588	times	3240
+34	physics	energy	5082	field	4154	quantum	3740	time	3650	e.g	3358
+35	circuits	voltage	2263	current	1535	power	1299	circuit	1257	output	855
+36	multilang	і	210	guerra	133	ў	128	од	109	și	103
+37	biology	cells	958	dna	618	blood	566	cell	526	health	513
+38	climate	energy	2184	climate	1798	change	1483	water	1244	solar	944

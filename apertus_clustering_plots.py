@@ -374,7 +374,7 @@ def compute_top_words_per_cluster(df: pd.DataFrame, label_col: str, text_col: st
     grouped = df.groupby(label_col, observed=True)[text_col]
 
     with out_path.open("w", encoding="utf-8") as f:
-        f.write("cluster\tword1\tcount1\tword2\tcount2\tword3\tcount3\n")
+        f.write("cluster\tword1\tcount1\tword2\tcount2\tword3\tcount3\tword4\tcount4\tword5\tcount5\n")
 
         for cluster_label, texts in grouped:
             counter: Counter[str] = Counter()
