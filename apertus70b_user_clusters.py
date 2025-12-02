@@ -62,7 +62,6 @@ TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 FEATURE_COLS = [
     # Volume & heterogeneity
     "request_count",
-    "n_unique_models",
     "n_unique_providers",
     "n_unique_sessions",
     "active_days",
@@ -548,7 +547,6 @@ def analyze_apertus70b_user_clusters(
             prompt_tokens_mean=("prompt_tokens", "mean"),
             completion_tokens_mean=("completion_tokens", "mean"),
             completion_ratio_mean=("completion_ratio", "mean"),
-            n_unique_models=("model", "nunique"),
             n_unique_model_groups=("model_group", "nunique"),
             n_unique_providers=("custom_llm_provider", "nunique"),
         )

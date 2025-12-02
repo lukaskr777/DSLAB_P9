@@ -2,12 +2,12 @@
 Clustering script for swiss-ai/apertus-sft-mixture.
 
 This script assumes that conversation-level embeddings have already been computed and stored in a .npy file
-(one row per conversation, in the same order as the DataFrame after parsing messages).
+(one row per conversation, in the same order as the text-only Parquet).
 
 Pipeline:
-1. Load original Parquet and parse/flatten `messages` into:
-   - `conversation_text`
-   - simple conversation-level features (n_turns, lengths, etc.).
+1. Load text-only Parquet:
+   - columns: conversation_id, conversation_text.
+   - add simple conversation-level features (e.g., text_length).
 2. Load precomputed L2-normalized embeddings from EMBEDDINGS_PATH.
 3. Clean embeddings: drop rows with non-finite values.
 4. L2-normalize embeddings (cosine geometry).
@@ -58,18 +58,17 @@ import igraph as ig
 import leidenalg as la
 import umap
 
-from utility_scripts.clustering_utils import ensure_list_of_dicts, extract_text_from_content, flatten_messages_to_text
-
 
 # ---------- CONFIG ----------
 
-DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled.parquet")
+# Use the merged text-only file that corresponds to the merged embeddings
+DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/small_train_conversations_text_only.parquet")
 OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
 
 # ---- Embeddings to use for this run ----
 # Change this path to point to the desired embeddings file.
 EMBEDDINGS_PATH = OUT_DIR / (
-    "train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
+    "small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
 )
 
 # UMAP settings
@@ -80,18 +79,25 @@ UMAP_METRIC = "cosine"
 UMAP_RANDOM_STATE = 0
 
 # HDBSCAN
-HDBSCAN_MIN_CLUSTER_SIZE = 250
-HDBSCAN_MIN_SAMPLES = 50  # None -> default (min_cluster_size)
+HDBSCAN_MIN_CLUSTER_SIZE = 800
+HDBSCAN_MIN_SAMPLES = int(0.25 * HDBSCAN_MIN_CLUSTER_SIZE)  # None -> default (min_cluster_size)
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
 
 # KMeans
-KMEANS_K_VALUES = list(range(2, 42))
+KMEANS_K_VALUES = list(range(2, 51))
 KMEANS_RANDOM_STATE = 0
 
+# KMeans speed/sampling controls
+MAX_KMEANS_SAMPLES: int | None = 50_000  # use a subset for the k-sweep; None -> use all
+KMEANS_SWEEP_N_INIT = 3                  # cheaper than "auto" (10)
+KMEANS_SWEEP_MAX_ITER = 100              # fewer iterations for the sweep
+KMEANS_FINAL_N_INIT = "auto"             # keep default for final fit
+KMEANS_FINAL_MAX_ITER = 300
+
 # Leiden
-LEIDEN_RESOLUTION = 1.0
+LEIDEN_RESOLUTION = 0.35
 LEIDEN_RANDOM_STATE = 0
 
 # Silhouette
@@ -124,60 +130,24 @@ def _format_metric(value: float) -> str:
     return f"{value:.6f}" if not np.isnan(value) else "nan"
 
 
-# ---------- Data preparation ----------
+# ---------- Data preparation (text-only) ----------
 
-def add_conversation_text_and_features(df: pd.DataFrame) -> pd.DataFrame:
+def add_basic_text_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Parse `messages` into conversation-level text and simple features.
+    For text-only input (conversation_id, conversation_text), add simple features.
 
     Adds:
-        - conversation_text
-        - n_turns
-        - user_msg_len
-        - assistant_msg_len
-        - text_length
+        - text_length: length of conversation_text in characters
 
-    Drops conversations where conversation_text is empty/whitespace.
+    Assumes that no empty conversations were dropped in the embedding pipeline,
+    so we do not drop any rows here.
     """
-    parsed_messages = [ensure_list_of_dicts(msgs) for msgs in df["messages"]]
-
-    empty_ratio = sum(len(m) == 0 for m in parsed_messages) / max(len(parsed_messages), 1)
-    print(f"Fraction of conversations with 0 parsed messages: {empty_ratio:.3f}")
+    if "conversation_text" not in df.columns:
+        raise KeyError("Expected a 'conversation_text' column in the input DataFrame.")
 
     df = df.copy()
-
-    conversation_texts: list[str] = []
-    n_turns: list[int] = []
-    user_msg_len: list[int] = []
-    assistant_msg_len: list[int] = []
-
-    for msgs in parsed_messages:
-        conversation_text = flatten_messages_to_text(msgs)
-        conversation_texts.append(conversation_text)
-        n_turns.append(len(msgs))
-
-        u_len = 0
-        a_len = 0
-        for m in msgs:
-            content = m.get("content")
-            text = extract_text_from_content(content)
-            role = m.get("role", "")
-            if role == "user":
-                u_len += len(text)
-            elif role == "assistant":
-                a_len += len(text)
-        user_msg_len.append(u_len)
-        assistant_msg_len.append(a_len)
-
-    df["conversation_text"] = conversation_texts
-    df["n_turns"] = n_turns
-    df["user_msg_len"] = user_msg_len
-    df["assistant_msg_len"] = assistant_msg_len
-    df["text_length"] = df["conversation_text"].str.len().fillna(0).astype(int)
-
-    mask_nonempty = df["conversation_text"].str.strip().astype(bool)
-    df = df.loc[mask_nonempty].reset_index(drop=True)
-
+    df["conversation_text"] = df["conversation_text"].fillna("").astype(str)
+    df["text_length"] = df["conversation_text"].str.len().astype(int)
     return df
 
 
@@ -243,6 +213,9 @@ def sweep_kmeans(
     Run KMeans for a range of k, compute inertia and internal indices,
     and return the selected k and a dict of metrics for each k.
 
+    KMeans is run on a subset of X (if MAX_KMEANS_SAMPLES is not None)
+    with cheaper settings (lower n_init, max_iter) to keep this sweep fast.
+
     Metrics per k:
         - inertia
         - silhouette
@@ -254,10 +227,20 @@ def sweep_kmeans(
         2. Else, min inertia.
     """
     n_samples = X.shape[0]
+
+    # Subsample for the sweep if requested
+    if MAX_KMEANS_SAMPLES is not None and n_samples > MAX_KMEANS_SAMPLES:
+        rng = np.random.default_rng(random_state)
+        idx = rng.choice(n_samples, size=MAX_KMEANS_SAMPLES, replace=False)
+        X_sweep = X[idx]
+    else:
+        X_sweep = X
+
+    n_sweep = X_sweep.shape[0]
     results: dict[int, dict[str, float]] = {}
 
     for k in tqdm(k_values, desc="Sweeping k for KMeans"):
-        k_eff = min(k, n_samples)  # guard against k > n_samples
+        k_eff = min(k, n_sweep)  # guard against k > n_samples
         if k_eff <= 1:
             results[k] = {
                 "inertia": float("nan"),
@@ -267,11 +250,17 @@ def sweep_kmeans(
             }
             continue
 
-        km = KMeans(n_clusters=k_eff, random_state=random_state, n_init="auto")
-        labels = km.fit_predict(X)
+        km = KMeans(
+            n_clusters=k_eff,
+            random_state=random_state,
+            n_init=KMEANS_SWEEP_N_INIT,
+            max_iter=KMEANS_SWEEP_MAX_ITER,
+            algorithm="elkan",  # faster for Euclidean distance
+        )
+        labels = km.fit_predict(X_sweep)
         inertia = float(km.inertia_)
 
-        metrics = evaluate_clustering_metrics(X, labels, max_silhouette_samples)
+        metrics = evaluate_clustering_metrics(X_sweep, labels, max_silhouette_samples)
         results[k] = {"inertia": inertia, **metrics}
 
     # Selection: prefer max silhouette if any is finite, else min inertia
@@ -290,15 +279,21 @@ def sweep_kmeans(
 
 
 def cluster_kmeans(X: np.ndarray, n_clusters: int, random_state: int = KMEANS_RANDOM_STATE) -> KMeans:
-    """Cluster with KMeans for a given k and return the fitted KMeans object."""
+    """Cluster with KMeans for a given k and return the fitted KMeans object (on full data)."""
     n_samples = X.shape[0]
     if n_samples <= 1:
-        km = KMeans(n_clusters=1, random_state=random_state, n_init="auto")
+        km = KMeans(n_clusters=1, random_state=random_state, n_init=KMEANS_FINAL_N_INIT, max_iter=KMEANS_FINAL_MAX_ITER)
         km.fit(X)
         return km
 
     n_clusters = min(n_clusters, n_samples)
-    km = KMeans(n_clusters=n_clusters, random_state=random_state, n_init="auto")
+    km = KMeans(
+        n_clusters=n_clusters,
+        random_state=random_state,
+        n_init=KMEANS_FINAL_N_INIT,
+        max_iter=KMEANS_FINAL_MAX_ITER,
+        algorithm="elkan",
+    )
     km.fit(X)
     return km
 
@@ -353,6 +348,7 @@ def write_scores_file(
     n_clusters_hdb = int((counts_hdb.index != -1).sum())
 
     # HDBSCAN metrics on non-noise points
+    print("Computing HDBSCAN internal metrics on non-noise points...")
     labels_all_hdb = df["cluster_hdbscan"].to_numpy()
     mask_hdb = labels_all_hdb != -1
     if mask_hdb.any():
@@ -363,10 +359,12 @@ def write_scores_file(
         metrics_hdb = EMPTY_METRICS.copy()
 
     # Final KMeans metrics
+    print("Computing KMeans internal metrics on all points...")
     labels_k_best = df["cluster_kmeans"].to_numpy().astype(int)
     metrics_k_best = evaluate_clustering_metrics(X_red, labels_k_best)
 
     # Leiden metrics (if available)
+    print("Computing Leiden internal metrics on all points (if available)...")
     has_leiden = "cluster_leiden" in df.columns
     if has_leiden:
         labels_leiden = df["cluster_leiden"].to_numpy().astype(int)
@@ -455,19 +453,19 @@ def main() -> None:
     emb = np.load(EMBEDDINGS_PATH)
     print(f"Embeddings shape: {emb.shape}")
 
-    # Load data and compute conversation_text + features
-    print(f"Loading sampled data from: {DATA_PATH}")
+    # Load text-only data and compute basic features
+    print(f"Loading text-only data from: {DATA_PATH}")
     df = pd.read_parquet(DATA_PATH)
     print(f"Loaded shape: {df.shape}")
 
-    print("Parsing `messages` and computing conversation-level features...")
-    df = add_conversation_text_and_features(df)
-    print(f"After dropping empty conversations: {df.shape}")
+    print("Computing basic text features from `conversation_text`...")
+    df = add_basic_text_features(df)
+    print(f"After feature computation: {df.shape}")
 
     if len(df) != emb.shape[0]:
         raise ValueError(
             f"Mismatch between DataFrame rows ({len(df)}) and embeddings rows ({emb.shape[0]}). "
-            "Ensure you are using embeddings computed on this exact filtered dataset and in the same order."
+            "Ensure you are using embeddings computed on this exact dataset and in the same order."
         )
 
     # Drop rows with any NaN/inf in embeddings
@@ -503,6 +501,7 @@ def main() -> None:
             n_components=UMAP_N_COMPONENTS,
             metric=UMAP_METRIC,
             random_state=UMAP_RANDOM_STATE,
+            verbose=True,
         )
         X_umap = np.asarray(umap_model.fit_transform(emb_norm), dtype=float)
         np.save(UMAP_EMBEDDINGS_PATH, X_umap)
@@ -566,7 +565,7 @@ def main() -> None:
 
     # Scores file
     print(f"\nWriting clustering scores to: {SCORES_TXT_PATH}")
-    write_scores_file( df=df, X_red=X_red, kmeans_results=kmeans_results, best_k=best_k, scores_path=SCORES_TXT_PATH)
+    write_scores_file(df=df, X_red=X_red, kmeans_results=kmeans_results, best_k=best_k, scores_path=SCORES_TXT_PATH)
     print("Done.")
 
 

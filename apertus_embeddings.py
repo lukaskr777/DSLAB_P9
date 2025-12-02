@@ -33,7 +33,8 @@ OUT_DIR = DATA_DIR
 
 # List of parquet files to process.
 # INPUT_PATHS = [DATA_DIR / "split_train" / f"train_part_{i:02d}.parquet" for i in range(55)]
-INPUT_PATHS = [DATA_DIR / "train_sampled.parquet"]
+# INPUT_PATHS = [DATA_DIR / "train_sampled.parquet"]
+INPUT_PATHS = [DATA_DIR / f"small_train_part_{i}.parquet" for i in range(10)]
 
 # Single model used for all embeddings
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
@@ -163,10 +164,8 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     device = (
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
+        "cuda" if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available()
         else "cpu"
     )
     print(f"Loading sentence-transformer model {MODEL_NAME!r} on device: {device}")

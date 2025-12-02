@@ -1,0 +1,197 @@
+Embeddings file: data/swiss-ai_apertus-sft-mixture/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy
+TAG: small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2
+n_samples: 197337
+Reduced shape (UMAP dims): (197337, 15)
+
+=== HDBSCAN ===
+min_cluster_size: 800
+min_samples: 200
+metric: euclidean
+cluster_selection_method: eom
+cluster_selection_epsilon: 0.0
+num_clusters_excl_noise: 39
+n_noise: 66587
+noise_fraction: 0.3374
+internal_metrics_on_non_noise: silhouette=0.487766, davies_bouldin=0.680158, calinski_harabasz=52363.490170
+cluster_sizes (including noise):
+  label=-1: count=66587
+  label=0: count=1529
+  label=1: count=4728
+  label=2: count=2656
+  label=3: count=8534
+  label=4: count=27833
+  label=5: count=9680
+  label=6: count=5378
+  label=7: count=953
+  label=8: count=958
+  label=9: count=856
+  label=10: count=1677
+  label=11: count=5734
+  label=12: count=1896
+  label=13: count=896
+  label=14: count=2999
+  label=15: count=1095
+  label=16: count=1611
+  label=17: count=1926
+  label=18: count=1361
+  label=19: count=4396
+  label=20: count=1481
+  label=21: count=7480
+  label=22: count=2402
+  label=23: count=870
+  label=24: count=838
+  label=25: count=2342
+  label=26: count=1044
+  label=27: count=1038
+  label=28: count=813
+  label=29: count=2693
+  label=30: count=2352
+  label=31: count=3310
+  label=32: count=1536
+  label=33: count=3367
+  label=34: count=3448
+  label=35: count=1316
+  label=36: count=1426
+  label=37: count=2159
+  label=38: count=4139
+
+=== Leiden ===
+resolution: 0.35
+internal_metrics: silhouette=0.325707, davies_bouldin=0.823482, calinski_harabasz=17934.226220
+cluster_sizes:
+  label=0: count=46348
+  label=1: count=30365
+  label=2: count=26235
+  label=3: count=19996
+  label=4: count=19155
+  label=5: count=19146
+  label=6: count=9933
+  label=7: count=9317
+  label=8: count=6907
+  label=9: count=4770
+  label=10: count=1529
+  label=11: count=796
+  label=12: count=531
+  label=13: count=525
+  label=14: count=336
+  label=15: count=161
+  label=16: count=159
+  label=17: count=157
+  label=18: count=156
+  label=19: count=140
+  label=20: count=131
+  label=21: count=125
+  label=22: count=61
+  label=23: count=54
+  label=24: count=37
+  label=25: count=32
+  label=26: count=28
+  label=27: count=28
+  label=28: count=20
+  label=29: count=17
+  label=30: count=16
+  label=31: count=16
+  label=32: count=15
+  label=33: count=15
+  label=34: count=15
+  label=35: count=13
+  label=36: count=11
+  label=37: count=10
+  label=38: count=8
+  label=39: count=8
+  label=40: count=8
+  label=41: count=7
+
+=== KMeans sweep ===
+k, inertia, silhouette, davies_bouldin, calinski_harabasz
+2, 6.138283e+05, 0.269702, 1.623110, 11184.985573
+3, 5.173583e+05, 0.306328, 1.405135, 11296.558263
+4, 4.406333e+05, 0.351680, 1.150223, 11744.040880
+5, 3.942191e+05, 0.388455, 0.994016, 11316.429028
+6, 3.630669e+05, 0.348013, 1.103671, 10687.678678
+7, 3.421916e+05, 0.355253, 0.895138, 9957.841518
+8, 3.100718e+05, 0.382923, 0.887964, 10159.051424
+9, 2.817061e+05, 0.384018, 0.787938, 10413.263500
+10, 2.586008e+05, 0.384558, 0.710590, 10579.326496
+11, 2.368607e+05, 0.381363, 0.649527, 10853.932113
+12, 2.181342e+05, 0.358083, 0.669545, 11104.207864
+13, 2.020998e+05, 0.374111, 0.654423, 11316.708348
+14, 1.883911e+05, 0.358068, 0.624201, 11485.895163
+15, 1.788460e+05, 0.351329, 0.716830, 11425.035853
+16, 1.670921e+05, 0.387345, 0.663270, 11647.637805
+17, 1.601915e+05, 0.367621, 0.576992, 11524.412707
+18, 1.423517e+05, 0.364750, 0.669164, 12574.032659
+19, 1.373251e+05, 0.366327, 0.909599, 12411.519488
+20, 1.230738e+05, 0.395504, 0.503743, 13424.179538
+21, 1.190599e+05, 0.383243, 0.615265, 13266.911962
+22, 1.087629e+05, 0.394292, 0.554300, 14056.416552
+23, 1.037129e+05, 0.379657, 0.606493, 14181.141314
+24, 9.939057e+04, 0.394920, 0.555027, 14248.674810
+25, 9.694621e+04, 0.395618, 0.611932, 14051.471646
+26, 9.221529e+04, 0.361048, 0.664746, 14283.734134
+27, 8.828825e+04, 0.367685, 0.703202, 14430.464662
+28, 8.271470e+04, 0.368931, 0.679291, 14956.801721
+29, 7.892452e+04, 0.391829, 0.597235, 15200.614634
+30, 7.453593e+04, 0.399258, 0.600171, 15641.753566
+31, 7.477244e+04, 0.373023, 0.692834, 15066.973665
+32, 6.977010e+04, 0.392936, 0.639383, 15741.580924
+33, 6.976013e+04, 0.382722, 0.705687, 15251.779756
+34, 6.148960e+04, 0.409700, 0.677227, 16982.147911
+35, 6.106699e+04, 0.406871, 0.691881, 16606.567701
+36, 5.947127e+04, 0.417679, 0.626538, 16602.934250
+37, 5.489496e+04, 0.420370, 0.679471, 17602.783412
+38, 5.518317e+04, 0.369833, 0.795769, 17030.160389
+39, 5.197000e+04, 0.401802, 0.734215, 17688.151430
+40, 5.146245e+04, 0.377066, 0.709750, 17416.855972
+41, 4.827892e+04, 0.398667, 0.664803, 18183.308547
+42, 4.652738e+04, 0.387166, 0.678577, 18453.048031
+43, 4.610802e+04, 0.393101, 0.698384, 18187.984327
+44, 4.401808e+04, 0.384357, 0.704443, 18663.276751
+45, 4.357716e+04, 0.379196, 0.711762, 18434.751426
+46, 4.191267e+04, 0.381030, 0.727518, 18784.633785
+47, 4.105931e+04, 0.379669, 0.742782, 18780.390921
+48, 3.971335e+04, 0.377579, 0.757092, 19039.415578
+49, 3.856741e+04, 0.380098, 0.748326, 19227.222377
+50, 3.830196e+04, 0.380857, 0.743003, 18972.054397
+
+Selected k (best_k): 37
+Final KMeans internal_metrics: silhouette=0.402571, davies_bouldin=0.626526, calinski_harabasz=67006.618569
+
+=== KMeans (k = best_k) cluster sizes ===
+  label=0: count=9887
+  label=1: count=15733
+  label=2: count=7599
+  label=3: count=3061
+  label=4: count=9325
+  label=5: count=4761
+  label=6: count=3487
+  label=7: count=17232
+  label=8: count=11935
+  label=9: count=159
+  label=10: count=10713
+  label=11: count=7386
+  label=12: count=16
+  label=13: count=11
+  label=14: count=150
+  label=15: count=14321
+  label=16: count=71
+  label=17: count=7
+  label=18: count=8898
+  label=19: count=125
+  label=20: count=15458
+  label=21: count=8200
+  label=22: count=331
+  label=23: count=37
+  label=24: count=12508
+  label=25: count=135
+  label=26: count=6425
+  label=27: count=2681
+  label=28: count=54
+  label=29: count=8819
+  label=30: count=15
+  label=31: count=139
+  label=32: count=6982
+  label=33: count=1529
+  label=34: count=5267
+  label=35: count=1224
+  label=36: count=2656

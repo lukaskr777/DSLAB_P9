@@ -1,18 +1,18 @@
 {
   "k_selected": "2",
-  "silhouette": "0.346",
+  "silhouette": "0.294",
   "clusters": [
     {
       "cluster": 0,
-      "n_users": 16143,
-      "median_requests": 3.0,
+      "n_users": 14947,
+      "median_requests": 2.0,
       "median_req_per_active_day": 2.0
     },
     {
       "cluster": 1,
-      "n_users": 3953,
+      "n_users": 5149,
       "median_requests": 10.0,
-      "median_req_per_active_day": 4.0
+      "median_req_per_active_day": 4.5
     }
   ]
 }

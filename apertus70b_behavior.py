@@ -30,7 +30,6 @@ from utility_scripts.file_utils import (
     PathLike,
     ensure_empty_dir,
     read_table,
-    sanitize_fname,
     save_csv,
 )
 from utility_scripts.plot_utils import (
