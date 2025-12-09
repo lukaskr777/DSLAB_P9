@@ -1,0 +1,394 @@
+Embeddings file: data/swiss-ai_apertus-sft-mixture/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy
+TAG: small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2
+RUN_TAG: small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise
+n_samples: 197337
+Reduced shape (UMAP dims): (197337, 15)
+
+=== Languages summary ===
+  lang='af': count=679
+  lang='ar': count=893
+  lang='bg': count=588
+  lang='bn': count=453
+  lang='ca': count=3213
+  lang='cs': count=726
+  lang='cy': count=620
+  lang='da': count=469
+  lang='de': count=8200
+  lang='el': count=71
+  lang='en': count=130164
+  lang='es': count=6033
+  lang='et': count=1283
+  lang='fa': count=581
+  lang='fi': count=921
+  lang='fr': count=3903
+  lang='he': count=1495
+  lang='hi': count=424
+  lang='hr': count=1598
+  lang='hu': count=962
+  lang='id': count=870
+  lang='it': count=8213
+  lang='ja': count=163
+  lang='ko': count=1049
+  lang='lt': count=788
+  lang='lv': count=808
+  lang='mk': count=714
+  lang='ml': count=3
+  lang='ne': count=3
+  lang='nl': count=3007
+  lang='no': count=3317
+  lang='pa': count=2
+  lang='pl': count=1489
+  lang='pt': count=3651
+  lang='ro': count=897
+  lang='ru': count=1018
+  lang='sk': count=810
+  lang='sl': count=961
+  lang='so': count=141
+  lang='sq': count=634
+  lang='sv': count=1167
+  lang='sw': count=305
+  lang='th': count=10
+  lang='tl': count=77
+  lang='tr': count=1271
+  lang='uk': count=1385
+  lang='unknown': count=20
+  lang='ur': count=4
+  lang='vi': count=103
+  lang='zh-cn': count=1172
+  lang='zh-tw': count=9
+
+=== Language-wise HDBSCAN statistics ===
+
+Language 'af'
+  n_conversations: 679
+  cluster_langwise_final counts:
+    'af_noise': count=679
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'ar'
+  n_conversations: 893
+  cluster_langwise_final counts:
+    'ar_noise': count=893
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'bg'
+  n_conversations: 588
+  cluster_langwise_final counts:
+    'bg_noise': count=588
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'bn'
+  n_conversations: 453
+  cluster_langwise_final counts:
+    'bn_noise': count=453
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'ca'
+  n_conversations: 3213
+  cluster_langwise_final counts:
+    'ca_noise': count=3213
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'cs'
+  n_conversations: 726
+  cluster_langwise_final counts:
+    'cs_noise': count=726
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'cy'
+  n_conversations: 620
+  cluster_langwise_final counts:
+    'cy_noise': count=620
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'da'
+  n_conversations: 469
+  cluster_langwise_final counts:
+    'da_noise': count=469
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'de'
+  n_conversations: 8200
+  cluster_langwise_final counts:
+    'de_c0': count=1499
+    'de_c1': count=2807
+    'de_c2': count=1053
+    'de_noise': count=2841
+  HDBSCAN internal_metrics (non-noise points): silhouette=0.583659, davies_bouldin=0.881275, calinski_harabasz=6363.526209
+
+Language 'el'
+  n_conversations: 71
+  cluster_langwise_final counts:
+    'el': count=71
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'en'
+  n_conversations: 130164
+  cluster_langwise_final counts:
+    'en_c0': count=4721
+    'en_c1': count=2651
+    'en_c10': count=860
+    'en_c11': count=3220
+    'en_c12': count=1046
+    'en_c13': count=2286
+    'en_c14': count=963
+    'en_c15': count=10068
+    'en_c16': count=983
+    'en_c17': count=1321
+    'en_c18': count=7315
+    'en_c19': count=1038
+    'en_c2': count=26635
+    'en_c20': count=828
+    'en_c3': count=7820
+    'en_c4': count=9482
+    'en_c5': count=5287
+    'en_c6': count=909
+    'en_c7': count=3851
+    'en_c8': count=2827
+    'en_c9': count=915
+    'en_noise': count=35138
+  HDBSCAN internal_metrics (non-noise points): silhouette=0.494522, davies_bouldin=0.601225, calinski_harabasz=63574.881545
+
+Language 'es'
+  n_conversations: 6033
+  cluster_langwise_final counts:
+    'es_c0': count=1079
+    'es_c1': count=2137
+    'es_noise': count=2817
+  HDBSCAN internal_metrics (non-noise points): silhouette=0.455815, davies_bouldin=1.055470, calinski_harabasz=2550.422622
+
+Language 'et'
+  n_conversations: 1283
+  cluster_langwise_final counts:
+    'et_noise': count=1283
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'fa'
+  n_conversations: 581
+  cluster_langwise_final counts:
+    'fa_noise': count=581
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'fi'
+  n_conversations: 921
+  cluster_langwise_final counts:
+    'fi_noise': count=921
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'fr'
+  n_conversations: 3903
+  cluster_langwise_final counts:
+    'fr_noise': count=3903
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'he'
+  n_conversations: 1495
+  cluster_langwise_final counts:
+    'he_noise': count=1495
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'hi'
+  n_conversations: 424
+  cluster_langwise_final counts:
+    'hi_noise': count=424
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'hr'
+  n_conversations: 1598
+  cluster_langwise_final counts:
+    'hr_noise': count=1598
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'hu'
+  n_conversations: 962
+  cluster_langwise_final counts:
+    'hu_noise': count=962
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'id'
+  n_conversations: 870
+  cluster_langwise_final counts:
+    'id_noise': count=870
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'it'
+  n_conversations: 8213
+  cluster_langwise_final counts:
+    'it_c0': count=895
+    'it_c1': count=4906
+    'it_noise': count=2412
+  HDBSCAN internal_metrics (non-noise points): silhouette=0.591816, davies_bouldin=0.832203, calinski_harabasz=5037.398992
+
+Language 'ja'
+  n_conversations: 163
+  cluster_langwise_final counts:
+    'ja': count=163
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'ko'
+  n_conversations: 1049
+  cluster_langwise_final counts:
+    'ko_noise': count=1049
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'lt'
+  n_conversations: 788
+  cluster_langwise_final counts:
+    'lt_noise': count=788
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'lv'
+  n_conversations: 808
+  cluster_langwise_final counts:
+    'lv_noise': count=808
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'mk'
+  n_conversations: 714
+  cluster_langwise_final counts:
+    'mk_noise': count=714
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'ml'
+  n_conversations: 3
+  cluster_langwise_final counts:
+    'ml': count=3
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'ne'
+  n_conversations: 3
+  cluster_langwise_final counts:
+    'ne': count=3
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'nl'
+  n_conversations: 3007
+  cluster_langwise_final counts:
+    'nl_noise': count=3007
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'no'
+  n_conversations: 3317
+  cluster_langwise_final counts:
+    'no_noise': count=3317
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'pa'
+  n_conversations: 2
+  cluster_langwise_final counts:
+    'pa': count=2
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'pl'
+  n_conversations: 1489
+  cluster_langwise_final counts:
+    'pl_noise': count=1489
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'pt'
+  n_conversations: 3651
+  cluster_langwise_final counts:
+    'pt_noise': count=3651
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'ro'
+  n_conversations: 897
+  cluster_langwise_final counts:
+    'ro_noise': count=897
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'ru'
+  n_conversations: 1018
+  cluster_langwise_final counts:
+    'ru_noise': count=1018
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'sk'
+  n_conversations: 810
+  cluster_langwise_final counts:
+    'sk_noise': count=810
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'sl'
+  n_conversations: 961
+  cluster_langwise_final counts:
+    'sl_noise': count=961
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'so'
+  n_conversations: 141
+  cluster_langwise_final counts:
+    'so': count=141
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'sq'
+  n_conversations: 634
+  cluster_langwise_final counts:
+    'sq_noise': count=634
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'sv'
+  n_conversations: 1167
+  cluster_langwise_final counts:
+    'sv_noise': count=1167
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'sw'
+  n_conversations: 305
+  cluster_langwise_final counts:
+    'sw_noise': count=305
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'th'
+  n_conversations: 10
+  cluster_langwise_final counts:
+    'th': count=10
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'tl'
+  n_conversations: 77
+  cluster_langwise_final counts:
+    'tl': count=77
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'tr'
+  n_conversations: 1271
+  cluster_langwise_final counts:
+    'tr_noise': count=1271
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'uk'
+  n_conversations: 1385
+  cluster_langwise_final counts:
+    'uk_noise': count=1385
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'unknown'
+  n_conversations: 20
+  cluster_langwise_final counts:
+    'unknown': count=20
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'ur'
+  n_conversations: 4
+  cluster_langwise_final counts:
+    'ur': count=4
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'vi'
+  n_conversations: 103
+  cluster_langwise_final counts:
+    'vi': count=103
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)
+
+Language 'zh-cn'
+  n_conversations: 1172
+  cluster_langwise_final counts:
+    'zh-cn_noise': count=1172
+  HDBSCAN: all points labeled as noise; no internal metrics.
+
+Language 'zh-tw'
+  n_conversations: 9
+  cluster_langwise_final counts:
+    'zh-tw': count=9
+  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING=300, no HDBSCAN run; cluster is the language itself.)

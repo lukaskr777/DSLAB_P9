@@ -79,7 +79,7 @@ UMAP_METRIC = "cosine"
 UMAP_RANDOM_STATE = 0
 
 # HDBSCAN
-HDBSCAN_MIN_CLUSTER_SIZE = 800
+HDBSCAN_MIN_CLUSTER_SIZE = 800  # should be 0.004 * n_samples approximately
 HDBSCAN_MIN_SAMPLES = int(0.25 * HDBSCAN_MIN_CLUSTER_SIZE)  # None -> default (min_cluster_size)
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
