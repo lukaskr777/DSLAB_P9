@@ -1,9 +1,8 @@
 """
 Language-wise clustering script for swiss-ai/apertus-sft-mixture.
 
-This script assumes that conversation-level embeddings have already been computed
-and stored in a .npy file (one row per conversation, in the same order as the
-text-only Parquet).
+This script assumes that conversation-level embeddings have already been computed and stored in a .npy file 
+(one row per conversation, in the same order as the text-only Parquet).
 
 Pipeline:
 1. Load text-only Parquet:
@@ -22,7 +21,7 @@ Pipeline:
 8. For each language separately:
    - Let n_lang = number of conversations in that language.
    - If n_lang ≥ MIN_LANG_SAMPLES_FOR_CLUSTERING:
-       * set min_cluster_size = max(100, int(HDBSCAN_BASE_FRACTION * n_lang)).
+       * set min_cluster_size = max(HDBSCAN_MIN_MIN_CLUSTER_SIZE, int(HDBSCAN_BASE_FRACTION * n_lang)).
        * set min_samples = max(1, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size)).
        * run HDBSCAN on X_red restricted to that language.
        * let noise_frac = (#points with label -1) / n_lang.
@@ -93,7 +92,9 @@ UMAP_METRIC = "cosine"
 UMAP_RANDOM_STATE = 0
 
 # HDBSCAN
-HDBSCAN_BASE_FRACTION = 0.005  #   min_cluster_size = max(100, int(HDBSCAN_BASE_FRACTION * n_lang))
+HDBSCAN_MIN_MIN_CLUSTER_SIZE = 200  # absolute minimum for very small languages
+HDBSCAN_BASE_FRACTION = 0.005  
+# min_cluster_size = max(HDBSCAN_MIN_MIN_CLUSTER_SIZE, int(HDBSCAN_BASE_FRACTION * n_lang))
 HDBSCAN_MIN_SAMPLES_FRACTION = 0.25  # min_samples = max(1, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size))
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
@@ -193,9 +194,7 @@ def detect_languages_for_df(df: pd.DataFrame, text_col: str = "conversation_text
 # ---------- Metrics helpers ----------
 
 def evaluate_clustering_metrics(
-    X: np.ndarray,
-    labels: np.ndarray,
-    max_silhouette_samples: int | None = MAX_SILHOUETTE_SAMPLES,
+    X: np.ndarray, labels: np.ndarray, max_silhouette_samples: int | None = MAX_SILHOUETTE_SAMPLES
 ) -> dict[str, float]:
     """
     Compute internal clustering metrics on X for the given labels.
@@ -249,11 +248,7 @@ def evaluate_clustering_metrics(
 
 # ---------- Scores file ----------
 
-def write_scores_file(
-    df: pd.DataFrame,
-    X_red: np.ndarray,
-    scores_path: Path,
-) -> None:
+def write_scores_file(df: pd.DataFrame, X_red: np.ndarray, scores_path: Path) -> None:
     """
     Write language-wise clustering statistics and scores to a TXT file.
 
@@ -409,10 +404,7 @@ def main() -> None:
         print(f"Loading UMAP model from: {UMAP_MODEL_PATH}")
         umap_model_loaded: umap.UMAP = joblib.load(UMAP_MODEL_PATH)
 
-        if (
-            X_umap_loaded.shape[0] == emb_norm.shape[0]
-            and X_umap_loaded.shape[1] == UMAP_N_COMPONENTS
-        ):
+        if X_umap_loaded.shape[0] == emb_norm.shape[0] and X_umap_loaded.shape[1] == UMAP_N_COMPONENTS:
             print("UMAP cache matches current data; reusing.")
             X_umap = X_umap_loaded
             umap_model = umap_model_loaded
@@ -519,7 +511,7 @@ def main() -> None:
         X_lang = X_red[idx_lang]
 
         # Per-language HDBSCAN hyperparameters
-        min_cluster_size_lang = max(100, int(HDBSCAN_BASE_FRACTION * n_lang))
+        min_cluster_size_lang = max(HDBSCAN_MIN_MIN_CLUSTER_SIZE, int(HDBSCAN_BASE_FRACTION * n_lang))
         min_samples_lang = max(1, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size_lang))
 
         print(
@@ -543,10 +535,7 @@ def main() -> None:
         noise_frac = float(noise_mask.mean()) if n_lang > 0 else 0.0
 
         if np.all(labels_h_lang == -1):
-            print(
-                "  HDBSCAN returned only noise for this language; "
-                "treating language as a single cluster instead."
-            )
+            print("  HDBSCAN returned only noise for this language; treating language as a single cluster instead.")
             df.loc[mask_lang, "cluster_langwise_hdbscan"] = -1
             df.loc[mask_lang, "cluster_langwise_final"] = lang
             continue

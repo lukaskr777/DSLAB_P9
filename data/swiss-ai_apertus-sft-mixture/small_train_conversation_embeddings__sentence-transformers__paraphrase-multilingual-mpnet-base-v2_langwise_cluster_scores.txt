@@ -92,10 +92,8 @@ Language 'ca'
 Language 'cs'
   n_conversations: 726
   cluster_langwise_final counts:
-    'cs_c0': count=119
-    'cs_c1': count=192
-    'cs_noise': count=415
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.571625, silhouette=0.575733, davies_bouldin=0.641941, calinski_harabasz=595.641691
+    'cs': count=726
+  HDBSCAN: either all points labeled as noise, or noise fraction above threshold; language was treated as a single cluster in 'cluster_langwise_final'. No internal metrics computed.
 
 Language 'cy'
   n_conversations: 620
@@ -112,26 +110,19 @@ Language 'da'
 Language 'de'
   n_conversations: 8200
   cluster_langwise_final counts:
-    'de_c0': count=225
-    'de_c1': count=170
-    'de_c10': count=244
-    'de_c11': count=2472
-    'de_c12': count=267
-    'de_c13': count=226
-    'de_c14': count=140
-    'de_c15': count=311
-    'de_c16': count=307
-    'de_c17': count=739
-    'de_c2': count=110
-    'de_c3': count=155
-    'de_c4': count=189
-    'de_c5': count=117
-    'de_c6': count=134
-    'de_c7': count=207
-    'de_c8': count=126
-    'de_c9': count=108
-    'de_noise': count=1953
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.238171, silhouette=0.595392, davies_bouldin=0.709548, calinski_harabasz=3332.521240
+    'de_c0': count=371
+    'de_c1': count=288
+    'de_c10': count=290
+    'de_c2': count=225
+    'de_c3': count=614
+    'de_c4': count=245
+    'de_c5': count=286
+    'de_c6': count=2424
+    'de_c7': count=487
+    'de_c8': count=694
+    'de_c9': count=292
+    'de_noise': count=1984
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.241951, silhouette=0.637326, davies_bouldin=0.621150, calinski_harabasz=8094.020020
 
 Language 'el'
   n_conversations: 71
@@ -171,18 +162,18 @@ Language 'en'
 Language 'es'
   n_conversations: 6033
   cluster_langwise_final counts:
-    'es_c0': count=124
-    'es_c1': count=5773
-    'es_noise': count=136
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.022543, silhouette=0.362324, davies_bouldin=0.768321, calinski_harabasz=364.490474
+    'es_c0': count=351
+    'es_c1': count=4963
+    'es_noise': count=719
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.119178, silhouette=0.433647, davies_bouldin=0.604978, calinski_harabasz=1476.703744
 
 Language 'et'
   n_conversations: 1283
   cluster_langwise_final counts:
-    'et_c0': count=348
-    'et_c1': count=919
-    'et_noise': count=16
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.012471, silhouette=0.621467, davies_bouldin=0.414223, calinski_harabasz=2415.230578
+    'et_c0': count=340
+    'et_c1': count=759
+    'et_noise': count=184
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.143414, silhouette=0.693889, davies_bouldin=0.347549, calinski_harabasz=3482.167024
 
 Language 'fa'
   n_conversations: 581
@@ -199,10 +190,11 @@ Language 'fi'
 Language 'fr'
   n_conversations: 3903
   cluster_langwise_final counts:
-    'fr_c0': count=192
-    'fr_c1': count=3584
-    'fr_noise': count=127
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.032539, silhouette=0.359001, davies_bouldin=0.827201, calinski_harabasz=532.322218
+    'fr_c0': count=358
+    'fr_c1': count=287
+    'fr_c2': count=2227
+    'fr_noise': count=1031
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.264156, silhouette=0.336653, davies_bouldin=0.801815, calinski_harabasz=974.795579
 
 Language 'he'
   n_conversations: 1495
@@ -231,28 +223,23 @@ Language 'hu'
 Language 'id'
   n_conversations: 870
   cluster_langwise_final counts:
-    'id_c0': count=223
-    'id_c1': count=130
-    'id_c2': count=185
-    'id_noise': count=332
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.381609, silhouette=0.750190, davies_bouldin=0.280215, calinski_harabasz=2952.149480
+    'id_c0': count=344
+    'id_c1': count=203
+    'id_noise': count=323
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.371264, silhouette=0.765755, davies_bouldin=0.330243, calinski_harabasz=3265.881556
 
 Language 'it'
   n_conversations: 8213
   cluster_langwise_final counts:
-    'it_c0': count=144
-    'it_c1': count=139
-    'it_c10': count=2440
-    'it_c2': count=364
-    'it_c3': count=321
-    'it_c4': count=275
-    'it_c5': count=253
-    'it_c6': count=208
-    'it_c7': count=263
-    'it_c8': count=390
-    'it_c9': count=180
-    'it_noise': count=3236
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.394009, silhouette=0.553393, davies_bouldin=0.660906, calinski_harabasz=7395.491200
+    'it_c0': count=307
+    'it_c1': count=461
+    'it_c2': count=251
+    'it_c3': count=354
+    'it_c4': count=263
+    'it_c5': count=388
+    'it_c6': count=3164
+    'it_noise': count=3025
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.368319, silhouette=0.590322, davies_bouldin=0.615810, calinski_harabasz=9104.918530
 
 Language 'ja'
   n_conversations: 163
@@ -299,22 +286,17 @@ Language 'ne'
 Language 'nl'
   n_conversations: 3007
   cluster_langwise_final counts:
-    'nl_c0': count=240
-    'nl_c1': count=287
-    'nl_c2': count=390
-    'nl_c3': count=485
-    'nl_noise': count=1605
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.533755, silhouette=0.658641, davies_bouldin=0.678244, calinski_harabasz=2408.604054
+    'nl_c0': count=479
+    'nl_c1': count=509
+    'nl_c2': count=403
+    'nl_noise': count=1616
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.537413, silhouette=0.565893, davies_bouldin=0.804010, calinski_harabasz=1218.805385
 
 Language 'no'
   n_conversations: 3317
   cluster_langwise_final counts:
-    'no_c0': count=117
-    'no_c1': count=187
-    'no_c2': count=1036
-    'no_c3': count=114
-    'no_noise': count=1863
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.561652, silhouette=0.712685, davies_bouldin=0.570139, calinski_harabasz=2824.306436
+    'no': count=3317
+  HDBSCAN: either all points labeled as noise, or noise fraction above threshold; language was treated as a single cluster in 'cluster_langwise_final'. No internal metrics computed.
 
 Language 'pa'
   n_conversations: 2
@@ -325,18 +307,18 @@ Language 'pa'
 Language 'pl'
   n_conversations: 1489
   cluster_langwise_final counts:
-    'pl_c0': count=485
-    'pl_c1': count=131
-    'pl_noise': count=873
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.586300, silhouette=0.697273, davies_bouldin=0.432132, calinski_harabasz=1774.093526
+    'pl': count=1489
+  HDBSCAN: either all points labeled as noise, or noise fraction above threshold; language was treated as a single cluster in 'cluster_langwise_final'. No internal metrics computed.
 
 Language 'pt'
   n_conversations: 3651
   cluster_langwise_final counts:
-    'pt_c0': count=164
-    'pt_c1': count=3360
-    'pt_noise': count=127
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.034785, silhouette=0.339764, davies_bouldin=0.868476, calinski_harabasz=413.773782
+    'pt_c0': count=354
+    'pt_c1': count=290
+    'pt_c2': count=681
+    'pt_c3': count=548
+    'pt_noise': count=1778
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.486990, silhouette=0.512544, davies_bouldin=0.768667, calinski_harabasz=2521.930316
 
 Language 'ro'
   n_conversations: 897
@@ -347,10 +329,8 @@ Language 'ro'
 Language 'ru'
   n_conversations: 1018
   cluster_langwise_final counts:
-    'ru_c0': count=194
-    'ru_c1': count=254
-    'ru_noise': count=570
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.559921, silhouette=0.422741, davies_bouldin=1.110145, calinski_harabasz=294.243275
+    'ru': count=1018
+  HDBSCAN: either all points labeled as noise, or noise fraction above threshold; language was treated as a single cluster in 'cluster_langwise_final'. No internal metrics computed.
 
 Language 'sk'
   n_conversations: 810
