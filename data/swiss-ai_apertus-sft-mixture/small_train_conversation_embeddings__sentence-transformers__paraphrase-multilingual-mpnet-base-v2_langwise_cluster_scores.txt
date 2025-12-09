@@ -142,39 +142,31 @@ Language 'el'
 Language 'en'
   n_conversations: 130164
   cluster_langwise_final counts:
-    'en_c0': count=567
-    'en_c1': count=4721
-    'en_c10': count=1350
-    'en_c11': count=5766
-    'en_c12': count=854
-    'en_c13': count=622
-    'en_c14': count=4028
-    'en_c15': count=2800
-    'en_c16': count=924
-    'en_c17': count=822
-    'en_c18': count=3231
-    'en_c19': count=1088
-    'en_c2': count=2651
-    'en_c20': count=2408
-    'en_c21': count=975
-    'en_c22': count=1091
-    'en_c23': count=1473
-    'en_c24': count=8435
-    'en_c25': count=1625
-    'en_c26': count=629
-    'en_c27': count=838
-    'en_c28': count=3820
-    'en_c29': count=934
-    'en_c3': count=581
-    'en_c30': count=2302
-    'en_c4': count=26740
-    'en_c5': count=8255
-    'en_c6': count=602
-    'en_c7': count=1770
-    'en_c8': count=929
-    'en_c9': count=3522
-    'en_noise': count=33811
-  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.259757, silhouette=0.462191, davies_bouldin=0.644736, calinski_harabasz=46032.498374
+    'en_c0': count=4721
+    'en_c1': count=2651
+    'en_c10': count=923
+    'en_c11': count=871
+    'en_c12': count=3291
+    'en_c13': count=1081
+    'en_c14': count=2411
+    'en_c15': count=981
+    'en_c16': count=1091
+    'en_c17': count=1427
+    'en_c18': count=2499
+    'en_c19': count=8354
+    'en_c2': count=26740
+    'en_c20': count=3926
+    'en_c21': count=895
+    'en_c22': count=2133
+    'en_c3': count=7979
+    'en_c4': count=9471
+    'en_c5': count=5603
+    'en_c6': count=765
+    'en_c7': count=914
+    'en_c8': count=4079
+    'en_c9': count=2868
+    'en_noise': count=34490
+  HDBSCAN internal_metrics (non-noise points):  noise_fraction=0.264973, silhouette=0.463652, davies_bouldin=0.688574, calinski_harabasz=57353.867786
 
 Language 'es'
   n_conversations: 6033
