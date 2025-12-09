@@ -16,28 +16,32 @@ Pipeline:
    - UMAP-reduced embeddings (X_umap)
    - UMAP model
 6. Standardize UMAP coordinates (X_red).
-7. Detect language of each conversation and build:
+7. Detect language of each conversation (cached) and build:
    - df["lang"]
    - language → [conversation_id] mapping (JSON file).
 8. For each language separately:
-   - If number of conversations ≥ MIN_LANG_SAMPLES_FOR_CLUSTERING:
+   - Let n_lang = number of conversations in that language.
+   - If n_lang ≥ MIN_LANG_SAMPLES_FOR_CLUSTERING:
+       * set min_cluster_size = max(100, int(HDBSCAN_BASE_FRACTION * n_lang)).
+       * set min_samples = max(1, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size)).
        * run HDBSCAN on X_red restricted to that language.
-       * assign per-language HDBSCAN cluster ids.
-       * build aggregated final labels of the form "{lang}_c{cluster_id}" or "{lang}_noise".
+       * let noise_frac = (#points with label -1) / n_lang.
+       * if HDBSCAN puts all points in noise OR noise_frac > MAX_NOISE_FRACTION:
+             - treat language as a single cluster (final label = language code).
+             - cluster_langwise_hdbscan set to -1 for all points.
+         else:
+             - assign per-language HDBSCAN cluster ids.
+             - build aggregated final labels of the form "{lang}_c{cluster_id}" or "{lang}_noise".
      Else:
        * no HDBSCAN; aggregated final label is simply the language code.
 9. Save:
    - clustered DataFrame with language-wise clusters
    - language → [conversation_id] JSON
+   - cached language series
    - a TXT file summarizing language-wise clustering statistics.
 
 Outputs use a suffix "_langwise" in filenames so that previous runs are not overwritten.
 """
-
-from __future__ import annotations
-
-from pathlib import Path
-from typing import cast
 
 import warnings
 
@@ -55,23 +59,18 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 
+from pathlib import Path
 import json
 
 import joblib
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
-
 from langdetect import detect, DetectorFactory, LangDetectException
-
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from sklearn.preprocessing import StandardScaler
-
 import hdbscan
 import umap
-
-# langdetect determinism
-DetectorFactory.seed = 0
 
 
 # ---------- CONFIG ----------
@@ -93,13 +92,18 @@ UMAP_MIN_DIST = 0.0
 UMAP_METRIC = "cosine"
 UMAP_RANDOM_STATE = 0
 
-# HDBSCAN (used language-wise on standardized UMAP space)
-HDBSCAN_MIN_CLUSTER_SIZE = 800
-HDBSCAN_MIN_SAMPLES = int(0.25 * HDBSCAN_MIN_CLUSTER_SIZE)
+# HDBSCAN
+HDBSCAN_BASE_FRACTION = 0.004  #   min_cluster_size = max(100, int(HDBSCAN_BASE_FRACTION * n_lang))
+HDBSCAN_MIN_SAMPLES_FRACTION = 0.25  # min_samples = max(1, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size))
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
+# If the fraction of points labeled as noise by HDBSCAN exceeds this threshold, 
+# the language is treated as a single cluster.
+MAX_NOISE_FRACTION = 0.6
 
+# langdetect determinism
+DetectorFactory.seed = 0
 # Language-wise clustering
 # Languages with fewer conversations than this threshold will not be clustered;
 # all their conversations will share a single cluster label equal to the language code.
@@ -122,6 +126,7 @@ UMAP_MODEL_PATH = OUT_DIR / f"{RUN_TAG}_umap_model.joblib"
 SCALER_PATH = OUT_DIR / f"{RUN_TAG}_umap_scaler.joblib"
 CLUSTERED_DF_PATH = OUT_DIR / f"{RUN_TAG}_clustered.parquet"
 LANG_MAP_PATH = OUT_DIR / f"{RUN_TAG}_lang_to_conversation_ids.json"
+LANG_SERIES_PATH = OUT_DIR / f"{RUN_TAG}_lang_series.parquet"
 SCORES_TXT_PATH = OUT_DIR / f"{RUN_TAG}_cluster_scores.txt"
 NONFINITE_IDX_PATH = OUT_DIR / f"{RUN_TAG}_nonfinite_embedding_rows.txt"
 
@@ -161,11 +166,7 @@ def add_basic_text_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def detect_languages_for_df(
-    df: pd.DataFrame,
-    text_col: str = "conversation_text",
-    min_chars: int = 20,
-) -> pd.Series:
+def detect_languages_for_df(df: pd.DataFrame, text_col: str = "conversation_text", min_chars: int = 20) -> pd.Series:
     """
     Detect language for each row in df[text_col].
 
@@ -292,7 +293,8 @@ def write_scores_file(
             f.write(f"\nLanguage {lang!r}\n")
             f.write(f"  n_conversations: {n_lang}\n")
 
-            # Cluster counts for final labels (includes small languages collapsed)
+            # Cluster counts for final labels (includes small languages collapsed,
+            # languages where HDBSCAN returned only noise, and high-noise languages)
             counts_final = (
                 df.loc[mask_lang, "cluster_langwise_final"]
                 .value_counts(dropna=False)
@@ -302,10 +304,7 @@ def write_scores_file(
             for label, cnt in counts_final.items():
                 f.write(f"    {label!r}: count={cnt}\n")
 
-            # HDBSCAN labels (only meaningful when clustering was run)
-            labels_hdb = df.loc[mask_lang, "cluster_langwise_hdbscan"].to_numpy()
-            unique_h = np.unique(labels_hdb)
-
+            # For languages below threshold, HDBSCAN was not run at all
             if n_lang < MIN_LANG_SAMPLES_FOR_CLUSTERING:
                 f.write(
                     f"  (n_conversations < MIN_LANG_SAMPLES_FOR_CLUSTERING={MIN_LANG_SAMPLES_FOR_CLUSTERING}, "
@@ -313,10 +312,22 @@ def write_scores_file(
                 )
                 continue
 
-            # If HDBSCAN was run but produced only noise or a single label, metrics are not informative.
+            labels_hdb = df.loc[mask_lang, "cluster_langwise_hdbscan"].to_numpy()
+
+            # If HDBSCAN was not used (all -1) due to all-noise or high-noise,
+            # we treated language as a single cluster
+            if np.all(labels_hdb == -1):
+                f.write(
+                    "  HDBSCAN: either all points labeled as noise, or noise fraction above threshold; "
+                    "language was treated as a single cluster in 'cluster_langwise_final'. "
+                    "No internal metrics computed.\n"
+                )
+                continue
+
+            # HDBSCAN labels with potential noise; metrics on non-noise points
             mask_non_noise = labels_hdb != -1
             if not mask_non_noise.any():
-                f.write("  HDBSCAN: all points labeled as noise; no internal metrics.\n")
+                f.write("  HDBSCAN: no non-noise points; no internal metrics.\n")
                 continue
 
             labels_non_noise = labels_hdb[mask_non_noise]
@@ -335,6 +346,7 @@ def write_scores_file(
 
             f.write(
                 "  HDBSCAN internal_metrics (non-noise points): "
+                f" noise_fraction={1.0 - (labels_non_noise.size / n_lang):.6f}, "
                 f"silhouette={_format_metric(metrics['silhouette'])}, "
                 f"davies_bouldin={_format_metric(metrics['davies_bouldin'])}, "
                 f"calinski_harabasz={_format_metric(metrics['calinski_harabasz'])}\n"
@@ -436,9 +448,26 @@ def main() -> None:
     joblib.dump(scaler, SCALER_PATH)
     print(f"Saved StandardScaler to: {SCALER_PATH}")
 
-    # Language detection
-    print("Detecting language for each conversation...")
-    df["lang"] = detect_languages_for_df(df)
+    # Language detection with caching
+    if LANG_SERIES_PATH.exists():
+        print(f"Loading cached language detections from: {LANG_SERIES_PATH}")
+        lang_df = pd.read_parquet(LANG_SERIES_PATH)
+        lang_series = lang_df["lang"]
+        if len(lang_series) != len(df):
+            print(
+                "Cached language series length does not match current DataFrame; "
+                "recomputing language detection."
+            )
+            lang_series = detect_languages_for_df(df)
+            pd.DataFrame({"lang": lang_series}).to_parquet(LANG_SERIES_PATH, index=False)
+            print(f"Saved language detections to: {LANG_SERIES_PATH}")
+    else:
+        print("Detecting language for each conversation...")
+        lang_series = detect_languages_for_df(df)
+        pd.DataFrame({"lang": lang_series}).to_parquet(LANG_SERIES_PATH, index=False)
+        print(f"Saved language detections to: {LANG_SERIES_PATH}")
+
+    df["lang"] = lang_series.astype("string")
     print("Language counts:")
     print(df["lang"].value_counts())
 
@@ -460,7 +489,7 @@ def main() -> None:
     print("\nRunning language-wise HDBSCAN clustering on standardized UMAP space...")
 
     # Initialize language-wise HDBSCAN cluster id and final labels
-    df["cluster_langwise_hdbscan"] = -1  # -1 = noise or not clustered (for small languages)
+    df["cluster_langwise_hdbscan"] = -1  # -1 = noise or not clustered (for small/high-noise languages)
     df["cluster_langwise_final"] = pd.Series(pd.NA, index=df.index, dtype="string")
 
     lang_array = df["lang"].to_numpy()
@@ -489,17 +518,49 @@ def main() -> None:
         # Language-specific slice of the standardized space
         X_lang = X_red[idx_lang]
 
+        # Per-language HDBSCAN hyperparameters
+        min_cluster_size_lang = max(100, int(HDBSCAN_BASE_FRACTION * n_lang))
+        min_samples_lang = max(1, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size_lang))
+
+        print(
+            f"  HDBSCAN parameters for this language: "
+            f"min_cluster_size={min_cluster_size_lang}, min_samples={min_samples_lang}"
+        )
+
         # HDBSCAN for this language
         print("  HDBSCAN on this language subset...")
         clusterer_lang = hdbscan.HDBSCAN(
-            min_cluster_size=HDBSCAN_MIN_CLUSTER_SIZE,
-            min_samples=HDBSCAN_MIN_SAMPLES,
+            min_cluster_size=min_cluster_size_lang,
+            min_samples=min_samples_lang,
             metric=HDBSCAN_METRIC,
             cluster_selection_method=HDBSCAN_CLUSTER_SELECTION_METHOD,
             cluster_selection_epsilon=HDBSCAN_CLUSTER_SELECTION_EPSILON,
         )
         labels_h_lang = clusterer_lang.fit_predict(X_lang)  # -1 = noise, 0..K-1 clusters
 
+        # Check noise fraction
+        noise_mask = labels_h_lang == -1
+        noise_frac = float(noise_mask.mean()) if n_lang > 0 else 0.0
+
+        if np.all(labels_h_lang == -1):
+            print(
+                "  HDBSCAN returned only noise for this language; "
+                "treating language as a single cluster instead."
+            )
+            df.loc[mask_lang, "cluster_langwise_hdbscan"] = -1
+            df.loc[mask_lang, "cluster_langwise_final"] = lang
+            continue
+
+        if noise_frac > MAX_NOISE_FRACTION:
+            print(
+                f"  HDBSCAN noise fraction {noise_frac:.3f} exceeds MAX_NOISE_FRACTION={MAX_NOISE_FRACTION:.3f}; "
+                "treating language as a single cluster instead."
+            )
+            df.loc[mask_lang, "cluster_langwise_hdbscan"] = -1
+            df.loc[mask_lang, "cluster_langwise_final"] = lang
+            continue
+
+        # Otherwise, keep HDBSCAN clusters
         df.loc[mask_lang, "cluster_langwise_hdbscan"] = labels_h_lang
 
         # Aggregated final labels: "{lang}_c{cluster_id}" or "{lang}_noise"
