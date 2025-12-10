@@ -19,26 +19,11 @@ Helper utilities required:
 
 import pandas as pd
 
-from utility_scripts.file_utils import (
-    PathLike,
-    ensure_empty_dir,
-    read_table,
-)
-from utility_scripts.plot_utils import (
-    line,
-    bar,
-    hist,
-    heatmap,
-)
+from utility_scripts.file_utils import PathLike, ensure_empty_dir, read_table
+from utility_scripts.plot_utils import line, bar, hist, heatmap
 from utility_scripts.df_reading_utils import (
-    require,
-    clean_table,
-    to_utc,
-    ensure_date_column,
-    aggregate_by_time,
-    cumulative_share,
+    require, clean_table, to_utc, ensure_date_column, aggregate_by_time, cumulative_share
 )
-
 
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 

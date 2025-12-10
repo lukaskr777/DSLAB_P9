@@ -22,7 +22,7 @@ DATA_DIR = HERE.parent / "data" / "swiss-ai_apertus-sft-mixture"
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 N_PARTS = 10  # small_train_part_0 .. small_train_part_9
 
-MERGE_TEXTS = True  # set False if you only care about the embeddings
+MERGE_TEXTS = True
 
 
 # ---------- Helpers ----------

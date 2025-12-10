@@ -13,7 +13,7 @@ This script:
   degenerate solutions where a cluster is too small.
 - Runs PCA for visualization (if possible).
 
-Outputs in figs/litellm_apertus70b_user_clusters:
+Outputs in figs/litellm_apertus70b_users_clustering:
     - apertus70b_feature_summary.csv  <-- per-feature stats for columns used in clustering
     - apertus70b_cluster_summary.json
     - users_pca_clusters.png
@@ -35,19 +35,9 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
-from utility_scripts.file_utils import (
-    PathLike,
-    ensure_empty_dir,
-    read_table,
-    save_csv,
-    save_text,
-)
+from utility_scripts.file_utils import PathLike, ensure_empty_dir, read_table, save_csv, save_text
 from utility_scripts.plot_utils import bar
-from utility_scripts.df_reading_utils import (
-    require,
-    safe_div,
-    clean_table,
-)
+from utility_scripts.df_reading_utils import require, safe_div, clean_table
 
 
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
@@ -386,10 +376,10 @@ def remove_extreme_apertus70b_users(
 # --------------------------------------------------------------------
 
 
-def analyze_apertus70b_user_clusters(
+def analyze_apertus70b_users_clustering(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
-    outdir: PathLike = "figs/litellm_apertus70b_user_clusters",
+    outdir: PathLike = "figs/litellm_apertus70b_users_clustering",
 ) -> None:
     """
     Compute per-user usage features for swiss-ai/apertus-70b-instruct, remove extreme power users, 
@@ -718,8 +708,8 @@ def analyze_apertus70b_user_clusters(
 if __name__ == "__main__":
     DATA_DIR = "data"
     FIGS_DIR = "figs"
-    analyze_apertus70b_user_clusters(
+    analyze_apertus70b_users_clustering(
         dir_name=DATA_DIR,
         dataset="litellm",
-        outdir=f"{FIGS_DIR}/litellm_apertus70b_user_clusters",
+        outdir=f"{FIGS_DIR}/litellm_apertus70b_users_clustering",
     )

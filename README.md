@@ -16,7 +16,7 @@ Datasets are confidential and must be placed in `{DATA_DIR}`. Figures are writte
 - **`apertus70b_usage.py`** — Usage profiling: request volumes, tokens, users, temporal patterns.  
 - **`apertus70b_performance.py`** — Latency/TTFT statistics, efficiency curves, latency distributions.  
 - **`apertus70b_behavior.py`** — Verbosity, length distributions, retries, length–latency correlations.  
-- **`apertus70b_user_clusters.py`** — User-level feature extraction and KMeans clustering.
+- **`apertus70b_users_clustering.py`** — User-level feature extraction and KMeans clustering.
 
 ---
 
