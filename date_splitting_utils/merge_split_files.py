@@ -1,3 +1,12 @@
+"""
+Merge per-part conversation embeddings and (optionally) per-part text Parquet files
+for the swiss-ai/apertus-sft-mixture dataset.
+
+This script:
+- Merges Numpy .npy embedding shards into a single memmapped .npy file.
+- Optionally merges the corresponding text Parquet shards into a single file.
+"""
+
 from pathlib import Path
 
 import numpy as np
@@ -7,7 +16,8 @@ import pandas as pd
 
 # ---------- CONFIG ----------
 
-DATA_DIR = Path("data/swiss-ai_apertus-sft-mixture")
+HERE = Path(__file__).resolve().parent
+DATA_DIR = HERE.parent / "data" / "swiss-ai_apertus-sft-mixture"
 
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 N_PARTS = 10  # small_train_part_0 .. small_train_part_9

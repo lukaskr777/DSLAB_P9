@@ -1,3 +1,14 @@
+"""
+Generate an overview of the apertus-sft-mixture dataset via exploratory data analysis and plotting.
+
+This script:
+- Loads the small_train.parquet subset.
+- Performs light EDA (column types, memory usage, basic statistics).
+- Computes simple derived features such as string lengths.
+- Produces structural, compositional, temporal, correlation, and aggregated metric plots.
+- Saves all figures into figs/apertus_overview.
+"""
+
 from pathlib import Path
 import json
 
@@ -8,7 +19,7 @@ from utility_scripts.plot_utils import hist, bar, line, scatter
 from utility_scripts.df_reading_utils import ensure_date_column
 
 
-DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/train_sampled.parquet")
+DATA_PATH = Path("data/swiss-ai_apertus-sft-mixture/small_train.parquet")
 OUTDIR = Path("figs/apertus_overview")
 
 

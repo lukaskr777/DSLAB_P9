@@ -1,3 +1,18 @@
+"""
+Build a complete HTML report combining:
+1) Public-AI (LiteLLM_SpendLogs) analysis for the Apertus-70B model group, and
+2) Language-wise clustering results for the swiss-ai/apertus-sft-mixture dataset.
+
+The script:
+- Locates all generated figures (usage, performance, behavior, user clustering, language-wise clustering, 
+  English-only subsets, word clouds, top-word tables, representative prompts).
+- Builds galleries, tables, and navigation anchors.
+- Produces a styled, self-contained `index.html` at the repository root with clickable images that open in a new tab.
+
+All paths are resolved relative to the repo layout; the script assumes that the plotting scripts have already produced 
+their outputs in the expected `figs/` subdirectories.
+"""
+
 from pathlib import Path
 from typing import Iterable
 import html

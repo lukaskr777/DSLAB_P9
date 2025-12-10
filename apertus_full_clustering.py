@@ -1,3 +1,23 @@
+"""
+Assign KMeans cluster labels to the full apertus-sft-mixture embedding dataset, using models fitted on a 5% sample.
+
+This script:
+- Memory-maps the full conversation embeddings (stored as a .dat file) to avoid loading everything into RAM at once.
+- Loads the UMAP model, StandardScaler, and KMeans model previously fitted on a sampled subset of the data.
+- Processes the full dataset in batches:
+    * L2-normalizes each batch of embeddings,
+    * applies the fitted UMAP transform,
+    * applies the fitted StandardScaler,
+    * predicts KMeans cluster labels.
+- Writes the resulting labels into a memory-mapped int32 array on disk and additionally saves a compact `.npy` copy.
+
+It assumes that:
+- The full embeddings `.dat` file, and the UMAP/StandardScaler/KMeans artifacts (trained on the sample) 
+  already exist in `OUT_DIR`.
+- The constants `N_SAMPLES_FULL`, `EMBEDDING_DIM`, and `EMBEDDINGS_DTYPE` 
+  correctly describe the full embedding matrix layout.
+"""
+
 from pathlib import Path
 
 import joblib
@@ -51,7 +71,7 @@ def main() -> None:
 
     print(f"Loading KMeans model from: {KMEANS_MODEL_PATH}")
     kmeans_model: KMeans = joblib.load(KMEANS_MODEL_PATH)
-    n_clusters = kmeans_model.n_clusters  # type: ignore
+    n_clusters = kmeans_model.n_clusters
     print(f"KMeans has {n_clusters} clusters.")
 
     print(f"Memory-mapping full embeddings from: {EMBEDDINGS_DAT_PATH}")

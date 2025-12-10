@@ -174,7 +174,7 @@ def make_cluster_plots(
 
         plt.tight_layout()
         out_path = figs_dir / f"scatter_dim1_dim2_{label_col}{suffix}.png"
-        plt.savefig(out_path, dpi=150)
+        plt.savefig(out_path, dpi=300)
         plt.close()
 
     # -------------------------------
@@ -188,7 +188,7 @@ def make_cluster_plots(
     plt.title(f"Cluster sizes ({label_col})")
     plt.tight_layout()
     out_path = figs_dir / f"cluster_sizes_{label_col}.png"
-    plt.savefig(out_path, dpi=150)
+    plt.savefig(out_path, dpi=300)
     plt.close()
 
     # -------------------------------
@@ -228,7 +228,7 @@ def make_cluster_plots(
     plt.title(f"Per-cluster feature z-score means ({label_col})")
     plt.tight_layout()
     out_path = figs_dir / f"cluster_feature_means_heatmap_{label_col}.png"
-    plt.savefig(out_path, dpi=150)
+    plt.savefig(out_path, dpi=300)
     plt.close()
 
     # Per-feature bar plots
@@ -240,7 +240,7 @@ def make_cluster_plots(
         plt.title(f"Mean {feat} per cluster ({label_col})")
         plt.tight_layout()
         out_path = figs_dir / f"cluster_mean_{feat}_{label_col}.png"
-        plt.savefig(out_path, dpi=150)
+        plt.savefig(out_path, dpi=300)
         plt.close()
 
 
@@ -362,7 +362,7 @@ def make_cluster_wordclouds(
         plt.tight_layout()
 
         out_path = wc_dir / f"cluster_{cluster_label}_wordcloud.png"
-        plt.savefig(out_path, dpi=150)
+        plt.savefig(out_path, dpi=300)
         plt.close()
 
 
