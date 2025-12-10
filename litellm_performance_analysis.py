@@ -5,7 +5,6 @@ Produces plots in figs/litellm_apertus70b_performance:
 
 - Daily performance metrics (latency, TTFT, gen time, success rate)
 - Daily quantile curves (Q1/median/Q3/mean) for latency, TTFT, gen time, tokens per request, and latency shares
-- Token-efficiency metrics (prompt/completion ratios)
 - Latency / TTFT / gen distributions (trimmed)
 - Latency vs tokens (binned averages and quantiles)
 - Success vs failure latency comparison
@@ -17,8 +16,6 @@ Requires helper utilities:
   - utility_scripts.df_reading_utils
 """
 
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 
@@ -26,7 +23,6 @@ from utility_scripts.file_utils import (
     PathLike,
     ensure_empty_dir,
     read_table,
-    save_csv,
 )
 from utility_scripts.plot_utils import (
     line,
@@ -47,6 +43,12 @@ from utility_scripts.df_reading_utils import (
 )
 
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
+
+
+def _add_log_suffix(fname: str) -> str:
+    if fname.lower().endswith(".png"):
+        return fname[:-4] + "_log.png"
+    return fname + "_log"
 
 
 def plot_apertus70b_performance(
@@ -98,10 +100,17 @@ def plot_apertus70b_performance(
     # Time features and daily aggregates
     # ------------------------------------------------------------------
     ts = to_utc(df["startTime"])
-    df["date"] = ts.dt.floor("D")  # type: ignore[attr-defined]
+    df["date"] = ts.dt.floor("D")
     df = df.dropna(subset=["date"])
 
-    df = ensure_date_column(df, time_col="startTime", out_col="date", floor="D", dropna=True, sort=True)
+    df = ensure_date_column(
+        df,
+        time_col="startTime",
+        out_col="date",
+        floor="D",
+        dropna=True,
+        sort=True,
+    )
 
     daily = aggregate_by_time(
         df,
@@ -252,8 +261,6 @@ def plot_apertus70b_performance(
         out,
     )
 
-    save_csv(daily, "daily_performance_stats.csv", out)
-
     # ------------------------------------------------------------------
     # Row-level latency and TTFT/gen shares
     # ------------------------------------------------------------------
@@ -261,6 +268,7 @@ def plot_apertus70b_performance(
     df["gen_share_row"] = safe_div(df["gen_s"], df["latency_s"]).clip(lower=0, upper=1)
 
     # Histograms of latency metrics (trimmed to 99.9% to reduce extreme tails)
+    # Produce both linear- and log-scale versions.
     for col, title, fname in [
         ("latency_s", "Latency per request (s) — trimmed 99.9%", "hist_latency_s_trimmed.png"),
         ("ttft_s", "Time to first token (s) — trimmed 99.9%", "hist_ttft_s_trimmed.png"),
@@ -268,7 +276,28 @@ def plot_apertus70b_performance(
     ]:
         series = safe_quantile_cut(df[col], 0.999)
         if not series.empty:
-            hist(series, title, col, "count", fname, out, bins=50)
+            # Linear scale
+            hist(
+                series,
+                title,
+                col,
+                "count",
+                fname,
+                out,
+                bins=50,
+                log_scale=False,
+            )
+            # Log scale
+            hist(
+                series,
+                title + " (log scale)",
+                col,
+                "count",
+                _add_log_suffix(fname),
+                out,
+                bins=50,
+                log_scale=True,
+            )
 
     # Histograms of latency shares
     for col, title, fname in [
@@ -277,7 +306,15 @@ def plot_apertus70b_performance(
     ]:
         s = df[col].replace([np.inf, -np.inf], np.nan).dropna()
         if not s.empty:
-            hist(s.clip(lower=0, upper=1), title, col, "count", fname, out, bins=50)
+            hist(
+                s.clip(lower=0, upper=1),
+                title,
+                col,
+                "count",
+                fname,
+                out,
+                bins=50,
+            )
 
     # Daily quantiles for latency shares
     lines_quantiles(
@@ -300,47 +337,6 @@ def plot_apertus70b_performance(
         "daily_gen_share_quantiles.png",
         out,
     )
-
-    # ------------------------------------------------------------------
-    # Token-efficiency metrics (prompt/completion ratios)
-    # ------------------------------------------------------------------
-    if "prompt_ratio" not in df.columns and {"prompt_tokens", "total_tokens"} <= set(df.columns):
-        df["prompt_ratio"] = safe_div(df["prompt_tokens"], df["total_tokens"]).clip(lower=0, upper=1)
-    if "completion_ratio" not in df.columns and {"completion_tokens", "total_tokens"} <= set(df.columns):
-        df["completion_ratio"] = safe_div(df["completion_tokens"], df["total_tokens"]).clip(lower=0, upper=1)
-
-    for col, title, fname in [
-        ("prompt_ratio", "Prompt ratio = prompt/total", "hist_prompt_ratio.png"),
-        ("completion_ratio", "Completion ratio = completion/total", "hist_completion_ratio.png"),
-    ]:
-        if col in df.columns:
-            s = df[col].replace([np.inf, -np.inf], np.nan).dropna()
-            if not s.empty:
-                hist(s.clip(lower=0, upper=1), title, col, "count", fname, out, bins=50)
-
-    # Daily quantiles for ratios
-    if "prompt_ratio" in df.columns:
-        lines_quantiles(
-            "date",
-            "prompt_ratio",
-            df,
-            "Prompt ratio per day: Q1/Median/Q3/Mean (Apertus 70B)",
-            "date",
-            "ratio",
-            "daily_prompt_ratio_quantiles.png",
-            out,
-        )
-    if "completion_ratio" in df.columns:
-        lines_quantiles(
-            "date",
-            "completion_ratio",
-            df,
-            "Completion ratio per day: Q1/Median/Q3/Mean (Apertus 70B)",
-            "date",
-            "ratio",
-            "daily_completion_ratio_quantiles.png",
-            out,
-        )
 
     # ------------------------------------------------------------------
     # Latency vs tokens (binned averages and quantiles)
@@ -410,7 +406,28 @@ def plot_apertus70b_performance(
     def _hist_if_any(series: pd.Series, title: str, fname: str) -> None:
         s = safe_quantile_cut(series, 0.999)
         if not s.empty:
-            hist(s, title, "latency_s", "count", fname, out, bins=50)
+            # Linear scale
+            hist(
+                s,
+                title,
+                "latency_s",
+                "count",
+                fname,
+                out,
+                bins=50,
+                log_scale=False,
+            )
+            # Log scale
+            hist(
+                s,
+                title + " (log scale)",
+                "latency_s",
+                "count",
+                _add_log_suffix(fname),
+                out,
+                bins=50,
+                log_scale=True,
+            )
 
     if not successes.empty:
         _hist_if_any(
@@ -474,20 +491,6 @@ def plot_apertus70b_performance(
                 "scatter_latency_vs_rpm.png",
                 out,
             )
-
-    # ------------------------------------------------------------------
-    # Overall summary (no spend)
-    # ------------------------------------------------------------------
-    summary = {
-        "n_rows": len(df),
-        "n_requests": int(df["request_id"].nunique()),
-        "total_tokens": float(df["total_tokens"].sum()),
-        "mean_tokens_per_request": float(df["total_tokens"].mean()),
-        "mean_latency_s": float(df["latency_s"].mean()),
-        "p95_latency_s": float(df["latency_s"].quantile(0.95)),
-        "mean_success_rate": float(daily["success_rate"].mean()),
-    }
-    save_csv(pd.DataFrame([summary]), "summary_performance_overall.csv", out)
 
 
 if __name__ == "__main__":

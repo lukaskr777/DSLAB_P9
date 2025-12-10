@@ -1,8 +1,7 @@
-# build_html_report.py
-
 from pathlib import Path
 from typing import Iterable
 import html
+import json
 
 
 OUT_DIR = Path("data/swiss-ai_apertus-sft-mixture")
@@ -13,16 +12,42 @@ TAG = EMBEDDINGS_PATH.stem
 RUN_SUFFIX = "_langwise"
 RUN_TAG = f"{TAG}{RUN_SUFFIX}"
 
+# apertus_sft_mixture clustering figs
 FIGS_ROOT = Path("figs/apertus_clustering")
 FIGS_DIR = FIGS_ROOT / RUN_TAG
-HTML_PATH = FIGS_DIR / "index.html"
+
+# Public AI (LiteLLM_SpendLogs) figure roots
+USAGE_DIR = Path("figs") / "litellm_apertus70b_usage"
+PERF_DIR = Path("figs") / "litellm_apertus70b_performance"
+BEHAV_DIR = Path("figs") / "litellm_apertus70b_behavior"
+USERCLUST_DIR = Path("figs") / "litellm_apertus70b_user_clusters"
+
+# Create index.html at the top level of the repo
+HTML_PATH = Path("index.html")
+
+
+def _rel_from_html(path: Path) -> str:
+    """
+    Compute a relative path from the HTML file location to `path`,
+    normalized with forward slashes.
+    """
+    try:
+        rel = path.relative_to(HTML_PATH.parent)
+    except ValueError:
+        # Fallback: best-effort
+        rel = path
+    return str(rel).replace("\\", "/")
 
 
 def _img_tag(src: Path, alt: str = "", css_class: str = "plot") -> str:
-    rel = src.relative_to(FIGS_DIR)
-    # Normalize Windows-style backslashes to forward slashes for HTML
-    rel_str = str(rel).replace("\\", "/")
-    return f'<img src="{html.escape(rel_str)}" alt="{html.escape(alt)}" class="{css_class}">'
+    rel_str = _rel_from_html(src)
+    escaped_src = html.escape(rel_str)
+    escaped_alt = html.escape(alt)
+    return (
+        f'<a href="{escaped_src}" target="_blank" class="plot-link">'
+        f'<img src="{escaped_src}" alt="{escaped_alt}" class="{css_class}">'
+        "</a>"
+    )
 
 
 def _section(title: str, content: str, section_id: str | None = None) -> str:
@@ -50,7 +75,7 @@ def _gallery(img_paths: Iterable[Path], title_prefix: str = "") -> str:
         )
     if not items:
         return "<p>No figures found.</p>"
-    return "<div class=\"gallery\">\n" + "\n".join(items) + "\n</div>"
+    return '<div class="gallery">\n' + "\n".join(items) + "\n</div>"
 
 
 def _parse_top_words(path: Path) -> list[dict[str, str]]:
@@ -58,7 +83,7 @@ def _parse_top_words(path: Path) -> list[dict[str, str]]:
     if not path.exists():
         return rows
     with path.open("r", encoding="utf-8") as f:
-        header = f.readline()
+        _ = f.readline()  # header
         for line in f:
             line = line.rstrip("\n")
             if not line:
@@ -117,7 +142,7 @@ def _parse_representatives(path: Path) -> list[dict[str, str]]:
     if not path.exists():
         return rows
     with path.open("r", encoding="utf-8") as f:
-        header = f.readline()
+        _ = f.readline()  # header
         for line in f:
             line = line.rstrip("\n")
             if not line:
@@ -171,110 +196,199 @@ def _representatives_table(path: Path, title: str) -> str:
     return table_html
 
 
+def _cluster_summary_block() -> str:
+    """Small block for the Public-AI user clustering JSON + CSV links and optional preview."""
+    cluster_json_path = USERCLUST_DIR / "apertus70b_cluster_summary.json"
+    feature_csv_path = USERCLUST_DIR / "apertus70b_feature_summary.csv"
+
+    lines: list[str] = []
+    lines.append("<p>Additional user-level clustering outputs:</p>")
+    lines.append("<ul>")
+    if cluster_json_path.exists():
+        lines.append(
+            "<li>Cluster summary JSON: "
+            f'<a href="{html.escape(_rel_from_html(cluster_json_path))}">apertus70b_cluster_summary.json</a></li>'
+        )
+    else:
+        lines.append("<li>Cluster summary JSON: <em>not found</em></li>")
+
+    if feature_csv_path.exists():
+        lines.append(
+            "<li>Feature summary CSV: "
+            f'<a href="{html.escape(_rel_from_html(feature_csv_path))}">apertus70b_feature_summary.csv</a></li>'
+        )
+    else:
+        lines.append("<li>Feature summary CSV: <em>not found</em></li>")
+    lines.append("</ul>")
+
+    # Optional JSON preview
+    if cluster_json_path.exists():
+        try:
+            data = json.loads(cluster_json_path.read_text(encoding="utf-8"))
+            pretty = json.dumps(data, indent=2)
+            lines.append("<details><summary>Preview cluster summary JSON</summary>")
+            lines.append("<pre>")
+            lines.append(html.escape(pretty))
+            lines.append("</pre></details>")
+        except Exception:
+            pass
+
+    return "\n".join(lines)
+
+
 def build_html() -> None:
     if not FIGS_DIR.exists():
         raise FileNotFoundError(f"FIGS_DIR does not exist: {FIGS_DIR}")
 
-    # ------- Sections for all languages -------
+    # ============================================================
+    # 1. Public AI logs (LiteLLM_SpendLogs) – Apertus 70B analysis
+    # ============================================================
 
-    # Scatter plots / cluster sizes / feature summaries
-    all_lang_plots = _gallery(FIGS_DIR.glob("scatter_dim1_dim2_*.png"), title_prefix="")
-    all_lang_sizes = _gallery(FIGS_DIR.glob("cluster_sizes_*.png"), title_prefix="")
-    all_lang_feats = _gallery(FIGS_DIR.glob("cluster_feature_means_heatmap_*.png"), title_prefix="")
+    usage_gallery = _gallery(USAGE_DIR.glob("*.png"))
+    perf_gallery = _gallery(PERF_DIR.glob("*.png"))
+    behav_gallery = _gallery(BEHAV_DIR.glob("*.png"))
+    userclust_gallery = _gallery(USERCLUST_DIR.glob("*.png"))
 
-    section_overview = _section(
-        "Overview",
-        """
-<p>This page summarizes the language-wise clustering results for the swiss-ai / apertus-sft-mixture dataset.
-Each figure and table is generated from the same RUN_TAG as the poster.</p>
-<p>Use the navigation at the top to jump to specific sections.</p>
-""",
-        section_id="overview",
+    public_content = f"""
+<p>
+This section summarizes the analysis of the <code>LiteLLM_SpendLogs</code> Public AI logs for the
+<code>swiss-ai/apertus-70b-instruct</code> model group. It aggregates the four Python analysis scripts:
+usage & workload, performance & efficiency, behavioral stability, and user-level clustering.
+</p>
+
+<h3>Usage & workload profiling</h3>
+<p>
+Time-series usage patterns, hourly/weekday behavior, request volume per session, and concentration of usage
+across end users ("whale" curves).
+</p>
+{usage_gallery}
+
+<h3>Performance & efficiency</h3>
+<p>
+Daily averages and quantiles for latency, TTFT, generation time, tokens per request, success rate,
+and latency shares, plus trimmed latency/TTFT/gen distributions and latency-versus-load plots.
+Log-scale variants are included where appropriate.
+</p>
+{perf_gallery}
+
+<h3>Behavior & stability</h3>
+<p>
+Prompt/completion length distributions (with log-scale variants), daily quantiles of completion length,
+prompt-vs-completion scatter, token-composition ratios (prompt/completion), inter-arrival behavior,
+and correlation plots between tokens and latency components.
+</p>
+{behav_gallery}
+
+<h3>User-level clustering</h3>
+<p>
+Per-end-user feature vectors (volume, temporal behavior, token structure, latency, and success rate)
+are clustered with KMeans (model selection via silhouette + degeneracy checks). PCA is used for 2D
+visualization, and per-feature cluster profiles are shown.
+</p>
+{userclust_gallery}
+{_cluster_summary_block()}
+"""
+
+    section_public = _section(
+        "Public AI logs – Apertus 70B analysis",
+        public_content,
+        section_id="public-ai-analysis",
     )
 
-    section_all = _section(
-        "All languages – cluster plots",
-        all_lang_plots + "<h3>Cluster sizes</h3>" + all_lang_sizes + "<h3>Feature heatmaps</h3>" + all_lang_feats,
-        section_id="all-languages",
-    )
+    # ============================================================
+    # 2. apertus_sft_mixture language-wise clustering
+    # ============================================================
 
-    # Top words and representatives (all languages)
+    # All languages – scatter / sizes / feature heatmaps
+    all_lang_plots = _gallery(FIGS_DIR.glob("scatter_dim1_dim2_*.png"))
+    all_lang_sizes = _gallery(FIGS_DIR.glob("cluster_sizes_*.png"))
+    all_lang_feats = _gallery(FIGS_DIR.glob("cluster_feature_means_heatmap_*.png"))
+
     top_words_all_path = FIGS_DIR / "top_words_cluster_langwise_final.txt"
     reps_all_path = FIGS_DIR / "cluster_representatives_cluster_langwise_final.txt"
 
-    section_all_words = _section(
-        "All languages – top words and representatives",
+    all_lang_words_html = (
         _top_words_table(top_words_all_path, "Top 5 words per final cluster (all languages)")
-        + _representatives_table(reps_all_path, "Representative prompts per final cluster (all languages)"),
-        section_id="all-languages-words",
+        + _representatives_table(reps_all_path, "Representative prompts per final cluster (all languages)")
     )
 
-    # ------- English-only sections -------
-
+    # English-only sections
     figs_dir_en = FIGS_DIR / "english"
     if figs_dir_en.exists():
         en_plots = _gallery(figs_dir_en.glob("scatter_dim1_dim2_*.png"))
         en_sizes = _gallery(figs_dir_en.glob("cluster_sizes_*.png"))
         en_feats = _gallery(figs_dir_en.glob("cluster_feature_means_heatmap_*.png"))
 
-        # English-only top words / reps
         top_words_en_path = figs_dir_en / "top_words_cluster_langwise_final.txt"
         reps_en_path = figs_dir_en / "cluster_representatives_cluster_langwise_final_en.txt"
-
-        # English word clouds
         wc_dir_en = figs_dir_en / "wordclouds" / "cluster_langwise_final"
         en_wcs = _gallery(wc_dir_en.glob("*.png"), title_prefix="")
 
-        section_en_plots = _section(
-            "English-only – cluster plots",
-            en_plots + "<h3>Cluster sizes (English only)</h3>" + en_sizes
-            + "<h3>Feature heatmaps (English only)</h3>" + en_feats,
-            section_id="english-plots",
-        )
+        english_html = f"""
+<h3>English-only – cluster plots</h3>
+{en_plots}
+<h4>Cluster sizes (English only)</h4>
+{en_sizes}
+<h4>Feature heatmaps (English only)</h4>
+{en_feats}
 
-        section_en_wcs = _section(
-            "English-only – word clouds",
-            en_wcs,
-            section_id="english-wordclouds",
-        )
+<h3>English-only – word clouds</h3>
+{en_wcs}
 
-        section_en_words = _section(
-            "English-only – top words and representatives",
-            _top_words_table(top_words_en_path, "Top 5 words per final cluster (English only)")
-            + _representatives_table(reps_en_path, "Representative prompts per final cluster (English only)"),
-            section_id="english-words",
-        )
+<h3>English-only – top words and representatives</h3>
+{_top_words_table(top_words_en_path, "Top 5 words per final cluster (English only)")
+ + _representatives_table(reps_en_path, "Representative prompts per final cluster (English only)")}
+"""
     else:
-        section_en_plots = _section(
-            "English-only results",
-            "<p>No English-only directory found. Run the plotting script with English outputs enabled.</p>",
-            section_id="english-plots",
-        )
-        section_en_wcs = ""
-        section_en_words = ""
+        english_html = """
+<h3>English-only results</h3>
+<p>No English-only directory found. Run the plotting script with English outputs enabled.</p>
+"""
 
-    # ------- Navigation -------
+    apertus_content = f"""
+<p>
+This section summarizes the language-wise clustering results for the
+<code>swiss-ai/apertus-sft-mixture</code> dataset. All figures and tables share the same
+<code>RUN_TAG = {html.escape(RUN_TAG)}</code> as the poster.
+</p>
+
+<h3>All languages – cluster plots</h3>
+{all_lang_plots}
+<h4>Cluster sizes</h4>
+{all_lang_sizes}
+<h4>Feature heatmaps</h4>
+{all_lang_feats}
+
+<h3>All languages – top words and representatives</h3>
+{all_lang_words_html}
+
+{english_html}
+"""
+
+    section_apertus = _section(
+        "apertus_sft_mixture – language-wise clustering",
+        apertus_content,
+        section_id="apertus-clustering",
+    )
+
+    # ---------------- Navigation ----------------
 
     nav_html = """
 <nav>
   <ul>
-    <li><a href="#overview">Overview</a></li>
-    <li><a href="#all-languages">All languages – cluster plots</a></li>
-    <li><a href="#all-languages-words">All languages – words & reps</a></li>
-    <li><a href="#english-plots">English-only – cluster plots</a></li>
-    <li><a href="#english-wordclouds">English-only – word clouds</a></li>
-    <li><a href="#english-words">English-only – words & reps</a></li>
+    <li><a href="#public-ai-analysis">Public AI logs – Apertus 70B</a></li>
+    <li><a href="#apertus-clustering">apertus_sft_mixture clustering</a></li>
   </ul>
 </nav>
 """
 
-    # ------- Final HTML -------
+    # ---------------- Final HTML ----------------
 
     html_doc = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Apertus clustering report – {html.escape(RUN_TAG)}</title>
+  <title>Apertus analysis & clustering report – {html.escape(RUN_TAG)}</title>
   <style>
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -336,6 +450,9 @@ Each figure and table is generated from the same RUN_TAG as the poster.</p>
       padding-bottom: 0.25rem;
       margin-bottom: 0.75rem;
     }}
+    h3 {{
+      margin-top: 1.5rem;
+    }}
     .gallery {{
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -383,21 +500,36 @@ Each figure and table is generated from the same RUN_TAG as the poster.</p>
     code {{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }}
+    details summary {{
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }}
+    pre {{
+      background: #111;
+      color: #eee;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }}
+    a.plot-link {{
+      text-decoration: none;
+    }}
+    a.plot-link img {{
+      display: block;
+    }}
   </style>
 </head>
 <body>
   <header>
-    <h1>Apertus clustering report – {html.escape(RUN_TAG)}</h1>
-    <p>Interactive companion page for the poster (all figures & cluster summaries).</p>
+    <h1>Apertus analysis & clustering report – {html.escape(RUN_TAG)}</h1>
+    <p>Public AI logs analysis for Apertus 70B and language-wise clustering of the apertus_sft_mixture dataset.</p>
   </header>
   {nav_html}
   <main>
-    {section_overview}
-    {section_all}
-    {section_all_words}
-    {section_en_plots}
-    {section_en_wcs}
-    {section_en_words}
+    {section_public}
+    {section_apertus}
   </main>
 </body>
 </html>

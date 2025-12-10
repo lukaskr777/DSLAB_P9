@@ -1,27 +1,23 @@
 """
-Model behavior & stability analysis for swiss-ai/apertus-70b-instruct
-based on LiteLLM_SpendLogs.
+Model behavior & stability analysis for swiss-ai/apertus-70b-instruct based on LiteLLM_SpendLogs.
 
-Focuses on behavioral proxies (verbosity, token composition, variability,
-retry patterns, and stability across workflows).
+Focuses on behavioral proxies 
+(verbosity, token composition, variability, retry patterns, and stability across workflows).
 
-Produces plots in figs/litellm_apertus70b_behavior, including:
+Produces plots in figs/litellm_apertus70b_behavior:
 
 - Completion length / verbosity distributions and daily quantiles
 - Prompt vs completion length scatter
 - Token-composition (prompt/completion ratios) distributions + drift over time
-- Variability (CV) of completion lengths across users
+- Variability (CV) of completion lengths across users (aggregated)
 - Inter-arrival / retry behavior within sessions or per user
-- Outliers and z-score drift in completion length
-- Correlations between completion length and latency (with sign)
+- Correlations between completion length, tokens, and latency (with sign)
 
 Requires helper utilities:
   - utility_scripts.file_utils
   - utility_scripts.plot_utils
   - utility_scripts.df_reading_utils
 """
-
-from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -30,7 +26,6 @@ from utility_scripts.file_utils import (
     PathLike,
     ensure_empty_dir,
     read_table,
-    save_csv,
 )
 from utility_scripts.plot_utils import (
     line,
@@ -51,11 +46,16 @@ from utility_scripts.df_reading_utils import (
 TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 
 
+def _add_log_suffix(fname: str) -> str:
+    if fname.lower().endswith(".png"):
+        return fname[:-4] + "_log.png"
+    return fname + "_log"
+
+
 def plot_apertus70b_behavior(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
     outdir: PathLike = "figs/litellm_apertus70b_behavior",
-    top: int = 20,
 ) -> None:
     out = ensure_empty_dir(outdir)
 
@@ -99,7 +99,7 @@ def plot_apertus70b_behavior(
     # ------------------------------------------------------------------
     ts = to_utc(df["startTime"])
     df["start_ts"] = ts
-    df["date"] = ts.dt.floor("D")  # type: ignore[attr-defined]
+    df["date"] = ts.dt.floor("D")
     df = df.dropna(subset=["date"])
     df = ensure_date_column(df, time_col="startTime", out_col="date", floor="D", dropna=True, sort=True)
 
@@ -112,16 +112,37 @@ def plot_apertus70b_behavior(
     # ------------------------------------------------------------------
     # 1. Verbosity & completion-length behavior
     # ------------------------------------------------------------------
-    # Distributions of prompt / completion lengths
+    # Distributions of prompt / completion lengths (linear + log-scale variants)
     for col, title, fname in [
         ("prompt_tokens", "Prompt tokens per request (Apertus 70B)", "hist_prompt_tokens.png"),
         ("completion_tokens", "Completion tokens per request (Apertus 70B)", "hist_completion_tokens.png"),
     ]:
         s = pd.to_numeric(df[col], errors="coerce").dropna()
         if not s.empty:
-            hist(s, title, col, "count", fname, out, bins=50)
+            # Linear scale
+            hist(
+                s,
+                title,
+                col,
+                "count",
+                fname,
+                out,
+                bins=50,
+                log_scale=False,
+            )
+            # Log scale
+            hist(
+                s,
+                title + " (log scale)",
+                col,
+                "count",
+                _add_log_suffix(fname),
+                out,
+                bins=50,
+                log_scale=True,
+            )
 
-    # Trimmed completion-token distribution to highlight typical region
+    # Trimmed completion-token distribution to highlight typical region (linear only)
     comp_trimmed = safe_quantile_cut(df["completion_tokens"], 0.999)
     if not comp_trimmed.empty:
         hist(
@@ -172,7 +193,7 @@ def plot_apertus70b_behavior(
         )
 
     # ------------------------------------------------------------------
-    # 2. Token-composition behavior & drift
+    # 2. Token-composition behavior & drift (prompt/completion ratios)
     # ------------------------------------------------------------------
     for col, title, fname in [
         ("prompt_ratio", "Prompt ratio = prompt/total (Apertus 70B)", "hist_prompt_ratio.png"),
@@ -181,7 +202,15 @@ def plot_apertus70b_behavior(
         if col in df.columns:
             s = df[col].replace([np.inf, -np.inf], np.nan).dropna()
             if not s.empty:
-                hist(s.clip(lower=0, upper=1), title, col, "count", fname, out, bins=50)
+                hist(
+                    s.clip(lower=0, upper=1),
+                    title,
+                    col,
+                    "count",
+                    fname,
+                    out,
+                    bins=50,
+                )
 
     # Daily averages and quantiles of ratios
     if "prompt_ratio" in df.columns or "completion_ratio" in df.columns:
@@ -242,7 +271,7 @@ def plot_apertus70b_behavior(
     # ------------------------------------------------------------------
     # 3. Variability across users
     # ------------------------------------------------------------------
-    def _variability_by_user(min_reqs: int = 30) -> None:
+    def _variability_by_user(min_reqs: int = 30) -> dict[str, float] | None:
         grp = (
             df.groupby("end_user", dropna=False)
             .agg(
@@ -255,36 +284,15 @@ def plot_apertus70b_behavior(
         grp = grp[grp["requests"] >= min_reqs]
         grp["cv_completion"] = safe_div(grp["std_completion"], grp["mean_completion"])
         if grp.empty:
-            return
+            return None
 
-        save_csv(grp, "user_completion_variability.csv", out)
+        return {
+            "n_users_ge_min_reqs": int(len(grp)),
+            "mean_cv_completion": float(grp["cv_completion"].mean()),
+            "p90_cv_completion": float(grp["cv_completion"].quantile(0.9)),
+        }
 
-        top_by_reqs = grp.sort_values("requests", ascending=False).head(top)
-        s_mean = top_by_reqs.set_index("end_user")["mean_completion"]
-        s_cv = top_by_reqs.set_index("end_user")["cv_completion"]
-
-        if not s_mean.empty:
-            bar(
-                s_mean,
-                f"Mean completion tokens by end_user (Top {len(s_mean)} by requests)",
-                "end_user",
-                "mean completion tokens",
-                "user_mean_completion_top.png",
-                out,
-                top=len(s_mean),
-            )
-        if not s_cv.empty:
-            bar(
-                s_cv,
-                f"CV of completion tokens by end_user (Top {len(s_cv)} by requests)",
-                "end_user",
-                "CV(completion length)",
-                "user_cv_completion_top.png",
-                out,
-                top=len(s_cv),
-            )
-
-    _variability_by_user(min_reqs=50)
+    variability_summary = _variability_by_user(min_reqs=50)
 
     # ------------------------------------------------------------------
     # 4. Retry / inter-arrival behavior (stability in interaction)
@@ -294,7 +302,7 @@ def plot_apertus70b_behavior(
 
     df = df.sort_values([group_key, "start_ts"], kind="stable")
     df["inter_arrival_s"] = (
-        df.groupby(group_key)["start_ts"].diff().dt.total_seconds()  # type: ignore[attr-defined]
+        df.groupby(group_key)["start_ts"].diff().dt.total_seconds()
     )
 
     inter = df["inter_arrival_s"].dropna()
@@ -310,62 +318,9 @@ def plot_apertus70b_behavior(
             bins=50,
         )
 
-    # Rapid retries: inter-arrival <= 30s
-    df["is_rapid_retry"] = df["inter_arrival_s"].le(30.0).fillna(False)
-    daily_retry = (
-        df.groupby("date", as_index=False)["is_rapid_retry"]
-        .mean()
-        .rename(columns={"is_rapid_retry": "rapid_retry_rate"})  # type: ignore[attr-defined]
-        .sort_values("date", kind="stable")
-    )
-    if not daily_retry.empty:
-        line(
-            "date",
-            "rapid_retry_rate",
-            daily_retry,
-            f"Rapid retry rate (inter-arrival ≤ 30s) per day (Apertus 70B, key={group_key})",
-            "date",
-            "rapid retry rate",
-            "daily_rapid_retry_rate.png",
-            out,
-        )
-        save_csv(daily_retry, "daily_rapid_retry_rate.csv", out)
 
     # ------------------------------------------------------------------
-    # 5. Outliers and anomalies in completion length
-    # ------------------------------------------------------------------
-    # Top 0.1% largest completions
-    n = max(1, int(len(df) * 0.001))
-    top_comp = df.nlargest(n, "completion_tokens")
-    save_csv(top_comp, "top_0p1pct_completion_tokens_rows.csv", out)
-
-    # Daily z-score of avg completion length
-    daily_comp = (
-        df.groupby("date", as_index=False)["completion_tokens"]
-        .mean()
-        .rename(columns={"completion_tokens": "avg_completion_tokens"})  # type: ignore[attr-defined]
-        .sort_values("date", kind="stable")
-    )
-    daily_comp["rolling_mean"] = daily_comp["avg_completion_tokens"].rolling(14, min_periods=7).mean()
-    daily_comp["rolling_std"] = daily_comp["avg_completion_tokens"].rolling(14, min_periods=7).std()
-    daily_comp["z"] = safe_div(
-        daily_comp["avg_completion_tokens"] - daily_comp["rolling_mean"],
-        daily_comp["rolling_std"],
-    )
-    line(
-        "date",
-        "z",
-        daily_comp,
-        "Daily z-score of avg completion tokens (window=14d, Apertus 70B)",
-        "date",
-        "z-score",
-        "daily_avg_completion_tokens_zscore.png",
-        out,
-    )
-    save_csv(daily_comp, "daily_avg_completion_tokens_zscore.csv", out)
-
-    # ------------------------------------------------------------------
-    # 6. Correlations involving completion behavior (signed)
+    # 5. Correlations involving completion behavior (signed) + extra plots
     # ------------------------------------------------------------------
     corr_cols = [
         "completion_tokens",
@@ -376,12 +331,12 @@ def plot_apertus70b_behavior(
         "gen_s",
     ]
     corr_df = df[corr_cols].replace([np.inf, -np.inf], np.nan).dropna()
+    corr_matrix = None
     if not corr_df.empty:
-        corr = corr_df.corr(method="pearson")
-        save_csv(corr, "correlations_completion_behavior.csv", out)
+        corr_matrix = corr_df.corr(method="pearson")
 
-        # Signed correlations with completion_tokens
-        v = corr["completion_tokens"].drop("completion_tokens", errors="ignore").sort_values(ascending=False)
+        # Signed correlations with completion_tokens as a bar plot
+        v = corr_matrix["completion_tokens"].drop("completion_tokens", errors="ignore").sort_values(ascending=False)
         if not v.empty:
             bar(
                 v,
@@ -393,15 +348,53 @@ def plot_apertus70b_behavior(
                 top=len(v),
             )
 
-    # Small summary table
-    summary = {
-        "n_rows": len(df),
-        "distinct_users": int(df["end_user"].nunique()),
-        "mean_completion_tokens": float(df["completion_tokens"].mean()),
-        "p95_completion_tokens": float(df["completion_tokens"].quantile(0.95)),
-        "rapid_retry_rate_overall": float(df["is_rapid_retry"].mean()),
-    }
-    save_csv(pd.DataFrame([summary]), "summary_behavior_overall.csv", out)
+        # Additional correlation scatter plots (trimmed to reduce outliers)
+        def _scatter_corr_pair(
+            x_col: str,
+            y_col: str,
+            title: str,
+            fname: str,
+            quantile: float = 0.99,
+        ) -> None:
+            x = safe_quantile_cut(corr_df[x_col], quantile)
+            y = safe_quantile_cut(corr_df[y_col], quantile)
+            idx = x.index.intersection(y.index)
+            if len(idx) == 0:
+                return
+            scatter(
+                corr_df.loc[idx, x_col],
+                corr_df.loc[idx, y_col],
+                title,
+                x_col.replace("_", " "),
+                y_col.replace("_", " "),
+                fname,
+                out,
+            )
+
+        _scatter_corr_pair(
+            "completion_tokens",
+            "latency_s",
+            "Completion tokens vs latency (trimmed, Apertus 70B)",
+            "scatter_completion_vs_latency.png",
+        )
+        _scatter_corr_pair(
+            "completion_tokens",
+            "ttft_s",
+            "Completion tokens vs TTFT (trimmed, Apertus 70B)",
+            "scatter_completion_vs_ttft.png",
+        )
+        _scatter_corr_pair(
+            "completion_tokens",
+            "gen_s",
+            "Completion tokens vs generation time (trimmed, Apertus 70B)",
+            "scatter_completion_vs_gen.png",
+        )
+        _scatter_corr_pair(
+            "prompt_tokens",
+            "completion_tokens",
+            "Prompt tokens vs completion tokens (trimmed, Apertus 70B)",
+            "scatter_prompt_vs_completion_corrview.png",
+        )
 
 
 if __name__ == "__main__":

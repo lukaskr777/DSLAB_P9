@@ -13,20 +13,14 @@ This script:
   degenerate solutions where a cluster is too small.
 - Runs PCA for visualization (if possible).
 
-Outputs in figs/apertus70b_user_clusters:
-    - apertus70b_user_stats.csv
+Outputs in figs/litellm_apertus70b_user_clusters:
     - apertus70b_feature_summary.csv  <-- per-feature stats for columns used in clustering
-    - apertus70b_user_clusters.csv
-    - apertus70b_cluster_profiles.csv
     - apertus70b_cluster_summary.json
-    - removed_extreme_users.csv (if any user was removed)
     - users_pca_clusters.png
     - cluster_sizes.png
     - cluster_profiles_bars.png
     - cluster_profile_<feature>.png
 """
-
-from __future__ import annotations
 
 import json
 from typing import Any
@@ -155,10 +149,9 @@ def _cluster_and_plot(
 ) -> tuple[np.ndarray, str, str]:
     """
     Fit KMeans with k in [2..min(9, n)], select by silhouette, add PCA for viz,
-    make cluster size + profile plots, write clustered CSVs.
+    make cluster size + profile plots.
 
-    Degenerate solutions with very small clusters (e.g. 1 heavy outlier)
-    are rejected: for a candidate k, we require
+    Degenerate solutions with very small clusters (e.g. 1 heavy outlier) are rejected: for a candidate k, we require
         min_cluster_size >= max(min_cluster_size_abs, min_cluster_fraction * n_samples)
 
     Returns (labels, k_str, sil_str).
@@ -169,7 +162,6 @@ def _cluster_and_plot(
     if n_samples < 2 or feats.shape[1] == 0:
         labels = np.full(len(stats_df), -1, dtype=int)
         stats_df["cluster_kmeans"] = labels
-        save_csv(stats_df, "apertus70b_user_clusters.csv", out_dir)
         save_text(
             json.dumps(
                 [{"cluster": -1, "n_users": int(len(stats_df)), "reason": "insufficient data"}],
@@ -225,12 +217,6 @@ def _cluster_and_plot(
         k_str, sil_str = str(best_k), f"{best_score:.3f}"
 
     stats_df["cluster_kmeans"] = labels
-
-    # Save clustered table (keep PCA columns if present)
-    keep_pca = [c for c in ("pca1", "pca2", "pca3") if c in stats_df.columns]
-    cols_to_save = [*stats_df.columns.intersection(["end_user"]), "cluster_kmeans", *keep_pca]
-    cols_to_save += [c for c in FEATURE_COLS if c in stats_df.columns]
-    save_csv(stats_df[cols_to_save], "apertus70b_user_clusters.csv", out_dir)
 
     # PCA scatter if ≥ 2 PCs
     if {"pca1", "pca2"}.issubset(stats_df.columns):
@@ -293,21 +279,29 @@ def _cluster_and_plot(
             out_dir,
         )
 
-    # Cluster profile table with mean/median of raw features
-    cols_for_table = [
-        c for c in FEATURE_COLS if c in stats_df.columns and pd.api.types.is_numeric_dtype(stats_df[c])
-    ]
-    if cols_for_table:
-        cluster_profiles = stats_df.groupby("cluster_kmeans", observed=True)[cols_for_table].agg(
-            ["mean", "median"]
-        )
-        save_csv(cluster_profiles, "apertus70b_cluster_profiles.csv", out_dir)
-    else:
-        save_text(
-            "No numeric feature columns available for cluster_profiles.",
-            "apertus70b_cluster_profiles.SKIPPED.txt",
-            out_dir,
-        )
+    # Additional raw-mean per-cluster bar plots (one per feature)
+    if len(np.unique(labels)) > 1:
+        numeric_cols2 = [
+            c for c in FEATURE_COLS
+            if c in stats_df.columns and pd.api.types.is_numeric_dtype(stats_df[c])
+        ]
+        if numeric_cols2:
+            raw_cluster_means = stats_df.groupby("cluster_kmeans", observed=True)[numeric_cols2].mean(
+                numeric_only=True
+            )
+            cats = sorted(pd.unique(labels).astype(int))
+            for feat in numeric_cols2:
+                series = raw_cluster_means[feat]
+                bar(
+                    series=series,
+                    title=f"{feat} — mean per cluster (Apertus-70B users)",
+                    xlabel="cluster",
+                    ylabel=f"mean({feat})",
+                    fname=f"cluster_profile_{feat}.png",
+                    outdir=out_dir,
+                    order=cats,
+                    sort_values=False,
+                )
 
     # Compact JSON summary (volume-oriented)
     def _safe_median(df_in: pd.DataFrame, col: str) -> float:
@@ -357,9 +351,6 @@ def remove_extreme_apertus70b_users(
 
     Returns:
         filtered_df, removed_users_df
-
-    You can reuse this function in other scripts that do user-level
-    statistics or clustering on Apertus-70B.
     """
     if "end_user" not in df.columns or "request_id" not in df.columns:
         return df, pd.DataFrame(columns=["end_user", "request_count"])
@@ -398,12 +389,11 @@ def remove_extreme_apertus70b_users(
 def analyze_apertus70b_user_clusters(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
-    outdir: PathLike = "figs/apertus70b_user_clusters",
+    outdir: PathLike = "figs/litellm_apertus70b_user_clusters",
 ) -> None:
     """
-    Compute per-user usage features for swiss-ai/apertus-70b-instruct,
-    remove extreme power users, then cluster users and visualize
-    cluster structure.
+    Compute per-user usage features for swiss-ai/apertus-70b-instruct, remove extreme power users, 
+    then cluster users and visualize cluster structure.
     """
     out = ensure_empty_dir(outdir)
 
@@ -482,8 +472,8 @@ def analyze_apertus70b_user_clusters(
 
     # Latency metrics
     lat = pd.DataFrame({"end_user": df["end_user"]})
-    lat["latency_s"] = (df["endTime"] - df["startTime"]).dt.total_seconds()  # type: ignore[attr-defined]
-    lat["completion_latency_s"] = (df["endTime"] - df["completionStartTime"]).dt.total_seconds()  # type: ignore[attr-defined]
+    lat["latency_s"] = (df["endTime"] - df["startTime"]).dt.total_seconds()
+    lat["completion_latency_s"] = (df["endTime"] - df["completionStartTime"]).dt.total_seconds()
     latency_agg = (
         lat.groupby("end_user", observed=True)
         .agg(
@@ -513,7 +503,7 @@ def analyze_apertus70b_user_clusters(
 
     # Weekday fraction (share of requests on Mon–Fri)
     weekday_frac = (
-        df.assign(_wd=df["startTime"].dt.weekday < 5)  # type: ignore[attr-defined]
+        df.assign(_wd=df["startTime"].dt.weekday < 5)
         .groupby("end_user", observed=True)["_wd"]
         .mean()
         .rename("weekday_fraction")
@@ -521,7 +511,7 @@ def analyze_apertus70b_user_clusters(
     )
 
     # Most active hour (0–23)
-    hours = df.assign(h=df["startTime"].dt.hour)  # type: ignore[attr-defined]
+    hours = df.assign(h=df["startTime"].dt.hour)
     most_active_hour = (
         hours.groupby(["end_user", "h"], observed=True)["request_id"]
         .count()
@@ -618,9 +608,6 @@ def analyze_apertus70b_user_clusters(
         if c in user_stats.columns:
             user_stats[c] = pd.to_numeric(user_stats[c], errors="coerce").fillna(0.0)
 
-    # Save raw user feature table
-    save_csv(user_stats, "apertus70b_user_stats.csv", out)
-
     # ----------------------------------------------------------------
     # Feature summary for columns actually used in clustering
     # ----------------------------------------------------------------
@@ -677,49 +664,48 @@ def analyze_apertus70b_user_clusters(
         title_prefix="Apertus-70B users",
     )
 
-    # Additional raw-mean per-cluster bar plots (one per feature)
-    if len(np.unique(labels_global)) > 1:
-        numeric_cols = [
-            c for c in FEATURE_COLS
-            if c in user_stats.columns and pd.api.types.is_numeric_dtype(user_stats[c])
-        ]
-        raw_cluster_means = (
-            user_stats.assign(cluster_kmeans=labels_global)
-            .groupby("cluster_kmeans", observed=True)[numeric_cols]
-            .mean(numeric_only=True)
-        )
-        cats = sorted(pd.unique(labels_global).astype(int))
-        for feat in numeric_cols:
-            series = raw_cluster_means[feat]
-            bar(
-                series=series,
-                title=f"{feat} — mean per cluster (Apertus-70B users)",
-                xlabel="cluster",
-                ylabel=f"mean({feat})",
-                fname=f"cluster_profile_{feat}.png",
-                outdir=out,
-                order=cats,
-                sort_values=False,
-            )
-
-    # Compact JSON summary (add k / silhouette)
+    # ----------------------------------------------------------------
+    # Enriched cluster summary with feature means (final JSON)
+    # ----------------------------------------------------------------
     summary_rows_json: list[dict[str, Any]] = []
     user_stats_with_labels = user_stats.copy()
     user_stats_with_labels["cluster_kmeans"] = labels_global if labels_global is not None else -1
+
+    numeric_feature_cols = [
+        c for c in FEATURE_COLS
+        if c in user_stats_with_labels.columns and pd.api.types.is_numeric_dtype(user_stats_with_labels[c])
+    ]
+
     for c_id, subc in user_stats_with_labels.groupby("cluster_kmeans", observed=True):
         cluster_id = _as_int(c_id)
-        summary_rows_json.append(
-            {
-                "cluster": cluster_id,
-                "n_users": int(len(subc)),
-                "median_requests": float(np.asarray(subc["request_count"].median()).item()) if len(subc) else 0.0,
-                "median_req_per_active_day": float(
-                    np.asarray(subc["requests_per_active_day"].median()).item()
-                )
-                if len(subc)
-                else 0.0,
-            }
-        )
+
+        # Basic stats
+        cluster_dict: dict[str, Any] = {
+            "cluster": cluster_id,
+            "n_users": int(len(subc)),
+            "median_requests": float(
+                np.asarray(pd.to_numeric(subc["request_count"], errors="coerce").median()).item()
+            )
+            if len(subc)
+            else 0.0,
+            "median_req_per_active_day": float(
+                np.asarray(pd.to_numeric(subc["requests_per_active_day"], errors="coerce").median()).item()
+            )
+            if len(subc)
+            else 0.0,
+        }
+
+        # Per-feature means
+        feature_means: dict[str, float] = {}
+        for feat in numeric_feature_cols:
+            s_feat = pd.to_numeric(subc[feat], errors="coerce")
+            if s_feat.dropna().empty:
+                feature_means[feat] = float("nan")
+            else:
+                feature_means[feat] = float(s_feat.mean())
+
+        cluster_dict["feature_means"] = feature_means
+        summary_rows_json.append(cluster_dict)
 
     summary_meta = {
         "k_selected": k_str_global,
@@ -735,5 +721,5 @@ if __name__ == "__main__":
     analyze_apertus70b_user_clusters(
         dir_name=DATA_DIR,
         dataset="litellm",
-        outdir=f"{FIGS_DIR}/apertus70b_user_clusters",
+        outdir=f"{FIGS_DIR}/litellm_apertus70b_user_clusters",
     )

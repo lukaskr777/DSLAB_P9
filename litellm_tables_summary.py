@@ -1,3 +1,18 @@
+"""
+Generate Markdown summaries of LiteLLM-style datasets by table.
+
+This script scans a dataset directory (e.g. ``data/litellm``) for subfolders named like ``public.<table_name>``, 
+loads each table once via ``utility_scripts.file_utils.read_table``, and writes a single Markdown file containing:
+
+- A table of contents listing all tables with their row x column counts (or an error tag if loading failed),
+- For each table, a section with:
+  - a schema summary 
+  (column name, dtype, non-null percentage, number of unique values, and a representative example value),
+  - a small top-left preview of the data as a Markdown table.
+
+When run, this script produces ``litellm_summary.md`` and ``openwebui_summary.md`` in the given ``data`` directory.
+"""
+
 from pathlib import Path
 from textwrap import shorten
 import math

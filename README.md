@@ -5,13 +5,15 @@ This project requires **Python 3.11**.
 ## Analysis of the data logs from Public AI Inference Utility
 
 Data should be placed in the {DATA_DIR} folder. All figures will be created in the {FIGS_DIR} folder.
-By default these are "data" and "figs", but you can change them when running the scripts.
+By default these are "data" and "figs", but these can be changed when running the scripts.
 
 Note: The datasets used in this project are confidential and therefore not included in the repository.
 
-- `table_summary.py` generates Markdown summary tables for the two datasets: `litellm` and `openwebui`.
-- `main_table_plots.py` produces several plots analyzing the main tables of the `litellm` dataset.
-- `users_usage.py` performs analyses of usage logs, including plotting tasks and clustering of end users of the Public AI LLM.
+- `litellm_tables_summary.py` generates Markdown summary tables for the two datasets: `litellm` and `openwebui`.
+- `apertus70b_usage.py` profiles usage and workload, including time-series of requests, tokens, distinct users, and temporal patterns (hour-of-day / weekday), and produces aggregate “whale” curves and activity-span plots.
+- `apertus70b_performance.py` analyzes performance and efficiency, producing daily latency/TTFT/generation statistics, token-per-request curves, latency distributions, and latency–throughput/token correlations.
+- `apertus70b_behavior.py` focuses on model behavior and stability, studying verbosity, prompt/completion length distributions, token-composition ratios, inter-arrival times/retries, and correlations between length and latency.
+- `apertus70b_user_clusters.py` builds per-user feature vectors (volume, efficiency, temporal behavior, latency, reliability), clusters users with KMeans (with automatic k-selection), and visualizes the resulting user segments in PCA space and via per-cluster feature profiles.
 
 ## Clustering of the Swiss AI Apertus SFT Mixture data
 

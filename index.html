@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Apertus analysis & clustering report – small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+      background-color: #f7f7f7;
+    }
+    header {
+      background-color: #222;
+      color: #fff;
+      padding: 1rem 2rem;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    header p {
+      margin: 0.3rem 0 0;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    nav {
+      background-color: #333;
+      padding: 0.5rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    nav ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    nav a {
+      color: #eee;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0.2rem 0.4rem;
+    }
+    nav a:hover {
+      background-color: #555;
+      border-radius: 4px;
+    }
+    main {
+      padding: 1.5rem 2rem 3rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: #fff;
+    }
+    section {
+      margin-bottom: 2.5rem;
+    }
+    section h2 {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 0.25rem;
+      margin-bottom: 0.75rem;
+    }
+    h3 {
+      margin-top: 1.5rem;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .gallery-item {
+      background-color: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 0.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .gallery-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .gallery-item figcaption {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 0.3rem;
+      word-break: break-word;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 0.75rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.3rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    tr:nth-child(even) td {
+      background-color: #fafafa;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    details summary {
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+    pre {
+      background: #111;
+      color: #eee;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    a.plot-link {
+      text-decoration: none;
+    }
+    a.plot-link img {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Apertus analysis & clustering report – small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise</h1>
+    <p>Public AI logs analysis for Apertus 70B and language-wise clustering of the apertus_sft_mixture dataset.</p>
+  </header>
+  
+<nav>
+  <ul>
+    <li><a href="#public-ai-analysis">Public AI logs – Apertus 70B</a></li>
+    <li><a href="#apertus-clustering">apertus_sft_mixture clustering</a></li>
+  </ul>
+</nav>
+
+  <main>
+    
+<section id="public-ai-analysis">
+  <h2>Public AI logs – Apertus 70B analysis</h2>
+  
+<p>
+This section summarizes the analysis of the <code>LiteLLM_SpendLogs</code> Public AI logs for the
+<code>swiss-ai/apertus-70b-instruct</code> model group. It aggregates the four Python analysis scripts:
+usage & workload, performance & efficiency, behavioral stability, and user-level clustering.
+</p>
+
+<h3>Usage & workload profiling</h3>
+<p>
+Time-series usage patterns, hourly/weekday behavior, request volume per session, and concentration of usage
+across end users ("whale" curves).
+</p>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/byhour_requests.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/byhour_requests.png" alt="byhour_requests" class="plot"></a>
+        <figcaption>byhour_requests</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/byhour_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/byhour_tokens.png" alt="byhour_tokens" class="plot"></a>
+        <figcaption>byhour_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/byweekday_requests.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/byweekday_requests.png" alt="byweekday_requests" class="plot"></a>
+        <figcaption>byweekday_requests</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/byweekday_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/byweekday_tokens.png" alt="byweekday_tokens" class="plot"></a>
+        <figcaption>byweekday_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/daily_distinct_users.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/daily_distinct_users.png" alt="daily_distinct_users" class="plot"></a>
+        <figcaption>daily_distinct_users</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/daily_requests.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/daily_requests.png" alt="daily_requests" class="plot"></a>
+        <figcaption>daily_requests</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/daily_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/daily_tokens.png" alt="daily_tokens" class="plot"></a>
+        <figcaption>daily_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/heatmap_weekday_hour_requests.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/heatmap_weekday_hour_requests.png" alt="heatmap_weekday_hour_requests" class="plot"></a>
+        <figcaption>heatmap_weekday_hour_requests</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/hist_requests_per_session.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/hist_requests_per_session.png" alt="hist_requests_per_session" class="plot"></a>
+        <figcaption>hist_requests_per_session</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/hist_requests_per_session_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/hist_requests_per_session_log.png" alt="hist_requests_per_session_log" class="plot"></a>
+        <figcaption>hist_requests_per_session_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/hist_user_active_days.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/hist_user_active_days.png" alt="hist_user_active_days" class="plot"></a>
+        <figcaption>hist_user_active_days</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/hist_user_active_days_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/hist_user_active_days_log.png" alt="hist_user_active_days_log" class="plot"></a>
+        <figcaption>hist_user_active_days_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/top_users_active_days.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/top_users_active_days.png" alt="top_users_active_days" class="plot"></a>
+        <figcaption>top_users_active_days</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/top_users_requests.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/top_users_requests.png" alt="top_users_requests" class="plot"></a>
+        <figcaption>top_users_requests</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_usage/whale_requests.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_usage/whale_requests.png" alt="whale_requests" class="plot"></a>
+        <figcaption>whale_requests</figcaption>
+      </figure>
+
+</div>
+
+<h3>Performance & efficiency</h3>
+<p>
+Daily averages and quantiles for latency, TTFT, generation time, tokens per request, success rate,
+and latency shares, plus trimmed latency/TTFT/gen distributions and latency-versus-load plots.
+Log-scale variants are included where appropriate.
+</p>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_avg_gen.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_avg_gen.png" alt="daily_avg_gen" class="plot"></a>
+        <figcaption>daily_avg_gen</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_avg_latency.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_avg_latency.png" alt="daily_avg_latency" class="plot"></a>
+        <figcaption>daily_avg_latency</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_avg_tokens_per_req.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_avg_tokens_per_req.png" alt="daily_avg_tokens_per_req" class="plot"></a>
+        <figcaption>daily_avg_tokens_per_req</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_avg_ttft.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_avg_ttft.png" alt="daily_avg_ttft" class="plot"></a>
+        <figcaption>daily_avg_ttft</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_gen_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_gen_quantiles.png" alt="daily_gen_quantiles" class="plot"></a>
+        <figcaption>daily_gen_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_gen_share.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_gen_share.png" alt="daily_gen_share" class="plot"></a>
+        <figcaption>daily_gen_share</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_gen_share_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_gen_share_quantiles.png" alt="daily_gen_share_quantiles" class="plot"></a>
+        <figcaption>daily_gen_share_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_latency_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_latency_quantiles.png" alt="daily_latency_quantiles" class="plot"></a>
+        <figcaption>daily_latency_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_success_rate.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_success_rate.png" alt="daily_success_rate" class="plot"></a>
+        <figcaption>daily_success_rate</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_tokens_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_tokens_quantiles.png" alt="daily_tokens_quantiles" class="plot"></a>
+        <figcaption>daily_tokens_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_ttft_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_ttft_quantiles.png" alt="daily_ttft_quantiles" class="plot"></a>
+        <figcaption>daily_ttft_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_ttft_share.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_ttft_share.png" alt="daily_ttft_share" class="plot"></a>
+        <figcaption>daily_ttft_share</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/daily_ttft_share_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/daily_ttft_share_quantiles.png" alt="daily_ttft_share_quantiles" class="plot"></a>
+        <figcaption>daily_ttft_share_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_gen_s_trimmed.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_gen_s_trimmed.png" alt="hist_gen_s_trimmed" class="plot"></a>
+        <figcaption>hist_gen_s_trimmed</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_gen_s_trimmed_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_gen_s_trimmed_log.png" alt="hist_gen_s_trimmed_log" class="plot"></a>
+        <figcaption>hist_gen_s_trimmed_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_gen_share_row.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_gen_share_row.png" alt="hist_gen_share_row" class="plot"></a>
+        <figcaption>hist_gen_share_row</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_latency_failure.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_latency_failure.png" alt="hist_latency_failure" class="plot"></a>
+        <figcaption>hist_latency_failure</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_latency_failure_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_latency_failure_log.png" alt="hist_latency_failure_log" class="plot"></a>
+        <figcaption>hist_latency_failure_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_latency_s_trimmed.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_latency_s_trimmed.png" alt="hist_latency_s_trimmed" class="plot"></a>
+        <figcaption>hist_latency_s_trimmed</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_latency_s_trimmed_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_latency_s_trimmed_log.png" alt="hist_latency_s_trimmed_log" class="plot"></a>
+        <figcaption>hist_latency_s_trimmed_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_latency_success.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_latency_success.png" alt="hist_latency_success" class="plot"></a>
+        <figcaption>hist_latency_success</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_latency_success_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_latency_success_log.png" alt="hist_latency_success_log" class="plot"></a>
+        <figcaption>hist_latency_success_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_ttft_s_trimmed.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_ttft_s_trimmed.png" alt="hist_ttft_s_trimmed" class="plot"></a>
+        <figcaption>hist_ttft_s_trimmed</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_ttft_s_trimmed_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_ttft_s_trimmed_log.png" alt="hist_ttft_s_trimmed_log" class="plot"></a>
+        <figcaption>hist_ttft_s_trimmed_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/hist_ttft_share_row.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/hist_ttft_share_row.png" alt="hist_ttft_share_row" class="plot"></a>
+        <figcaption>hist_ttft_share_row</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/latency_vs_rpm_binned.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/latency_vs_rpm_binned.png" alt="latency_vs_rpm_binned" class="plot"></a>
+        <figcaption>latency_vs_rpm_binned</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/latency_vs_tokens_binned.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/latency_vs_tokens_binned.png" alt="latency_vs_tokens_binned" class="plot"></a>
+        <figcaption>latency_vs_tokens_binned</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/latency_vs_tokens_binned_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/latency_vs_tokens_binned_quantiles.png" alt="latency_vs_tokens_binned_quantiles" class="plot"></a>
+        <figcaption>latency_vs_tokens_binned_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/scatter_latency_vs_rpm.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/scatter_latency_vs_rpm.png" alt="scatter_latency_vs_rpm" class="plot"></a>
+        <figcaption>scatter_latency_vs_rpm</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/scatter_latency_vs_tokens_trimmed.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/scatter_latency_vs_tokens_trimmed.png" alt="scatter_latency_vs_tokens_trimmed" class="plot"></a>
+        <figcaption>scatter_latency_vs_tokens_trimmed</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_performance/throughput_rpm.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_performance/throughput_rpm.png" alt="throughput_rpm" class="plot"></a>
+        <figcaption>throughput_rpm</figcaption>
+      </figure>
+
+</div>
+
+<h3>Behavior & stability</h3>
+<p>
+Prompt/completion length distributions (with log-scale variants), daily quantiles of completion length,
+prompt-vs-completion scatter, token-composition ratios (prompt/completion), inter-arrival behavior,
+and correlation plots between tokens and latency components.
+</p>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/corr_with_completion_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/corr_with_completion_tokens.png" alt="corr_with_completion_tokens" class="plot"></a>
+        <figcaption>corr_with_completion_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/daily_avg_completion_ratio.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/daily_avg_completion_ratio.png" alt="daily_avg_completion_ratio" class="plot"></a>
+        <figcaption>daily_avg_completion_ratio</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/daily_avg_prompt_ratio.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/daily_avg_prompt_ratio.png" alt="daily_avg_prompt_ratio" class="plot"></a>
+        <figcaption>daily_avg_prompt_ratio</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/daily_completion_ratio_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/daily_completion_ratio_quantiles.png" alt="daily_completion_ratio_quantiles" class="plot"></a>
+        <figcaption>daily_completion_ratio_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/daily_completion_tokens_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/daily_completion_tokens_quantiles.png" alt="daily_completion_tokens_quantiles" class="plot"></a>
+        <figcaption>daily_completion_tokens_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/daily_completion_tokens_quantiles_with_max.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/daily_completion_tokens_quantiles_with_max.png" alt="daily_completion_tokens_quantiles_with_max" class="plot"></a>
+        <figcaption>daily_completion_tokens_quantiles_with_max</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/daily_prompt_ratio_quantiles.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/daily_prompt_ratio_quantiles.png" alt="daily_prompt_ratio_quantiles" class="plot"></a>
+        <figcaption>daily_prompt_ratio_quantiles</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_completion_ratio.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_completion_ratio.png" alt="hist_completion_ratio" class="plot"></a>
+        <figcaption>hist_completion_ratio</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_completion_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_completion_tokens.png" alt="hist_completion_tokens" class="plot"></a>
+        <figcaption>hist_completion_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_completion_tokens_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_completion_tokens_log.png" alt="hist_completion_tokens_log" class="plot"></a>
+        <figcaption>hist_completion_tokens_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_completion_tokens_trimmed.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_completion_tokens_trimmed.png" alt="hist_completion_tokens_trimmed" class="plot"></a>
+        <figcaption>hist_completion_tokens_trimmed</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_prompt_ratio.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_prompt_ratio.png" alt="hist_prompt_ratio" class="plot"></a>
+        <figcaption>hist_prompt_ratio</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_prompt_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_prompt_tokens.png" alt="hist_prompt_tokens" class="plot"></a>
+        <figcaption>hist_prompt_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/hist_prompt_tokens_log.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/hist_prompt_tokens_log.png" alt="hist_prompt_tokens_log" class="plot"></a>
+        <figcaption>hist_prompt_tokens_log</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/scatter_completion_vs_gen.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/scatter_completion_vs_gen.png" alt="scatter_completion_vs_gen" class="plot"></a>
+        <figcaption>scatter_completion_vs_gen</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/scatter_completion_vs_latency.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/scatter_completion_vs_latency.png" alt="scatter_completion_vs_latency" class="plot"></a>
+        <figcaption>scatter_completion_vs_latency</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/scatter_completion_vs_ttft.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/scatter_completion_vs_ttft.png" alt="scatter_completion_vs_ttft" class="plot"></a>
+        <figcaption>scatter_completion_vs_ttft</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/scatter_prompt_vs_completion.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/scatter_prompt_vs_completion.png" alt="scatter_prompt_vs_completion" class="plot"></a>
+        <figcaption>scatter_prompt_vs_completion</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_behavior/scatter_prompt_vs_completion_corrview.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_behavior/scatter_prompt_vs_completion_corrview.png" alt="scatter_prompt_vs_completion_corrview" class="plot"></a>
+        <figcaption>scatter_prompt_vs_completion_corrview</figcaption>
+      </figure>
+
+</div>
+
+<h3>User-level clustering</h3>
+<p>
+Per-end-user feature vectors (volume, temporal behavior, token structure, latency, and success rate)
+are clustered with KMeans (model selection via silhouette + degeneracy checks). PCA is used for 2D
+visualization, and per-feature cluster profiles are shown.
+</p>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_active_days.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_active_days.png" alt="cluster_profile_active_days" class="plot"></a>
+        <figcaption>cluster_profile_active_days</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_activity_span_days.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_activity_span_days.png" alt="cluster_profile_activity_span_days" class="plot"></a>
+        <figcaption>cluster_profile_activity_span_days</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_avg_completion_tokens.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_avg_completion_tokens.png" alt="cluster_profile_avg_completion_tokens" class="plot"></a>
+        <figcaption>cluster_profile_avg_completion_tokens</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_avg_tokens_per_req.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_avg_tokens_per_req.png" alt="cluster_profile_avg_tokens_per_req" class="plot"></a>
+        <figcaption>cluster_profile_avg_tokens_per_req</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_completion_ratio_mean.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_completion_ratio_mean.png" alt="cluster_profile_completion_ratio_mean" class="plot"></a>
+        <figcaption>cluster_profile_completion_ratio_mean</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_latency_std_s.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_latency_std_s.png" alt="cluster_profile_latency_std_s" class="plot"></a>
+        <figcaption>cluster_profile_latency_std_s</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_mean_completion_latency_s.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_mean_completion_latency_s.png" alt="cluster_profile_mean_completion_latency_s" class="plot"></a>
+        <figcaption>cluster_profile_mean_completion_latency_s</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_mean_inter_req_s.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_mean_inter_req_s.png" alt="cluster_profile_mean_inter_req_s" class="plot"></a>
+        <figcaption>cluster_profile_mean_inter_req_s</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_mean_latency_s.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_mean_latency_s.png" alt="cluster_profile_mean_latency_s" class="plot"></a>
+        <figcaption>cluster_profile_mean_latency_s</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_most_active_hour.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_most_active_hour.png" alt="cluster_profile_most_active_hour" class="plot"></a>
+        <figcaption>cluster_profile_most_active_hour</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_n_unique_providers.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_n_unique_providers.png" alt="cluster_profile_n_unique_providers" class="plot"></a>
+        <figcaption>cluster_profile_n_unique_providers</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_n_unique_sessions.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_n_unique_sessions.png" alt="cluster_profile_n_unique_sessions" class="plot"></a>
+        <figcaption>cluster_profile_n_unique_sessions</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_prompt_to_completion_ratio_mean.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_prompt_to_completion_ratio_mean.png" alt="cluster_profile_prompt_to_completion_ratio_mean" class="plot"></a>
+        <figcaption>cluster_profile_prompt_to_completion_ratio_mean</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_request_count.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_request_count.png" alt="cluster_profile_request_count" class="plot"></a>
+        <figcaption>cluster_profile_request_count</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_requests_per_active_day.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_requests_per_active_day.png" alt="cluster_profile_requests_per_active_day" class="plot"></a>
+        <figcaption>cluster_profile_requests_per_active_day</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_success_rate.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_success_rate.png" alt="cluster_profile_success_rate" class="plot"></a>
+        <figcaption>cluster_profile_success_rate</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profile_weekday_fraction.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profile_weekday_fraction.png" alt="cluster_profile_weekday_fraction" class="plot"></a>
+        <figcaption>cluster_profile_weekday_fraction</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_profiles_bars.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_profiles_bars.png" alt="cluster_profiles_bars" class="plot"></a>
+        <figcaption>cluster_profiles_bars</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/cluster_sizes.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/cluster_sizes.png" alt="cluster_sizes" class="plot"></a>
+        <figcaption>cluster_sizes</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/litellm_apertus70b_user_clusters/users_pca_clusters.png" target="_blank" class="plot-link"><img src="figs/litellm_apertus70b_user_clusters/users_pca_clusters.png" alt="users_pca_clusters" class="plot"></a>
+        <figcaption>users_pca_clusters</figcaption>
+      </figure>
+
+</div>
+<p>Additional user-level clustering outputs:</p>
+<ul>
+<li>Cluster summary JSON: <em>not found</em></li>
+<li>Feature summary CSV: <a href="figs/litellm_apertus70b_user_clusters/apertus70b_feature_summary.csv">apertus70b_feature_summary.csv</a></li>
+</ul>
+
+</section>
+
+    
+<section id="apertus-clustering">
+  <h2>apertus_sft_mixture – language-wise clustering</h2>
+  
+<p>
+This section summarizes the language-wise clustering results for the
+<code>swiss-ai/apertus-sft-mixture</code> dataset. All figures and tables share the same
+<code>RUN_TAG = small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise</code> as the poster.
+</p>
+
+<h3>All languages – cluster plots</h3>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final.png" alt="scatter_dim1_dim2_cluster_langwise_final" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_final</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final_robust.png" alt="scatter_dim1_dim2_cluster_langwise_final_robust" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_final_robust</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan.png" alt="scatter_dim1_dim2_cluster_langwise_hdbscan" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_hdbscan</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan_robust.png" alt="scatter_dim1_dim2_cluster_langwise_hdbscan_robust" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_hdbscan_robust</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang.png" alt="scatter_dim1_dim2_lang" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_lang</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang_robust.png" alt="scatter_dim1_dim2_lang_robust" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_lang_robust</figcaption>
+      </figure>
+
+</div>
+<h4>Cluster sizes</h4>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_final.png" alt="cluster_sizes_cluster_langwise_final" class="plot"></a>
+        <figcaption>cluster_sizes_cluster_langwise_final</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_hdbscan.png" alt="cluster_sizes_cluster_langwise_hdbscan" class="plot"></a>
+        <figcaption>cluster_sizes_cluster_langwise_hdbscan</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_lang.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_lang.png" alt="cluster_sizes_lang" class="plot"></a>
+        <figcaption>cluster_sizes_lang</figcaption>
+      </figure>
+
+</div>
+<h4>Feature heatmaps</h4>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_final.png" alt="cluster_feature_means_heatmap_cluster_langwise_final" class="plot"></a>
+        <figcaption>cluster_feature_means_heatmap_cluster_langwise_final</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_hdbscan.png" alt="cluster_feature_means_heatmap_cluster_langwise_hdbscan" class="plot"></a>
+        <figcaption>cluster_feature_means_heatmap_cluster_langwise_hdbscan</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_lang.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_lang.png" alt="cluster_feature_means_heatmap_lang" class="plot"></a>
+        <figcaption>cluster_feature_means_heatmap_lang</figcaption>
+      </figure>
+
+</div>
+
+<h3>All languages – top words and representatives</h3>
+
+<h3>Top 5 words per final cluster (all languages)</h3>
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr><th>cluster</th><th>word1</th><th>count1</th><th>word2</th><th>count2</th><th>word3</th><th>count3</th><th>word4</th><th>count4</th><th>word5</th><th>count5</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>af</td><td>waard</td><td>482</td><td>syn</td><td>272</td><td>foar</td><td>260</td><td>troch</td><td>224</td><td>dy&#x27;t</td><td>167</td></tr><tr><td>ar</td><td>نعم،</td><td>167</td><td>الدولة</td><td>150</td><td>رغم</td><td>123</td><td>عبر</td><td>106</td><td>الحرب</td><td>105</td></tr><tr><td>bg</td><td>век</td><td>106</td><td>българия</td><td>90</td><td>част</td><td>86</td><td>какви</td><td>81</td><td>града</td><td>65</td></tr><tr><td>bn</td><td>হয়।</td><td>192</td><td>করে।</td><td>147</td><td>হিসেবে</td><td>123</td><td>কীভাবে</td><td>105</td><td>সালে</td><td>105</td></tr><tr><td>ca</td><td>coma</td><td>1157</td><td>foguèt</td><td>395</td><td>xxx</td><td>358</td><td>sco</td><td>275</td><td>sos</td><td>243</td></tr><tr><td>cs</td><td>roce</td><td>231</td><td>jaký</td><td>144</td><td>například</td><td>131</td><td>jaké</td><td>129</td><td>století</td><td>101</td></tr><tr><td>cy</td><td>mae</td><td>660</td><td>roedd</td><td>359</td><td>cael</td><td>298</td><td>wedi</td><td>283</td><td>o&#x27;r</td><td>248</td></tr><tr><td>da</td><td>hvilket</td><td>138</td><td>gennem</td><td>101</td><td>især</td><td>98</td><td>selvom</td><td>79</td><td>mellem</td><td>78</td></tr><tr><td>de_c0</td><td>rumantsch</td><td>370</td><td>übersetze</td><td>368</td><td>deutsche</td><td>367</td><td>liste</td><td>365</td><td>grischun-begriffen</td><td>365</td></tr><tr><td>de_c1</td><td>übersetze</td><td>288</td><td>liste</td><td>288</td><td>deutsche</td><td>153</td><td>sutsilvan-begriffen</td><td>152</td><td>deutscher</td><td>136</td></tr><tr><td>de_c10</td><td>geschichte</td><td>795</td><td>welt</td><td>383</td><td>figur</td><td>280</td><td>leser</td><td>246</td><td>könnten</td><td>231</td></tr><tr><td>de_c2</td><td>grischun</td><td>230</td><td>übersetze</td><td>224</td><td>liste</td><td>224</td><td>deutscher</td><td>224</td><td>begriffe</td><td>224</td></tr><tr><td>de_c3</td><td>liste</td><td>614</td><td>übersetze</td><td>599</td><td>deutscher</td><td>395</td><td>begriffe</td><td>392</td><td>deutsche</td><td>210</td></tr><tr><td>de_c4</td><td>satz</td><td>242</td><td>sag</td><td>234</td><td>idiom</td><td>234</td><td>grischun</td><td>79</td><td>rumantsch</td><td>74</td></tr><tr><td>de_c5</td><td>liste</td><td>493</td><td>python</td><td>468</td><td>funktion</td><td>415</td><td>return</td><td>411</td><td>code</td><td>300</td></tr><tr><td>de_c6</td><td>vun</td><td>2115</td><td>huet</td><td>1188</td><td>ass</td><td>940</td><td>isch</td><td>784</td><td>vum</td><td>624</td></tr><tr><td>de_c7</td><td>wichtig</td><td>137</td><td>auswirkungen</td><td>133</td><td>rolle</td><td>133</td><td>führen</td><td>118</td><td>wasser</td><td>112</td></tr><tr><td>de_c8</td><td>antwort</td><td>636</td><td>daten</td><td>607</td><td>wichtig</td><td>405</td><td>unternehmen</td><td>396</td><td>helfen</td><td>388</td></tr><tr><td>de_c9</td><td>könnten</td><td>246</td><td>erstellen</td><td>186</td><td>kunden</td><td>179</td><td>sicher</td><td>155</td><td>stellen</td><td>148</td></tr><tr><td>de_noise</td><td>vun</td><td>483</td><td>helfen</td><td>380</td><td>funktion</td><td>376</td><td>reise</td><td>349</td><td>zahlen</td><td>342</td></tr><tr><td>el</td><td>είναι</td><td>124</td><td>μπορεί</td><td>68</td><td>όπως</td><td>55</td><td>ή</td><td>49</td><td>ότι</td><td>40</td></tr><tr><td>en_c0</td><td>key</td><td>5290</td><td>input</td><td>4870</td><td>provide</td><td>4015</td><td>person</td><td>3446</td><td>focusing</td><td>3344</td></tr><tr><td>en_c1</td><td>project</td><td>3181</td><td>input</td><td>2822</td><td>hope</td><td>2712</td><td>rewrite</td><td>2586</td><td>re-writing</td><td>2567</td></tr><tr><td>en_c10</td><td>detailed</td><td>973</td><td>thinking</td><td>914</td><td>provide</td><td>882</td><td>respectful</td><td>705</td><td>understanding</td><td>603</td></tr><tr><td>en_c11</td><td>cells</td><td>1082</td><td>blood</td><td>661</td><td>cell</td><td>618</td><td>dna</td><td>567</td><td>body</td><td>524</td></tr><tr><td>en_c12</td><td>reaction</td><td>5106</td><td>bond</td><td>3742</td><td>carbon</td><td>3632</td><td>acid</td><td>3608</td><td>times</td><td>3347</td></tr><tr><td>en_c13</td><td>voltage</td><td>2266</td><td>current</td><td>1541</td><td>power</td><td>1298</td><td>circuit</td><td>1254</td><td>output</td><td>847</td></tr><tr><td>en_c14</td><td>energy</td><td>5172</td><td>field</td><td>4135</td><td>quantum</td><td>3808</td><td>time</td><td>3483</td><td>e.g</td><td>3381</td></tr><tr><td>en_c15</td><td>sentence</td><td>5643</td><td>writing</td><td>4326</td><td>concise</td><td>2483</td><td>language</td><td>2340</td><td>clarity</td><td>2338</td></tr><tr><td>en_c16</td><td>job</td><td>4836</td><td>career</td><td>4106</td><td>time</td><td>4000</td><td>skills</td><td>3219</td><td>company</td><td>2851</td></tr><tr><td>en_c17</td><td>probability</td><td>5159</td><td>game</td><td>3249</td><td>cards</td><td>2654</td><td>player</td><td>2650</td><td>step</td><td>2291</td></tr><tr><td>en_c18</td><td>data</td><td>27280</td><td>analysis</td><td>7624</td><td>variables</td><td>6252</td><td>values</td><td>4910</td><td>standard</td><td>4809</td></tr><tr><td>en_c19</td><td>times</td><td>12321</td><td>calculate</td><td>10200</td><td>hours</td><td>7902</td><td>time</td><td>7280</td><td>books</td><td>6257</td></tr><tr><td>en_c2</td><td>function</td><td>28431</td><td>equation</td><td>25862</td><td>sum</td><td>19433</td><td>f(x</td><td>16374</td><td>set</td><td>15934</td></tr><tr><td>en_c20</td><td>return</td><td>17333</td><td>function</td><td>14167</td><td>python</td><td>13589</td><td>list</td><td>12700</td><td>def</td><td>9647</td></tr><tr><td>en_c21</td><td>code</td><td>4436</td><td>python</td><td>3227</td><td>return</td><td>2940</td><td>function</td><td>2903</td><td>class</td><td>2870</td></tr><tr><td>en_c22</td><td>string</td><td>7450</td><td>return</td><td>6947</td><td>function</td><td>6877</td><td>python</td><td>6359</td><td>def</td><td>4268</td></tr><tr><td>en_c3</td><td>triangle</td><td>15715</td><td>angle</td><td>11663</td><td>circle</td><td>10091</td><td>equation</td><td>8842</td><td>distance</td><td>6616</td></tr><tr><td>en_c4</td><td>step</td><td>83966</td><td>equation</td><td>28665</td><td>answer</td><td>28325</td><td>solve</td><td>16482</td><td>cdot</td><td>12990</td></tr><tr><td>en_c5</td><td>access</td><td>4156</td><td>helpful</td><td>3965</td><td>questions</td><td>3377</td><td>tools</td><td>3214</td><td>answer</td><td>3129</td></tr><tr><td>en_c6</td><td>tha</td><td>1325</td><td>ann</td><td>1067</td><td>a’</td><td>641</td><td>bha</td><td>526</td><td>aig</td><td>375</td></tr><tr><td>en_c7</td><td>probability</td><td>3370</td><td>distribution</td><td>1479</td><td>random</td><td>1313</td><td>function</td><td>901</td><td>variable</td><td>574</td></tr><tr><td>en_c8</td><td>story</td><td>19130</td><td>character</td><td>16132</td><td>create</td><td>13700</td><td>characters</td><td>10773</td><td>time</td><td>8790</td></tr><tr><td>en_c9</td><td>create</td><td>9007</td><td>community</td><td>4757</td><td>social</td><td>4522</td><td>business</td><td>4392</td><td>product</td><td>4249</td></tr><tr><td>en_noise</td><td>return</td><td>42097</td><td>function</td><td>31861</td><td>def</td><td>30695</td><td>python</td><td>29766</td><td>time</td><td>29193</td></tr><tr><td>es_c0</td><td>python</td><td>892</td><td>código</td><td>780</td><td>función</td><td>644</td><td>lista</td><td>635</td><td>datos</td><td>506</td></tr><tr><td>es_c1</td><td>datos</td><td>1789</td><td>importante</td><td>1719</td><td>historia</td><td>1704</td><td>vida</td><td>1565</td><td>puedes</td><td>1245</td></tr><tr><td>es_noise</td><td>función</td><td>402</td><td>números</td><td>266</td><td>datos</td><td>236</td><td>millones</td><td>234</td><td>punto</td><td>225</td></tr><tr><td>et_c0</td><td>lɛ</td><td>261</td><td>minn</td><td>203</td><td>ta’</td><td>159</td><td>bħala</td><td>138</td><td>kien</td><td>136</td></tr><tr><td>et_c1</td><td>aastal</td><td>279</td><td>kuidas</td><td>234</td><td>miks</td><td>215</td><td>ning</td><td>182</td><td>olid</td><td>163</td></tr><tr><td>et_noise</td><td>näiteks</td><td>134</td><td>või</td><td>115</td><td>seotud</td><td>66</td><td>kuidas</td><td>62</td><td>välja</td><td>59</td></tr><tr><td>fa</td><td>چۆن</td><td>103</td><td>سال</td><td>97</td><td>شهر</td><td>87</td><td>کوردی</td><td>82</td><td>momentum</td><td>81</td></tr><tr><td>fi</td><td>vuonna</td><td>269</td><td>suomen</td><td>169</td><td>osa</td><td>92</td><td>johti</td><td>79</td><td>vaikuttaa</td><td>71</td></tr><tr><td>fr_c0</td><td>fuit</td><td>112</td><td>question</td><td>94</td><td>document</td><td>65</td><td>natus</td><td>62</td><td>vie</td><td>58</td></tr><tr><td>fr_c1</td><td>python</td><td>711</td><td>fonction</td><td>647</td><td>return</td><td>606</td><td>code</td><td>589</td><td>def</td><td>499</td></tr><tr><td>fr_c2</td><td>données</td><td>1760</td><td>également</td><td>1502</td><td>vie</td><td>1115</td><td>temps</td><td>1089</td><td>exemple</td><td>1052</td></tr><tr><td>fr_noise</td><td>fonction</td><td>548</td><td>nombre</td><td>498</td><td>également</td><td>453</td><td>nombres</td><td>395</td><td>exemple</td><td>386</td></tr><tr><td>he</td><td>די</td><td>1815</td><td>און</td><td>1604</td><td>איז</td><td>1547</td><td>א</td><td>1219</td><td>פון</td><td>1062</td></tr><tr><td>hi</td><td>है।</td><td>1422</td><td>हैं।</td><td>642</td><td>क्या</td><td>399</td><td>जाता</td><td>394</td><td>कारण</td><td>266</td></tr><tr><td>hr</td><td>godine</td><td>684</td><td>zašto</td><td>410</td><td>poput</td><td>316</td><td>zbog</td><td>281</td><td>tijekom</td><td>267</td></tr><tr><td>hu</td><td>fontos</td><td>257</td><td>szerepet</td><td>150</td><td>magyar</td><td>120</td><td>különösen</td><td>111</td><td>jelentős</td><td>91</td></tr><tr><td>id_c0</td><td>awọn</td><td>509</td><td>daa</td><td>426</td><td>nyɛla</td><td>235</td><td>kɛ</td><td>191</td><td>sing</td><td>176</td></tr><tr><td>id_c1</td><td>euskal</td><td>62</td><td>eragin</td><td>45</td><td>daude</td><td>33</td><td>hasi</td><td>33</td><td>gisa</td><td>31</td></tr><tr><td>id_noise</td><td>û</td><td>83</td><td>sesuai</td><td>57</td><td>kalimat</td><td>57</td><td>eragin</td><td>52</td><td>wayang</td><td>52</td></tr><tr><td>it_c0</td><td>python</td><td>790</td><td>codice</td><td>649</td><td>funzione</td><td>624</td><td>numero</td><td>508</td><td>lista</td><td>471</td></tr><tr><td>it_c1</td><td>dati</td><td>1128</td><td>lavoro</td><td>537</td><td>possono</td><td>344</td><td>importante</td><td>301</td><td>migliorare</td><td>260</td></tr><tr><td>it_c2</td><td>clienti</td><td>361</td><td>creare</td><td>319</td><td>marketing</td><td>235</td><td>prodotto</td><td>203</td><td>possono</td><td>201</td></tr><tr><td>it_c3</td><td>storia</td><td>1025</td><td>personaggio</td><td>580</td><td>personaggi</td><td>497</td><td>creare</td><td>474</td><td>possono</td><td>337</td></tr><tr><td>it_c4</td><td>idiom</td><td>253</td><td>sag</td><td>252</td><td>satz</td><td>252</td><td>igl</td><td>87</td><td>surmiran</td><td>54</td></tr><tr><td>it_c5</td><td>possono</td><td>241</td><td>importante</td><td>187</td><td>causa</td><td>104</td><td>dieta</td><td>103</td><td>sintomi</td><td>102</td></tr><tr><td>it_c6</td><td>ła</td><td>2870</td><td>l&#x27;è</td><td>764</td><td>comu</td><td>606</td><td>dô</td><td>586</td><td>dâ</td><td>543</td></tr><tr><td>it_noise</td><td>debbie</td><td>1539</td><td>andrey</td><td>1456</td><td>possono</td><td>783</td><td>numero</td><td>649</td><td>funzione</td><td>641</td></tr><tr><td>ja</td><td>ホテル</td><td>419</td><td>名前：</td><td>32</td><td>生年月日：</td><td>32</td><td>身長：</td><td>32</td><td>体重：</td><td>32</td></tr><tr><td>ko</td><td>치료</td><td>1098</td><td>수</td><td>1029</td><td>있습니다</td><td>675</td><td>있는</td><td>340</td><td>통해</td><td>265</td></tr><tr><td>lt</td><td>buvo</td><td>897</td><td>yra</td><td>519</td><td>iš</td><td>305</td><td>į</td><td>293</td><td>metais</td><td>276</td></tr><tr><td>lv</td><td>gadā</td><td>264</td><td>piemēram</td><td>246</td><td>kāpēc</td><td>232</td><td>tās</td><td>222</td><td>viņš</td><td>144</td></tr><tr><td>mk</td><td>од</td><td>1043</td><td>како</td><td>689</td><td>што</td><td>563</td><td>ја</td><td>367</td><td>дека</td><td>224</td></tr><tr><td>ml</td><td>താരതമ്യം</td><td>3</td><td>കമ്മീഷണർ</td><td>2</td><td>പറഞ്ഞു</td><td>2</td><td>ചട്ടക്കൂട്</td><td>2</td><td>ഖണ്ഡിക</td><td>2</td></tr><tr><td>ne</td><td>ଏବଂ</td><td>13</td><td>ପ୍ରେମ</td><td>11</td><td>ଏହା</td><td>10</td><td>र</td><td>6</td><td>काठमाडौ</td><td>5</td></tr><tr><td>nl_c0</td><td>zien</td><td>119</td><td>waardoor</td><td>85</td><td>rol</td><td>82</td><td>grote</td><td>72</td><td>gebruikt</td><td>70</td></tr><tr><td>nl_c1</td><td>‘t</td><td>449</td><td>zien</td><td>212</td><td>‘n</td><td>196</td><td>waard</td><td>151</td><td>zier</td><td>120</td></tr><tr><td>nl_c2</td><td>yezh</td><td>116</td><td>implijet</td><td>110</td><td>brezhoneg</td><td>89</td><td>breizh</td><td>87</td><td>graet</td><td>82</td></tr><tr><td>nl_noise</td><td>zien</td><td>507</td><td>‘t</td><td>502</td><td>‘n</td><td>224</td><td>rol</td><td>200</td><td>kinderen</td><td>186</td></tr><tr><td>no</td><td>við</td><td>859</td><td>sum</td><td>743</td><td>hann</td><td>673</td><td>eru</td><td>668</td><td>frá</td><td>464</td></tr><tr><td>pa</td><td>ସ</td><td>9</td><td>ସସସସସସସ</td><td>5</td><td>ସସସସସ</td><td>4</td><td>ਵੀ</td><td>4</td><td>ਨਾ</td><td>4</td></tr><tr><td>pl</td><td>wieku</td><td>191</td><td>dzieci</td><td>158</td><td>polski</td><td>141</td><td>ôd</td><td>138</td><td>rolę</td><td>134</td></tr><tr><td>pt_c0</td><td>disso</td><td>230</td><td>água</td><td>194</td><td>importante</td><td>172</td><td>saúde</td><td>171</td><td>alimentos</td><td>158</td></tr><tr><td>pt_c1</td><td>python</td><td>876</td><td>função</td><td>701</td><td>código</td><td>604</td><td>lista</td><td>529</td><td>return</td><td>360</td></tr><tr><td>pt_c2</td><td>história</td><td>1084</td><td>criar</td><td>819</td><td>personagem</td><td>603</td><td>mundo</td><td>585</td><td>personagens</td><td>537</td></tr><tr><td>pt_c3</td><td>dados</td><td>1353</td><td>análise</td><td>466</td><td>importante</td><td>386</td><td>empresa</td><td>379</td><td>ajudar</td><td>341</td></tr><tr><td>pt_noise</td><td>função</td><td>742</td><td>disso</td><td>601</td><td>importante</td><td>506</td><td>dados</td><td>502</td><td>números</td><td>450</td></tr><tr><td>ro</td><td>și</td><td>3352</td><td>precum</td><td>207</td><td>s-a</td><td>135</td><td>deși</td><td>128</td><td>timpul</td><td>104</td></tr><tr><td>ru</td><td>maria</td><td>1301</td><td>эд</td><td>839</td><td>данных</td><td>806</td><td>страница</td><td>743</td><td>cut</td><td>713</td></tr><tr><td>sk</td><td>napríklad</td><td>114</td><td>počas</td><td>103</td><td>vplyv</td><td>94</td><td>vrátane</td><td>90</td><td>napriek</td><td>90</td></tr><tr><td>sl</td><td>leta</td><td>330</td><td>zaradi</td><td>162</td><td>še</td><td>115</td><td>čeprav</td><td>104</td><td>pomeni</td><td>82</td></tr><tr><td>so</td><td>daa</td><td>276</td><td>waxay</td><td>199</td><td>y^2</td><td>169</td><td>2(x^2</td><td>153</td><td>2(xu</td><td>150</td></tr><tr><td>sq</td><td>të</td><td>3112</td><td>dhe</td><td>1483</td><td>një</td><td>1057</td><td>për</td><td>670</td><td>nga</td><td>601</td></tr><tr><td>sv</td><td>slott</td><td>451</td><td>exempel</td><td>279</td><td>använda</td><td>246</td><td>särskilt</td><td>221</td><td>sverige</td><td>199</td></tr><tr><td>sw</td><td>lɛ</td><td>1579</td><td>kɛ</td><td>810</td><td>mli</td><td>532</td><td>nɔ</td><td>484</td><td>yɛ</td><td>385</td></tr><tr><td>th</td><td>ๆ</td><td>6</td><td>set</td><td>4</td><td>จังหวัดนครนายก</td><td>4</td><td>อย่างไรก็ตาม</td><td>3</td><td>ฉันเป็นโมเดลภาษา</td><td>2</td></tr><tr><td>tl</td><td>kendo</td><td>608</td><td>gik</td><td>593</td><td>kod</td><td>499</td><td>nigi</td><td>331</td><td>nyalo</td><td>330</td></tr><tr><td>tr</td><td>û</td><td>968</td><td>büyük</td><td>299</td><td>önemli</td><td>298</td><td>şekilde</td><td>265</td><td>özellikle</td><td>261</td></tr><tr><td>uk</td><td>і</td><td>2821</td><td>ў</td><td>807</td><td>які</td><td>513</td><td>што</td><td>406</td><td>його</td><td>356</td></tr><tr><td>unknown</td><td>ኣብ</td><td>131</td><td>እና</td><td>86</td><td>እቲ</td><td>42</td><td>ናይ</td><td>41</td><td>ንዓኻ</td><td>39</td></tr><tr><td>ur</td><td>یەکەم</td><td>3</td><td>کوردی</td><td>3</td><td>باتیفا</td><td>2</td><td>ھەروەھا</td><td>2</td><td>دیکەش</td><td>2</td></tr><tr><td>vi</td><td>awọn</td><td>331</td><td>ọ</td><td>261</td><td>nke</td><td>249</td><td>dị</td><td>212</td><td>bụ</td><td>168</td></tr><tr><td>zh-cn</td><td>结论</td><td>92</td><td>python</td><td>76</td><td>time</td><td>69</td><td>platform</td><td>65</td><td>json</td><td>64</td></tr><tr><td>zh-tw</td><td>detailed</td><td>3</td><td>thinking</td><td>3</td><td>error</td><td>3</td><td>《戰城南》的死者與《大橋墓下》的「征夫」，處境如何？試分述之。</td><td>2</td><td>《戰城南》提及烏鴉，《大橋墓下》提及「樹木」、「草根」，用意何在？試分別加以析述</td><td>2</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>No representatives file found at figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_representatives_cluster_langwise_final.txt.</p>
+
+
+<h3>English-only – cluster plots</h3>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final.png" alt="scatter_dim1_dim2_cluster_langwise_final" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_final</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final_robust.png" alt="scatter_dim1_dim2_cluster_langwise_final_robust" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_final_robust</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan.png" alt="scatter_dim1_dim2_cluster_langwise_hdbscan" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_hdbscan</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan_robust.png" alt="scatter_dim1_dim2_cluster_langwise_hdbscan_robust" class="plot"></a>
+        <figcaption>scatter_dim1_dim2_cluster_langwise_hdbscan_robust</figcaption>
+      </figure>
+
+</div>
+<h4>Cluster sizes (English only)</h4>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_final.png" alt="cluster_sizes_cluster_langwise_final" class="plot"></a>
+        <figcaption>cluster_sizes_cluster_langwise_final</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_hdbscan.png" alt="cluster_sizes_cluster_langwise_hdbscan" class="plot"></a>
+        <figcaption>cluster_sizes_cluster_langwise_hdbscan</figcaption>
+      </figure>
+
+</div>
+<h4>Feature heatmaps (English only)</h4>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_final.png" alt="cluster_feature_means_heatmap_cluster_langwise_final" class="plot"></a>
+        <figcaption>cluster_feature_means_heatmap_cluster_langwise_final</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_hdbscan.png" alt="cluster_feature_means_heatmap_cluster_langwise_hdbscan" class="plot"></a>
+        <figcaption>cluster_feature_means_heatmap_cluster_langwise_hdbscan</figcaption>
+      </figure>
+
+</div>
+
+<h3>English-only – word clouds</h3>
+<div class="gallery">
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c0_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c0_wordcloud.png" alt="cluster_en_c0_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c0_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c10_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c10_wordcloud.png" alt="cluster_en_c10_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c10_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c11_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c11_wordcloud.png" alt="cluster_en_c11_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c11_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c12_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c12_wordcloud.png" alt="cluster_en_c12_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c12_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c13_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c13_wordcloud.png" alt="cluster_en_c13_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c13_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c14_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c14_wordcloud.png" alt="cluster_en_c14_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c14_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c15_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c15_wordcloud.png" alt="cluster_en_c15_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c15_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c16_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c16_wordcloud.png" alt="cluster_en_c16_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c16_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c17_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c17_wordcloud.png" alt="cluster_en_c17_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c17_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c18_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c18_wordcloud.png" alt="cluster_en_c18_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c18_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c19_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c19_wordcloud.png" alt="cluster_en_c19_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c19_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c1_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c1_wordcloud.png" alt="cluster_en_c1_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c1_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c20_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c20_wordcloud.png" alt="cluster_en_c20_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c20_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c21_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c21_wordcloud.png" alt="cluster_en_c21_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c21_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c22_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c22_wordcloud.png" alt="cluster_en_c22_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c22_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c2_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c2_wordcloud.png" alt="cluster_en_c2_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c2_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c3_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c3_wordcloud.png" alt="cluster_en_c3_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c3_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c4_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c4_wordcloud.png" alt="cluster_en_c4_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c4_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c5_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c5_wordcloud.png" alt="cluster_en_c5_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c5_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c6_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c6_wordcloud.png" alt="cluster_en_c6_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c6_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c7_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c7_wordcloud.png" alt="cluster_en_c7_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c7_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c8_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c8_wordcloud.png" alt="cluster_en_c8_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c8_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c9_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c9_wordcloud.png" alt="cluster_en_c9_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_c9_wordcloud</figcaption>
+      </figure>
+
+
+      <figure class="gallery-item">
+        <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_noise_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_noise_wordcloud.png" alt="cluster_en_noise_wordcloud" class="plot"></a>
+        <figcaption>cluster_en_noise_wordcloud</figcaption>
+      </figure>
+
+</div>
+
+<h3>English-only – top words and representatives</h3>
+
+<h3>Top 5 words per final cluster (English only)</h3>
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr><th>cluster</th><th>word1</th><th>count1</th><th>word2</th><th>count2</th><th>word3</th><th>count3</th><th>word4</th><th>count4</th><th>word5</th><th>count5</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>en_c0</td><td>key</td><td>5290</td><td>input</td><td>4870</td><td>provide</td><td>4015</td><td>person</td><td>3446</td><td>focusing</td><td>3344</td></tr><tr><td>en_c1</td><td>project</td><td>3181</td><td>input</td><td>2822</td><td>hope</td><td>2712</td><td>rewrite</td><td>2586</td><td>re-writing</td><td>2567</td></tr><tr><td>en_c10</td><td>detailed</td><td>973</td><td>thinking</td><td>914</td><td>provide</td><td>882</td><td>respectful</td><td>705</td><td>understanding</td><td>603</td></tr><tr><td>en_c11</td><td>cells</td><td>1082</td><td>blood</td><td>661</td><td>cell</td><td>618</td><td>dna</td><td>567</td><td>body</td><td>524</td></tr><tr><td>en_c12</td><td>reaction</td><td>5106</td><td>bond</td><td>3742</td><td>carbon</td><td>3632</td><td>acid</td><td>3608</td><td>times</td><td>3347</td></tr><tr><td>en_c13</td><td>voltage</td><td>2266</td><td>current</td><td>1541</td><td>power</td><td>1298</td><td>circuit</td><td>1254</td><td>output</td><td>847</td></tr><tr><td>en_c14</td><td>energy</td><td>5172</td><td>field</td><td>4135</td><td>quantum</td><td>3808</td><td>time</td><td>3483</td><td>e.g</td><td>3381</td></tr><tr><td>en_c15</td><td>sentence</td><td>5643</td><td>writing</td><td>4326</td><td>concise</td><td>2483</td><td>language</td><td>2340</td><td>clarity</td><td>2338</td></tr><tr><td>en_c16</td><td>job</td><td>4836</td><td>career</td><td>4106</td><td>time</td><td>4000</td><td>skills</td><td>3219</td><td>company</td><td>2851</td></tr><tr><td>en_c17</td><td>probability</td><td>5159</td><td>game</td><td>3249</td><td>cards</td><td>2654</td><td>player</td><td>2650</td><td>step</td><td>2291</td></tr><tr><td>en_c18</td><td>data</td><td>27280</td><td>analysis</td><td>7624</td><td>variables</td><td>6252</td><td>values</td><td>4910</td><td>standard</td><td>4809</td></tr><tr><td>en_c19</td><td>times</td><td>12321</td><td>calculate</td><td>10200</td><td>hours</td><td>7902</td><td>time</td><td>7280</td><td>books</td><td>6257</td></tr><tr><td>en_c2</td><td>function</td><td>28431</td><td>equation</td><td>25862</td><td>sum</td><td>19433</td><td>f(x</td><td>16374</td><td>set</td><td>15934</td></tr><tr><td>en_c20</td><td>return</td><td>17333</td><td>function</td><td>14167</td><td>python</td><td>13589</td><td>list</td><td>12700</td><td>def</td><td>9647</td></tr><tr><td>en_c21</td><td>code</td><td>4436</td><td>python</td><td>3227</td><td>return</td><td>2940</td><td>function</td><td>2903</td><td>class</td><td>2870</td></tr><tr><td>en_c22</td><td>string</td><td>7450</td><td>return</td><td>6947</td><td>function</td><td>6877</td><td>python</td><td>6359</td><td>def</td><td>4268</td></tr><tr><td>en_c3</td><td>triangle</td><td>15715</td><td>angle</td><td>11663</td><td>circle</td><td>10091</td><td>equation</td><td>8842</td><td>distance</td><td>6616</td></tr><tr><td>en_c4</td><td>step</td><td>83966</td><td>equation</td><td>28665</td><td>answer</td><td>28325</td><td>solve</td><td>16482</td><td>cdot</td><td>12990</td></tr><tr><td>en_c5</td><td>access</td><td>4156</td><td>helpful</td><td>3965</td><td>questions</td><td>3377</td><td>tools</td><td>3214</td><td>answer</td><td>3129</td></tr><tr><td>en_c6</td><td>tha</td><td>1325</td><td>ann</td><td>1067</td><td>a’</td><td>641</td><td>bha</td><td>526</td><td>aig</td><td>375</td></tr><tr><td>en_c7</td><td>probability</td><td>3370</td><td>distribution</td><td>1479</td><td>random</td><td>1313</td><td>function</td><td>901</td><td>variable</td><td>574</td></tr><tr><td>en_c8</td><td>story</td><td>19130</td><td>character</td><td>16132</td><td>create</td><td>13700</td><td>characters</td><td>10773</td><td>time</td><td>8790</td></tr><tr><td>en_c9</td><td>create</td><td>9007</td><td>community</td><td>4757</td><td>social</td><td>4522</td><td>business</td><td>4392</td><td>product</td><td>4249</td></tr><tr><td>en_noise</td><td>return</td><td>42097</td><td>function</td><td>31861</td><td>def</td><td>30695</td><td>python</td><td>29766</td><td>time</td><td>29193</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>No representatives file found at figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_representatives_cluster_langwise_final_en.txt.</p>
+
+
+</section>
+
+  </main>
+</body>
+</html>

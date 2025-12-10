@@ -15,7 +15,7 @@ from utility_scripts.file_utils import PathLike, make_outpath, save_text
 # ---------- Global plotting defaults ----------
 
 DEFAULT_FIGSIZE: tuple[float, float] = (7.0, 4.2)
-DEFAULT_DPI: int = 160
+DEFAULT_DPI: int = 300
 DEFAULT_TITLE_FONTSIZE: int = 12
 DEFAULT_LABEL_FONTSIZE: int = 10
 DEFAULT_TICK_FONTSIZE: int = 8

@@ -3,7 +3,7 @@ Usage & workload profiling for swiss-ai/apertus-70b-instruct based on LiteLLM_Sp
 
 Produces plots in figs/litellm_apertus70b_usage:
 
-- Volume over time (requests / tokens / spend for this model group)
+- Volume over time (requests / tokens for this model group)
 - Distinct users over time
 - Hour-of-day and weekday usage patterns (+ weekday x hour heatmap)
 - Top users by request volume
@@ -23,8 +23,6 @@ from utility_scripts.file_utils import (
     PathLike,
     ensure_empty_dir,
     read_table,
-    sanitize_fname,
-    save_csv,
 )
 from utility_scripts.plot_utils import (
     line,
@@ -72,7 +70,6 @@ def plot_apertus70b_usage(
         "startTime",
         "endTime",
         "total_tokens",
-        "spend",
         "model_group",
         "model",
         "end_user",
@@ -94,11 +91,11 @@ def plot_apertus70b_usage(
     # Time features
     # ------------------------------------------------------------------
     ts = to_utc(df["startTime"])
-    df["date"] = ts.dt.floor("D")  # type: ignore[attr-defined]
+    df["date"] = ts.dt.floor("D")
     df = df.dropna(subset=["date"])
-    df["hour"] = ts.dt.hour  # type: ignore[attr-defined]
-    df["dow"] = ts.dt.dayofweek  # 0 = Monday  # type: ignore[attr-defined]
-    df["datehour"] = ts.dt.floor("h")  # type: ignore[attr-defined]
+    df["hour"] = ts.dt.hour
+    df["dow"] = ts.dt.dayofweek  # 0 = Monday
+    df["datehour"] = ts.dt.floor("h")
 
     df = ensure_date_column(df, time_col="startTime", out_col="date", floor="D", dropna=True, sort=True)
     df["__count__"] = 1
@@ -110,20 +107,19 @@ def plot_apertus70b_usage(
         df,
         time_col="date",
         freq="D",
-        sums=("__count__", "total_tokens", "spend"),
+        sums=("__count__", "total_tokens"),
         include_count=False,
         custom={
             "requests": ("__count__", "sum"),
             "total_tokens": ("total_tokens", "sum"),
-            "spend": ("spend", "sum"),
         },
     ).sort_values("date", kind="stable")
 
-    # Distinct users  per day
+    # Distinct users per day
     users_per_day = df.groupby("date")["end_user"].nunique().reset_index(name="distinct_users")
     daily = daily.merge(users_per_day, on="date", how="left")
 
-    # Lines: requests, tokens, spend
+    # Lines: requests, tokens
     line(
         "date",
         "requests",
@@ -144,18 +140,8 @@ def plot_apertus70b_usage(
         "daily_tokens.png",
         out,
     )
-    line(
-        "date",
-        "spend",
-        daily,
-        "Spend per day (Apertus 70B)",
-        "date",
-        "spend",
-        "daily_spend.png",
-        out,
-    )
 
-    # Lines: distinct users 
+    # Lines: distinct users
     line(
         "date",
         "distinct_users",
@@ -167,8 +153,6 @@ def plot_apertus70b_usage(
         out,
     )
 
-    save_csv(daily, "daily_usage_stats.csv", out)
-
     # ------------------------------------------------------------------
     # Hour-of-day and weekday patterns
     # ------------------------------------------------------------------
@@ -177,7 +161,6 @@ def plot_apertus70b_usage(
         .agg(
             requests=("request_id", "count"),
             tokens=("total_tokens", "sum"),
-            spend=("spend", "sum"),
         )
         .sort_values("hour", kind="stable")
     )
@@ -186,7 +169,6 @@ def plot_apertus70b_usage(
         .agg(
             requests=("request_id", "count"),
             tokens=("total_tokens", "sum"),
-            spend=("spend", "sum"),
         )
         .sort_values("dow", kind="stable")
     )
@@ -210,17 +192,6 @@ def plot_apertus70b_usage(
         "hour",
         "tokens",
         "byhour_tokens.png",
-        out,
-        top=24,
-        order=order_hours,
-        sort_values=False,
-    )
-    bar(
-        hourly.set_index("hour")["spend"],
-        "Spend by hour of day (Apertus 70B)",
-        "hour",
-        "spend",
-        "byhour_spend.png",
         out,
         top=24,
         order=order_hours,
@@ -253,20 +224,6 @@ def plot_apertus70b_usage(
         order=dow_labels,
         sort_values=False,
     )
-    bar(
-        weekday.set_index("dow_label")["spend"],
-        "Spend by weekday (Apertus 70B)",
-        "weekday",
-        "spend",
-        "byweekday_spend.png",
-        out,
-        top=7,
-        order=dow_labels,
-        sort_values=False,
-    )
-
-    save_csv(hourly, "byhour_usage.csv", out)
-    save_csv(weekday, "byweekday_usage.csv", out)
 
     # Weekday x hour heatmap (requests)
     pivot_hw = (
@@ -315,6 +272,7 @@ def plot_apertus70b_usage(
     if "session_id" in df.columns:
         session_stats = df.groupby("session_id", dropna=True)["request_id"].count().rename("requests")
         if not session_stats.empty:
+            # Linear-scale histogram
             hist(
                 session_stats,
                 "Requests per session (Apertus 70B)",
@@ -324,7 +282,17 @@ def plot_apertus70b_usage(
                 out,
                 bins=50,
             )
-            save_csv(session_stats.reset_index(), "session_stats.csv", out)
+            # Log-scale histogram
+            hist(
+                session_stats,
+                "Requests per session (Apertus 70B, log scale)",
+                "requests per session",
+                "count (log scale)",
+                "hist_requests_per_session_log.png",
+                out,
+                bins=50,
+                log_scale=True,
+            )
 
     # ------------------------------------------------------------------
     # User concentration / activity
@@ -345,7 +313,6 @@ def plot_apertus70b_usage(
             normalize_rank=True,
             dropna_key=True,
         ).rename(columns={"rank": "user_rank_frac", "cum_share": "cum_share"})
-        save_csv(whale, "whale_requests.csv", out)
         line(
             "user_rank_frac",
             "cum_share",
@@ -364,6 +331,7 @@ def plot_apertus70b_usage(
         last=("date", "max"),
         active_days=("date", pd.Series.nunique),
     )
+    # Linear-scale histogram
     hist(
         user_stats["active_days"],
         "Active days per user (Apertus 70B)",
@@ -373,6 +341,18 @@ def plot_apertus70b_usage(
         out,
         bins=30,
     )
+    # Log-scale histogram
+    hist(
+        user_stats["active_days"],
+        "Active days per user (Apertus 70B, log scale)",
+        "active days",
+        "count (log scale)",
+        "hist_user_active_days_log.png",
+        out,
+        bins=30,
+        log_scale=True,
+    )
+
     top_active = (
         user_stats.sort_values("active_days", ascending=False)
         .head(top)
@@ -388,8 +368,6 @@ def plot_apertus70b_usage(
             out,
             top=len(top_active),
         )
-
-    save_csv(user_stats, "user_stats.csv", out)
 
 
 if __name__ == "__main__":
