@@ -5,7 +5,7 @@ based on LiteLLM_SpendLogs.
 Focuses on behavioral proxies (verbosity, token composition, variability,
 retry patterns, and stability across workflows).
 
-Produces plots in figs/apertus70b_behavior, including:
+Produces plots in figs/litellm_apertus70b_behavior, including:
 
 - Completion length / verbosity distributions and daily quantiles
 - Prompt vs completion length scatter
@@ -54,7 +54,7 @@ TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 def plot_apertus70b_behavior(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
-    outdir: PathLike = "figs/apertus70b_behavior",
+    outdir: PathLike = "figs/litellm_apertus70b_behavior",
     top: int = 20,
 ) -> None:
     out = ensure_empty_dir(outdir)

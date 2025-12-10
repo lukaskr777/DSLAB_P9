@@ -1,8 +1,7 @@
 """
-Usage & workload profiling for swiss-ai/apertus-70b-instruct
-based on LiteLLM_SpendLogs.
+Usage & workload profiling for swiss-ai/apertus-70b-instruct based on LiteLLM_SpendLogs.
 
-Produces plots in figs/apertus70b_usage:
+Produces plots in figs/litellm_apertus70b_usage:
 
 - Volume over time (requests / tokens / spend for this model group)
 - Distinct users over time
@@ -18,9 +17,6 @@ Helper utilities required:
   - utility_scripts.df_reading_utils
 """
 
-from __future__ import annotations
-
-import numpy as np
 import pandas as pd
 
 from utility_scripts.file_utils import (
@@ -55,7 +51,7 @@ DEFAULT_USER_TO_EXCLUDE_FROM_WHALE: str | None = "enduser_d41d8cd9"
 def plot_apertus70b_usage(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
-    outdir: PathLike = "figs/apertus70b_usage",
+    outdir: PathLike = "figs/litellm_apertus70b_usage",
     top: int = 20,
     exclude_users_from_whale: list[str] | None = None,
 ) -> None:

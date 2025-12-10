@@ -1,8 +1,7 @@
 """
-Performance & efficiency analysis for swiss-ai/apertus-70b-instruct
-based on LiteLLM_SpendLogs.
+Performance & efficiency analysis for swiss-ai/apertus-70b-instruct based on LiteLLM_SpendLogs.
 
-Produces plots in figs/apertus70b_performance:
+Produces plots in figs/litellm_apertus70b_performance:
 
 - Daily performance metrics (latency, TTFT, gen time, success rate)
 - Daily quantile curves (Q1/median/Q3/mean) for latency, TTFT, gen time, tokens per request, and latency shares
@@ -53,7 +52,7 @@ TARGET_MODEL_GROUP = "swiss-ai/apertus-70b-instruct"
 def plot_apertus70b_performance(
     dir_name: PathLike = "data",
     dataset: str = "litellm",
-    outdir: PathLike = "figs/apertus70b_performance",
+    outdir: PathLike = "figs/litellm_apertus70b_performance",
 ) -> None:
     out = ensure_empty_dir(outdir)
 
