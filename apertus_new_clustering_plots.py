@@ -18,10 +18,12 @@ It:
     * Per-feature bar plots of per-cluster means
     * Cluster-wise word clouds (for 'cluster_langwise_final')
     * Top-5 words per final cluster tables (for 'cluster_langwise_final')
+    * Representative prompts per final cluster (all languages and English-only)
 
-Figures are written under figs/apertus_clustering/RUN_TAG, and that directory
-is cleared with `ensure_empty_dir` before plotting, so that previous *non-langwise*
-figures (under TAG) are preserved.
+Figures are written under figs/apertus_clustering/RUN_TAG, and that directory is cleared with `ensure_empty_dir` 
+before plotting, so that previous *non-langwise* figures (under TAG) are preserved.
+
+Additionally, English-only plots and summaries are written under figs/apertus_clustering/RUN_TAG/english.
 """
 
 import sys
@@ -152,14 +154,7 @@ def make_cluster_plots(
         cmap = colormaps.get_cmap("tab20").resampled(max(n_clusters, 1))
 
         plt.figure(figsize=(8, 6))
-        scatter = plt.scatter(
-            x,
-            y,
-            c=idx_colors,
-            s=5,
-            alpha=0.7,
-            cmap=cmap,
-        )
+        scatter = plt.scatter(x, y, c=idx_colors, s=5, alpha=0.7, cmap=cmap)
         plt.xlabel("Dim 1")
         plt.ylabel("Dim 2")
         plt.title(f"Reduced-space scatter (colored by {label_col})")
@@ -211,9 +206,7 @@ def make_cluster_plots(
 
     scaler = StandardScaler()
     cluster_means_z = pd.DataFrame(
-        scaler.fit_transform(cluster_means),
-        index=cluster_means.index,
-        columns=cluster_means.columns,
+        scaler.fit_transform(cluster_means), index=cluster_means.index, columns=cluster_means.columns
     )
 
     # Heatmap
@@ -375,9 +368,8 @@ def make_cluster_wordclouds(
 
 def compute_top_words_per_cluster(df: pd.DataFrame, label_col: str, text_col: str, out_path: Path) -> None:
     """
-    For each cluster in `label_col`, compute the five most frequent words (after
-    preprocessing and stopword removal) in `text_col`, and write them to a TXT
-    file as a tab-separated table.
+    For each cluster in `label_col`, compute the five most frequent words (after preprocessing and stopword removal) 
+    in `text_col`, and write them to a TXT file as a tab-separated table.
 
     If a cluster has fewer than 5 distinct words, remaining slots are left empty.
     """
@@ -426,6 +418,63 @@ def compute_top_words_per_cluster(df: pd.DataFrame, label_col: str, text_col: st
     print(f"[{label_col}] Top-words table written to: {out_path}")
 
 
+# ---------- Representative prompts per cluster ----------
+
+def compute_cluster_representatives(
+    df: pd.DataFrame, X_red: np.ndarray, label_col: str, text_col: str, out_path: Path
+) -> None:
+    """
+    For each cluster (in label_col), pick a representative conversation:
+
+    - Compute centroid of X_red for the cluster.
+    - Select the sample whose X_red is closest (Euclidean) to the centroid.
+    - Use the corresponding conversation_text as the "standard prompt".
+
+    Writes a TSV with columns:
+        cluster    full_prompt
+    """
+    if text_col not in df.columns:
+        print(f"[{label_col}] Column {text_col!r} not found, skipping representatives.")
+        return
+
+    labels = df[label_col].to_numpy()
+    unique_labels = pd.unique(labels)
+
+    with out_path.open("w", encoding="utf-8") as f:
+        f.write("cluster\tfull_prompt\n")
+
+        for lab in unique_labels:
+            # Skip NaN labels (if any)
+            if pd.isna(lab):
+                continue
+
+            mask = labels == lab
+            idx = np.where(mask)[0]
+            if idx.size == 0:
+                continue
+
+            X_c = X_red[idx]
+            # If X_c is empty or has bad shape, skip
+            if X_c.size == 0:
+                continue
+
+            centroid = X_c.mean(axis=0)
+            dists = np.sum((X_c - centroid) ** 2, axis=1)
+            best_local_idx = int(np.argmin(dists))
+            best_global_idx = idx[best_local_idx]
+
+            row = df.iloc[best_global_idx]
+            raw_text = str(row[text_col]).replace("\r", " ").replace("\n", " ")
+            raw_text = re.sub(r"\s+", " ", raw_text).strip()
+
+            if not raw_text:
+                continue
+
+            f.write(f"{lab}\t{raw_text}\n")
+
+    print(f"[{label_col}] Cluster representatives written to: {out_path}")
+
+
 # ---------- Main ----------
 
 def main() -> None:
@@ -456,11 +505,11 @@ def main() -> None:
     ensure_empty_dir(FIGS_DIR)
     print(f"Figures will be written to: {FIGS_DIR}")
 
-    # 1) Cluster plots:
+    # 1) Cluster plots (all languages):
     #    - 'lang'                    (language)
     #    - 'cluster_langwise_final'  (final aggregated cluster label)
     #    - 'cluster_langwise_hdbscan' (per-language HDBSCAN raw labels)
-    print("Generating cluster plots...")
+    print("Generating cluster plots (all languages)...")
     for label_col in ("lang", "cluster_langwise_final", "cluster_langwise_hdbscan"):
         if label_col not in df.columns:
             print(f"Column {label_col!r} not in DataFrame, skipping plots for it.")
@@ -469,8 +518,8 @@ def main() -> None:
         make_cluster_plots(df, X_red, label_col=label_col, figs_dir=FIGS_DIR, use_robust_limits=False)
         make_cluster_plots(df, X_red, label_col=label_col, figs_dir=FIGS_DIR, use_robust_limits=True)
 
-    # 2) Word clouds (only for final aggregated clusters)
-    print("Generating word clouds per final cluster...")
+    # 2) Word clouds (all languages, final clusters)
+    print("Generating word clouds per final cluster (all languages)...")
     if "conversation_text" not in df.columns:
         print("Column 'conversation_text' not found; cannot build word clouds.")
     else:
@@ -482,8 +531,8 @@ def main() -> None:
         else:
             print(f"Column {label_col!r} not found; skipping word clouds.")
 
-    # 3) Top-5 words per final cluster
-    print("Computing top-5 words per final cluster...")
+    # 3) Top-5 words per final cluster (all languages)
+    print("Computing top-5 words per final cluster (all languages)...")
     if "conversation_text" not in df.columns:
         print("Column 'conversation_text' not found; cannot compute top words.")
     else:
@@ -493,6 +542,95 @@ def main() -> None:
             compute_top_words_per_cluster(df=df, label_col=label_col, text_col="conversation_text", out_path=out_path)
         else:
             print(f"Column {label_col!r} not found; skipping top-words table.")
+
+    # 4) Representative prompts per final cluster (all languages)
+    print("Computing representative prompts per final cluster (all languages)...")
+    if "conversation_text" in df.columns and "cluster_langwise_final" in df.columns:
+        out_rep_all = FIGS_DIR / "cluster_representatives_cluster_langwise_final.txt"
+        compute_cluster_representatives(
+            df=df, X_red=X_red, label_col="cluster_langwise_final", text_col="conversation_text", out_path=out_rep_all
+        )
+    else:
+        print("Missing columns for representatives on all languages; skipping.")
+
+    # 5) ENGLISH-FOCUSED SECTION ---------------------------------------------
+
+    if "lang" in df.columns:
+        mask_en = df["lang"] == "en"
+        if mask_en.any():
+            print("Generating English-only plots and summaries...")
+            df_en = df.loc[mask_en].reset_index(drop=True)
+            X_red_en = X_red[mask_en.to_numpy()]
+
+            figs_dir_en = FIGS_DIR / "english"
+            ensure_empty_dir(figs_dir_en)
+            print(f"English-only figures will be written to: {figs_dir_en}")
+
+            # 5.1) English-only cluster plots
+            for label_col in ("cluster_langwise_final", "cluster_langwise_hdbscan"):
+                if label_col not in df_en.columns:
+                    print(f"[EN] Column {label_col!r} not in English subset, skipping plots.")
+                    continue
+
+                make_cluster_plots(
+                    df_en,
+                    X_red_en,
+                    label_col=label_col,
+                    figs_dir=figs_dir_en,
+                    use_robust_limits=False,
+                )
+                make_cluster_plots(
+                    df_en,
+                    X_red_en,
+                    label_col=label_col,
+                    figs_dir=figs_dir_en,
+                    use_robust_limits=True,
+                )
+
+            # 5.2) English-only word clouds and top words
+            if "conversation_text" in df_en.columns:
+                # Word clouds
+                if "cluster_langwise_final" in df_en.columns:
+                    make_cluster_wordclouds(
+                        df=df_en,
+                        label_col="cluster_langwise_final",
+                        text_col="conversation_text",
+                        figs_dir=figs_dir_en,
+                        font_path=FONT_PATH,
+                    )
+                else:
+                    print("[EN] 'cluster_langwise_final' missing in English subset; skipping word clouds.")
+
+                # Top words
+                if "cluster_langwise_final" in df_en.columns:
+                    out_top_en = figs_dir_en / "top_words_cluster_langwise_final.txt"
+                    compute_top_words_per_cluster(
+                        df=df_en,
+                        label_col="cluster_langwise_final",
+                        text_col="conversation_text",
+                        out_path=out_top_en,
+                    )
+                else:
+                    print("[EN] 'cluster_langwise_final' missing in English subset; skipping top-words table.")
+
+                # 5.3) English-only representatives
+                if "cluster_langwise_final" in df_en.columns:
+                    out_rep_en = figs_dir_en / "cluster_representatives_cluster_langwise_final_en.txt"
+                    compute_cluster_representatives(
+                        df=df_en,
+                        X_red=X_red_en,
+                        label_col="cluster_langwise_final",
+                        text_col="conversation_text",
+                        out_path=out_rep_en,
+                    )
+                else:
+                    print("[EN] 'cluster_langwise_final' missing in English subset; skipping representatives.")
+            else:
+                print("[EN] 'conversation_text' not found in English subset; skipping English word-based plots.")
+        else:
+            print("No English conversations found (lang == 'en'); skipping English-only plots.")
+    else:
+        print("Column 'lang' not found; cannot generate English-only summaries.")
 
     print("Done.")
 
