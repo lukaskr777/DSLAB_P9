@@ -1,6 +1,5 @@
 import pyarrow.parquet as pq
 import pyarrow as pa
-import pyarrow.compute as pc
 import numpy as np
 
 DATA_DIR = "data/swiss-ai_apertus-sft-mixture"

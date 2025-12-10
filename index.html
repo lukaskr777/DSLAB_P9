@@ -155,7 +155,7 @@
   
 <p>
 This section summarizes the analysis of the <code>LiteLLM_SpendLogs</code> Public AI logs for the
-<code>swiss-ai/apertus-70b-instruct</code> model group. It aggregates the four Python analysis scripts:
+<code>swiss-ai/apertus-70b-instruct</code> model group. It focuses on four main aspects:
 usage & workload, performance & efficiency, behavioral stability, and user-level clustering.
 </p>
 
@@ -705,9 +705,93 @@ visualization, and per-feature cluster profiles are shown.
 </div>
 <p>Additional user-level clustering outputs:</p>
 <ul>
-<li>Cluster summary JSON: <em>not found</em></li>
+<li>Cluster summary TXT: <a href="figs/litellm_apertus70b_user_clusters/apertus70b_cluster_summary.txt">apertus70b_cluster_summary.txt</a></li>
 <li>Feature summary CSV: <a href="figs/litellm_apertus70b_user_clusters/apertus70b_feature_summary.csv">apertus70b_feature_summary.csv</a></li>
 </ul>
+<details><summary>Preview cluster summary TXT</summary>
+<pre>
+{
+  &quot;k_selected&quot;: &quot;3&quot;,
+  &quot;silhouette&quot;: &quot;0.311&quot;,
+  &quot;clusters&quot;: [
+    {
+      &quot;cluster&quot;: 0,
+      &quot;n_users&quot;: 5162,
+      &quot;median_requests&quot;: 10.0,
+      &quot;median_req_per_active_day&quot;: 4.333333333333333,
+      &quot;feature_means&quot;: {
+        &quot;request_count&quot;: 14.162340178225493,
+        &quot;n_unique_providers&quot;: 1.3773731111972103,
+        &quot;n_unique_sessions&quot;: 14.162340178225493,
+        &quot;active_days&quot;: 2.750484308407594,
+        &quot;activity_span_days&quot;: 7.707069994988754,
+        &quot;requests_per_active_day&quot;: 6.216659034997942,
+        &quot;mean_inter_req_s&quot;: 100859.55707312589,
+        &quot;most_active_hour&quot;: 11.577876791941108,
+        &quot;weekday_fraction&quot;: 0.8324298457578087,
+        &quot;avg_tokens_per_req&quot;: 4452.236413407283,
+        &quot;avg_completion_tokens&quot;: 1320.5716021919395,
+        &quot;completion_ratio_mean&quot;: 0.36974754046235814,
+        &quot;prompt_to_completion_ratio_mean&quot;: 9.060335639627871,
+        &quot;mean_latency_s&quot;: 48.00222757958981,
+        &quot;latency_std_s&quot;: 61.66045196904945,
+        &quot;mean_completion_latency_s&quot;: 34.695195223359796,
+        &quot;success_rate&quot;: 0.9187079585247881
+      }
+    },
+    {
+      &quot;cluster&quot;: 1,
+      &quot;n_users&quot;: 265,
+      &quot;median_requests&quot;: 1.0,
+      &quot;median_req_per_active_day&quot;: 1.0,
+      &quot;feature_means&quot;: {
+        &quot;request_count&quot;: 1.8150943396226416,
+        &quot;n_unique_providers&quot;: 1.0150943396226415,
+        &quot;n_unique_sessions&quot;: 1.8150943396226416,
+        &quot;active_days&quot;: 1.0113207547169811,
+        &quot;activity_span_days&quot;: 0.036087588312368975,
+        &quot;requests_per_active_day&quot;: 1.8,
+        &quot;mean_inter_req_s&quot;: 2101.354954860737,
+        &quot;most_active_hour&quot;: 10.535849056603773,
+        &quot;weekday_fraction&quot;: 0.8578616352201257,
+        &quot;avg_tokens_per_req&quot;: 1.0715902964959567,
+        &quot;avg_completion_tokens&quot;: 0.3363522012578616,
+        &quot;completion_ratio_mean&quot;: 0.0056399244094886124,
+        &quot;prompt_to_completion_ratio_mean&quot;: 0.035100752462535696,
+        &quot;mean_latency_s&quot;: 0.009571069182389936,
+        &quot;latency_std_s&quot;: 0.02117580946801004,
+        &quot;mean_completion_latency_s&quot;: 0.00970642857142857,
+        &quot;success_rate&quot;: 0.003090745732255166
+      }
+    },
+    {
+      &quot;cluster&quot;: 2,
+      &quot;n_users&quot;: 14669,
+      &quot;median_requests&quot;: 2.0,
+      &quot;median_req_per_active_day&quot;: 2.0,
+      &quot;feature_means&quot;: {
+        &quot;request_count&quot;: 3.035244392937487,
+        &quot;n_unique_providers&quot;: 1.010907355647965,
+        &quot;n_unique_sessions&quot;: 3.035244392937487,
+        &quot;active_days&quot;: 1.0789419865021475,
+        &quot;activity_span_days&quot;: 0.19238650777701405,
+        &quot;requests_per_active_day&quot;: 2.8827232031267758,
+        &quot;mean_inter_req_s&quot;: 8838.743193025857,
+        &quot;most_active_hour&quot;: 11.846410798282092,
+        &quot;weekday_fraction&quot;: 0.8538263122641743,
+        &quot;avg_tokens_per_req&quot;: 2814.383936469375,
+        &quot;avg_completion_tokens&quot;: 1251.7203605054176,
+        &quot;completion_ratio_mean&quot;: 0.44868439069545624,
+        &quot;prompt_to_completion_ratio_mean&quot;: 3.0592791340876286,
+        &quot;mean_latency_s&quot;: 42.82069983989905,
+        &quot;latency_std_s&quot;: 16.26337143177401,
+        &quot;mean_completion_latency_s&quot;: 33.78482228322934,
+        &quot;success_rate&quot;: 0.9954268639080147
+      }
+    }
+  ]
+}
+</pre></details>
 
 </section>
 

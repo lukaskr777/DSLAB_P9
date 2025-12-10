@@ -27,10 +27,7 @@ HTML_PATH = Path("index.html")
 
 
 def _rel_from_html(path: Path) -> str:
-    """
-    Compute a relative path from the HTML file location to `path`,
-    normalized with forward slashes.
-    """
+    """Compute a relative path from the HTML file location to `path`, normalized with forward slashes."""
     try:
         rel = path.relative_to(HTML_PATH.parent)
     except ValueError:
@@ -197,20 +194,20 @@ def _representatives_table(path: Path, title: str) -> str:
 
 
 def _cluster_summary_block() -> str:
-    """Small block for the Public-AI user clustering JSON + CSV links and optional preview."""
-    cluster_json_path = USERCLUST_DIR / "apertus70b_cluster_summary.json"
+    """Small block for the Public-AI user clustering TXT + CSV links and optional preview."""
+    cluster_txt_path = USERCLUST_DIR / "apertus70b_cluster_summary.txt"
     feature_csv_path = USERCLUST_DIR / "apertus70b_feature_summary.csv"
 
     lines: list[str] = []
     lines.append("<p>Additional user-level clustering outputs:</p>")
     lines.append("<ul>")
-    if cluster_json_path.exists():
+    if cluster_txt_path.exists():
         lines.append(
-            "<li>Cluster summary JSON: "
-            f'<a href="{html.escape(_rel_from_html(cluster_json_path))}">apertus70b_cluster_summary.json</a></li>'
+            "<li>Cluster summary TXT: "
+            f'<a href="{html.escape(_rel_from_html(cluster_txt_path))}">apertus70b_cluster_summary.txt</a></li>'
         )
     else:
-        lines.append("<li>Cluster summary JSON: <em>not found</em></li>")
+        lines.append("<li>Cluster summary TXT: <em>not found</em></li>")
 
     if feature_csv_path.exists():
         lines.append(
@@ -221,12 +218,12 @@ def _cluster_summary_block() -> str:
         lines.append("<li>Feature summary CSV: <em>not found</em></li>")
     lines.append("</ul>")
 
-    # Optional JSON preview
-    if cluster_json_path.exists():
+    # Optional TXT preview
+    if cluster_txt_path.exists():
         try:
-            data = json.loads(cluster_json_path.read_text(encoding="utf-8"))
+            data = json.loads(cluster_txt_path.read_text(encoding="utf-8"))
             pretty = json.dumps(data, indent=2)
-            lines.append("<details><summary>Preview cluster summary JSON</summary>")
+            lines.append("<details><summary>Preview cluster summary TXT</summary>")
             lines.append("<pre>")
             lines.append(html.escape(pretty))
             lines.append("</pre></details>")
@@ -252,7 +249,7 @@ def build_html() -> None:
     public_content = f"""
 <p>
 This section summarizes the analysis of the <code>LiteLLM_SpendLogs</code> Public AI logs for the
-<code>swiss-ai/apertus-70b-instruct</code> model group. It aggregates the four Python analysis scripts:
+<code>swiss-ai/apertus-70b-instruct</code> model group. It focuses on four main aspects:
 usage & workload, performance & efficiency, behavioral stability, and user-level clustering.
 </p>
 

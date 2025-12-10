@@ -228,7 +228,7 @@ def _cluster_and_plot(
         plt.ylabel(f"PCA2 ({e2:.1f}% var)")
         plt.title(f"{title_prefix} — PCA by KMeans clusters\n(k={k_str}, silhouette={sil_str})")
         plt.tight_layout()
-        plt.savefig(out_dir / "users_pca_clusters.png", dpi=150)
+        plt.savefig(out_dir / "users_pca_clusters.png", dpi=300)
         plt.close()
 
     # Cluster sizes bar
@@ -264,7 +264,7 @@ def _cluster_and_plot(
             plt.ylabel("mean feature (z-score)")
             plt.title(f"{title_prefix} — cluster profiles (z-scored means)")
             plt.tight_layout()
-            plt.savefig(out_dir / "cluster_profiles_bars.png", dpi=150)
+            plt.savefig(out_dir / "cluster_profiles_bars.png", dpi=300)
             plt.close()
         else:
             save_text(
