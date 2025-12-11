@@ -91,7 +91,6 @@
     .gallery-item img {
       width: 100%;
       height: auto;
-      /* No max-height: show larger thumbnails for better readability */
       object-fit: contain;
       display: block;
     }
@@ -194,14 +193,14 @@
 <body>
   <header>
     <h1>Public AI Logs Analysis &amp; Clustering of the apertus_sft_mixture dataset</h1>
-    <p>Public AI logs analysis (for the Apertus 70B model) and language-wise clustering of the apertus_sft_mixture dataset.</p>
+    <p>Public AI logs analysis (for the Apertus 70B model) and clustering of the apertus_sft_mixture dataset.</p>
   </header>
   
 <nav>
   <ul>
     <li><a href="#overview">Overview</a></li>
     <li><a href="#public-ai-analysis">Public AI logs – Apertus 70B analysis</a></li>
-    <li><a href="#apertus-clustering">apertus_sft_mixture Clustering</a></li>
+    <li><a href="#apertus-clustering">Clustering of apertus_sft_mixture conversations</a></li>
   </ul>
 </nav>
 
@@ -216,9 +215,9 @@ This report combines two complementary analyses:
 <ul>
   <li><strong>Public AI logs – Apertus 70B:</strong> Usage, performance, behavior, and user-level clustering
       derived from <code>LiteLLM_SpendLogs</code> for the <code>swiss-ai/apertus-70b-instruct</code> model group.</li>
-  <li><strong>apertus_sft_mixture clustering:</strong> UMAP-based visualization and clustering
-      of conversations in the <code>swiss-ai/apertus-sft-mixture</code> dataset, with language-specific and
-      English-only breakdowns.</li>
+  <li><strong>Clustering of apertus_sft_mixture conversations:</strong> UMAP-based visualization and clustering
+      of conversations in the <code>swiss-ai/apertus-sft-mixture</code> dataset, including a mixed-languages run,
+      per-language clustering, and an English-only subset.</li>
 </ul>
 
 </section>
@@ -415,44 +414,345 @@ It focuses on usage &amp; workload, performance &amp; efficiency, behavioral sta
 
     
 <section id="apertus-clustering">
-  <h2>apertus_sft_mixture Clustering</h2>
+  <h2>Clustering of apertus_sft_mixture conversations</h2>
   
 <p>
-This section summarizes the language-wise clustering results for the
+This section summarizes the clustering results for the
 <code>swiss-ai/apertus-sft-mixture</code> dataset.
+We show a mixed-languages clustering run, per-language clustering, and an English-only subset.
 </p>
 
 
 <ul class="section-toc">
-  <li><a href="#apertus-all-langs">All languages – cluster plots</a></li>
-  <li><a href="#apertus-all-langs-topwords">All languages – top words &amp; representatives</a></li>
-  <li><a href="#apertus-english">English-only highlights</a></li>
+  <li><a href="#apertus-mixed">Mixed languages</a></li>
+  <li><a href="#apertus-per-lang">Per-language clustering</a></li>
+  <li><a href="#apertus-english">English only</a></li>
 </ul>
 
 
-<h3 id="apertus-all-langs">All languages – cluster plots</h3>
+
+<h3 id="apertus-mixed">Mixed languages</h3>
+
 <details class="collapsible">
-  <summary>Show all-languages cluster scatter plots</summary>
+  <summary>Show mixed-languages cluster scatter plots</summary>
   <div class="gallery">
 <figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final.png" alt="cluster langwise final" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final</figcaption>
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/scatter_dim1_dim2_cluster_hdbscan_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/scatter_dim1_dim2_cluster_hdbscan_robust.png" alt="cluster hdbscan robust" class="plot" loading="lazy"></a>
+<figcaption>cluster hdbscan robust</figcaption>
 </figure>
 <figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_final_robust.png" alt="cluster langwise final robust" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final robust</figcaption>
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/scatter_dim1_dim2_cluster_kmeans_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/scatter_dim1_dim2_cluster_kmeans_robust.png" alt="cluster kmeans robust" class="plot" loading="lazy"></a>
+<figcaption>cluster kmeans robust</figcaption>
 </figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/scatter_dim1_dim2_cluster_leiden_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/scatter_dim1_dim2_cluster_leiden_robust.png" alt="cluster leiden robust" class="plot" loading="lazy"></a>
+<figcaption>cluster leiden robust</figcaption>
+</figure>
+</div>
+</details>
+<h4 id="apertus-mixed-sizes">Cluster sizes (mixed languages)</h4>
+<details class="collapsible">
+  <summary>Show mixed-languages cluster size plots</summary>
+  <div class="gallery">
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/cluster_sizes_cluster_hdbscan.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/cluster_sizes_cluster_hdbscan.png" alt="cluster hdbscan" class="plot" loading="lazy"></a>
+<figcaption>cluster hdbscan</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/cluster_sizes_cluster_kmeans.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/cluster_sizes_cluster_kmeans.png" alt="cluster kmeans" class="plot" loading="lazy"></a>
+<figcaption>cluster kmeans</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/cluster_sizes_cluster_leiden.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/cluster_sizes_cluster_leiden.png" alt="cluster leiden" class="plot" loading="lazy"></a>
+<figcaption>cluster leiden</figcaption>
+</figure>
+</div>
+</details>
+
+<h4 id="apertus-mixed-wordclouds">Mixed-languages word clouds</h4>
+<details class="collapsible">
+  <summary>Show mixed-languages word clouds</summary>
+  <div class="gallery">
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_-1_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_-1_wordcloud.png" alt="cluster -1 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster -1 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_0_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_0_wordcloud.png" alt="cluster 0 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 0 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_10_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_10_wordcloud.png" alt="cluster 10 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 10 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_11_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_11_wordcloud.png" alt="cluster 11 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 11 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_12_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_12_wordcloud.png" alt="cluster 12 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 12 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_13_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_13_wordcloud.png" alt="cluster 13 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 13 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_14_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_14_wordcloud.png" alt="cluster 14 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 14 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_15_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_15_wordcloud.png" alt="cluster 15 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 15 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_16_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_16_wordcloud.png" alt="cluster 16 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 16 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_17_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_17_wordcloud.png" alt="cluster 17 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 17 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_18_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_18_wordcloud.png" alt="cluster 18 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 18 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_19_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_19_wordcloud.png" alt="cluster 19 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 19 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_1_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_1_wordcloud.png" alt="cluster 1 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 1 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_20_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_20_wordcloud.png" alt="cluster 20 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 20 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_21_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_21_wordcloud.png" alt="cluster 21 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 21 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_22_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_22_wordcloud.png" alt="cluster 22 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 22 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_23_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_23_wordcloud.png" alt="cluster 23 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 23 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_24_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_24_wordcloud.png" alt="cluster 24 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 24 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_25_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_25_wordcloud.png" alt="cluster 25 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 25 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_26_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_26_wordcloud.png" alt="cluster 26 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 26 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_27_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_27_wordcloud.png" alt="cluster 27 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 27 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_28_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_28_wordcloud.png" alt="cluster 28 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 28 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_29_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_29_wordcloud.png" alt="cluster 29 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 29 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_2_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_2_wordcloud.png" alt="cluster 2 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 2 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_30_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_30_wordcloud.png" alt="cluster 30 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 30 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_31_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_31_wordcloud.png" alt="cluster 31 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 31 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_32_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_32_wordcloud.png" alt="cluster 32 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 32 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_33_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_33_wordcloud.png" alt="cluster 33 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 33 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_34_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_34_wordcloud.png" alt="cluster 34 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 34 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_35_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_35_wordcloud.png" alt="cluster 35 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 35 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_36_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_36_wordcloud.png" alt="cluster 36 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 36 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_37_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_37_wordcloud.png" alt="cluster 37 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 37 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_38_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_38_wordcloud.png" alt="cluster 38 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 38 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_3_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_3_wordcloud.png" alt="cluster 3 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 3 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_4_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_4_wordcloud.png" alt="cluster 4 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 4 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_5_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_5_wordcloud.png" alt="cluster 5 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 5 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_6_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_6_wordcloud.png" alt="cluster 6 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 6 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_7_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_7_wordcloud.png" alt="cluster 7 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 7 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_8_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_8_wordcloud.png" alt="cluster 8 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 8 wordcloud</figcaption>
+</figure>
+<figure class="gallery-item">
+<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_9_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2/wordclouds/cluster_hdbscan/cluster_9_wordcloud.png" alt="cluster 9 wordcloud" class="plot" loading="lazy"></a>
+<figcaption>cluster 9 wordcloud</figcaption>
+</figure>
+</div>
+</details>
+
+<h4 id="apertus-mixed-topwords">Mixed-languages top words &amp; representatives</h4>
+<details class="collapsible">
+  <summary>Show mixed-languages top words and representative prompts</summary>
+  <h3>Top 5 words per cluster (mixed languages)</h3>
+<div class="table-wrapper">
+  <table id="mixed-top-words">
+    <thead>
+      <tr><th>cluster</th><th>word1</th><th class="numeric">count1</th><th>word2</th><th class="numeric">count2</th><th>word3</th><th class="numeric">count3</th><th>word4</th><th class="numeric">count4</th><th>word5</th><th class="numeric">count5</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>-1</td><td>return</td><td class="numeric">49386</td><td>function</td><td class="numeric">35698</td><td>python</td><td class="numeric">35562</td><td>def</td><td class="numeric">35445</td><td>data</td><td class="numeric">29080</td></tr>
+      <tr><td>0</td><td>liste</td><td class="numeric">1498</td><td>übersetze</td><td class="numeric">1493</td><td>deutscher</td><td class="numeric">757</td><td>begriffe</td><td class="numeric">754</td><td>deutsche</td><td class="numeric">737</td></tr>
+      <tr><td>1</td><td>key</td><td class="numeric">5290</td><td>input</td><td class="numeric">4871</td><td>provide</td><td class="numeric">4015</td><td>person</td><td class="numeric">3446</td><td>focusing</td><td class="numeric">3344</td></tr>
+      <tr><td>2</td><td>project</td><td class="numeric">3183</td><td>input</td><td class="numeric">2822</td><td>hope</td><td class="numeric">2713</td><td>rewrite</td><td class="numeric">2586</td><td>re-writing</td><td class="numeric">2567</td></tr>
+      <tr><td>3</td><td>triangle</td><td class="numeric">15914</td><td>angle</td><td class="numeric">11831</td><td>circle</td><td class="numeric">10262</td><td>equation</td><td class="numeric">9311</td><td>distance</td><td class="numeric">6943</td></tr>
+      <tr><td>4</td><td>function</td><td class="numeric">28465</td><td>equation</td><td class="numeric">25881</td><td>sum</td><td class="numeric">19419</td><td>f(x</td><td class="numeric">16998</td><td>set</td><td class="numeric">15926</td></tr>
+      <tr><td>5</td><td>step</td><td class="numeric">85617</td><td>equation</td><td class="numeric">29120</td><td>answer</td><td class="numeric">28899</td><td>solve</td><td class="numeric">17016</td><td>cdot</td><td class="numeric">13400</td></tr>
+      <tr><td>6</td><td>access</td><td class="numeric">4084</td><td>helpful</td><td class="numeric">3890</td><td>questions</td><td class="numeric">3338</td><td>tools</td><td class="numeric">3188</td><td>answer</td><td class="numeric">3103</td></tr>
+      <tr><td>7</td><td>probability</td><td class="numeric">3366</td><td>distribution</td><td class="numeric">1502</td><td>random</td><td class="numeric">1321</td><td>function</td><td class="numeric">901</td><td>variable</td><td class="numeric">608</td></tr>
+      <tr><td>8</td><td>trip</td><td class="numeric">3913</td><td>day</td><td class="numeric">3101</td><td>visit</td><td class="numeric">2425</td><td>time</td><td class="numeric">2322</td><td>travel</td><td class="numeric">2288</td></tr>
+      <tr><td>9</td><td>satz</td><td class="numeric">816</td><td>idiom</td><td class="numeric">811</td><td>sag</td><td class="numeric">810</td><td>igl</td><td class="numeric">194</td><td>grischun</td><td class="numeric">166</td></tr>
+      <tr><td>10</td><td>lɛ</td><td class="numeric">1840</td><td>kɛ</td><td class="numeric">1306</td><td>daa</td><td class="numeric">1270</td><td>awọn</td><td class="numeric">986</td><td>nyɛla</td><td class="numeric">795</td></tr>
+      <tr><td>11</td><td>story</td><td class="numeric">18679</td><td>character</td><td class="numeric">15707</td><td>create</td><td class="numeric">13495</td><td>characters</td><td class="numeric">10508</td><td>time</td><td class="numeric">8387</td></tr>
+      <tr><td>12</td><td>music</td><td class="numeric">368</td><td>і</td><td class="numeric">298</td><td>jazz</td><td class="numeric">232</td><td>album</td><td class="numeric">189</td><td>metal</td><td class="numeric">186</td></tr>
+      <tr><td>13</td><td>detailed</td><td class="numeric">932</td><td>thinking</td><td class="numeric">868</td><td>provide</td><td class="numeric">842</td><td>respectful</td><td class="numeric">693</td><td>understanding</td><td class="numeric">577</td></tr>
+      <tr><td>14</td><td>vun</td><td class="numeric">1951</td><td>huet</td><td class="numeric">1029</td><td>ass</td><td class="numeric">836</td><td>isch</td><td class="numeric">687</td><td>vum</td><td class="numeric">559</td></tr>
+      <tr><td>15</td><td>tha</td><td class="numeric">1298</td><td>ann</td><td class="numeric">1072</td><td>a’</td><td class="numeric">630</td><td>mae</td><td class="numeric">530</td><td>bha</td><td class="numeric">529</td></tr>
+      <tr><td>16</td><td>við</td><td class="numeric">611</td><td>sum</td><td class="numeric">552</td><td>hann</td><td class="numeric">417</td><td>eru</td><td class="numeric">403</td><td>frá</td><td class="numeric">313</td></tr>
+      <tr><td>17</td><td>job</td><td class="numeric">5022</td><td>career</td><td class="numeric">4165</td><td>time</td><td class="numeric">4099</td><td>skills</td><td class="numeric">3293</td><td>company</td><td class="numeric">2933</td></tr>
+      <tr><td>18</td><td>sentence</td><td class="numeric">5540</td><td>writing</td><td class="numeric">4307</td><td>concise</td><td class="numeric">2479</td><td>language</td><td class="numeric">2321</td><td>clarity</td><td class="numeric">2305</td></tr>
+      <tr><td>19</td><td>create</td><td class="numeric">8499</td><td>community</td><td class="numeric">4628</td><td>social</td><td class="numeric">4574</td><td>marketing</td><td class="numeric">4517</td><td>business</td><td class="numeric">4397</td></tr>
+      <tr><td>20</td><td>probability</td><td class="numeric">5149</td><td>game</td><td class="numeric">2813</td><td>cards</td><td class="numeric">2660</td><td>player</td><td class="numeric">2556</td><td>step</td><td class="numeric">2264</td></tr>
+      <tr><td>21</td><td>times</td><td class="numeric">11278</td><td>calculate</td><td class="numeric">9174</td><td>hours</td><td class="numeric">7469</td><td>time</td><td class="numeric">6498</td><td>books</td><td class="numeric">5942</td></tr>
+      <tr><td>22</td><td>און</td><td class="numeric">603</td><td>איז</td><td class="numeric">591</td><td>די</td><td class="numeric">590</td><td>א</td><td class="numeric">419</td><td>פון</td><td class="numeric">396</td></tr>
+      <tr><td>23</td><td>learning</td><td class="numeric">943</td><td>social</td><td class="numeric">941</td><td>students</td><td class="numeric">715</td><td>language</td><td class="numeric">584</td><td>sentence</td><td class="numeric">571</td></tr>
+      <tr><td>24</td><td>data</td><td class="numeric">4272</td><td>sales</td><td class="numeric">3069</td><td>average</td><td class="numeric">1734</td><td>product</td><td class="numeric">1345</td><td>analysis</td><td class="numeric">1265</td></tr>
+      <tr><td>25</td><td>data</td><td class="numeric">21722</td><td>analysis</td><td class="numeric">5953</td><td>variables</td><td class="numeric">5149</td><td>distribution</td><td class="numeric">3920</td><td>values</td><td class="numeric">3754</td></tr>
+      <tr><td>26</td><td>political</td><td class="numeric">254</td><td>government</td><td class="numeric">239</td><td>public</td><td class="numeric">222</td><td>president</td><td class="numeric">213</td><td>rights</td><td class="numeric">206</td></tr>
+      <tr><td>27</td><td>roman</td><td class="numeric">140</td><td>și</td><td class="numeric">106</td><td>papa</td><td class="numeric">104</td><td>të</td><td class="numeric">98</td><td>roma</td><td class="numeric">94</td></tr>
+      <tr><td>28</td><td>fuit</td><td class="numeric">314</td><td>quomodo</td><td class="numeric">249</td><td>eius</td><td class="numeric">157</td><td>sicut</td><td class="numeric">126</td><td>propter</td><td class="numeric">121</td></tr>
+      <tr><td>29</td><td>ła</td><td class="numeric">2440</td><td>l&#x27;è</td><td class="numeric">530</td><td>sos</td><td class="numeric">487</td><td>dô</td><td class="numeric">425</td><td>comu</td><td class="numeric">406</td></tr>
+      <tr><td>30</td><td>python</td><td class="numeric">7544</td><td>string</td><td class="numeric">7532</td><td>return</td><td class="numeric">7375</td><td>function</td><td class="numeric">7091</td><td>def</td><td class="numeric">4819</td></tr>
+      <tr><td>31</td><td>return</td><td class="numeric">12997</td><td>python</td><td class="numeric">10866</td><td>list</td><td class="numeric">10663</td><td>function</td><td class="numeric">10304</td><td>def</td><td class="numeric">7101</td></tr>
+      <tr><td>32</td><td>code</td><td class="numeric">5190</td><td>python</td><td class="numeric">4810</td><td>return</td><td class="numeric">3522</td><td>class</td><td class="numeric">3478</td><td>function</td><td class="numeric">3226</td></tr>
+      <tr><td>33</td><td>reaction</td><td class="numeric">4978</td><td>bond</td><td class="numeric">3716</td><td>carbon</td><td class="numeric">3619</td><td>acid</td><td class="numeric">3588</td><td>times</td><td class="numeric">3240</td></tr>
+      <tr><td>34</td><td>energy</td><td class="numeric">5082</td><td>field</td><td class="numeric">4154</td><td>quantum</td><td class="numeric">3740</td><td>time</td><td class="numeric">3650</td><td>e.g</td><td class="numeric">3358</td></tr>
+      <tr><td>35</td><td>voltage</td><td class="numeric">2263</td><td>current</td><td class="numeric">1535</td><td>power</td><td class="numeric">1299</td><td>circuit</td><td class="numeric">1257</td><td>output</td><td class="numeric">855</td></tr>
+      <tr><td>36</td><td>і</td><td class="numeric">210</td><td>guerra</td><td class="numeric">133</td><td>ў</td><td class="numeric">128</td><td>од</td><td class="numeric">109</td><td>și</td><td class="numeric">103</td></tr>
+      <tr><td>37</td><td>cells</td><td class="numeric">958</td><td>dna</td><td class="numeric">618</td><td>blood</td><td class="numeric">566</td><td>cell</td><td class="numeric">526</td><td>health</td><td class="numeric">513</td></tr>
+      <tr><td>38</td><td>energy</td><td class="numeric">2184</td><td>climate</td><td class="numeric">1798</td><td>change</td><td class="numeric">1483</td><td>water</td><td class="numeric">1244</td><td>solar</td><td class="numeric">944</td></tr>
+    </tbody>
+  </table>
+</div>
+<details class="collapsible">
+  <summary>Show representative prompts per cluster (mixed languages)</summary>
+  <div class="table-wrapper">
+  <table>
+    <thead>
+      <tr><th>cluster</th><th>representative prompt</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>-1</td><td>user: How can I create a device for social distancing that measures the distance between two devices accurately? During the COVID-19 pandemic, maintaining a safe distance of 1.5 meters is crucial. To promote awareness, I&#x27;m working on a device that hangs on a keychain and alerts users when they are too close to others. I&#x27;ve considered various technologies for this purpose, such as Bluetooth, RFID, GPS, NFC, Arduino ultrasonic/HC-SR04, and Bluetooth Low Energy (BTLE). This is a school project with potential commercial application. Can anyone advise on the best approach for accurately measuring the distance between two such devices? assistant: To accurately measure the distance between two devices in a social distancing context, you&#x27;ll need a technology that can determine the time it takes for a signal to travel between them. Signal strength alone is not reliable due to the absorption of wavelengths by human bodies and environmental reflections. One possible solution is using ultrasonic sensors, like the Arduino HC-SR04, which can measure the time it takes for sound waves to travel to an object and back. However, they only measure one-way distance and might not be suitable for detecting multiple nearby devices. Another option to explore is Bluetooth Low Energy (BTLE) or similar technologies, which can estimate distances based on signal strength and time-of-flight measurements. These methods can be more complex to implement and may require calibration for different environments. Keep in mind that even with these technologies, achieving consistent accuracy can be challenging, especially in crowded spaces or with obstructions. Many companies have been working on multi-party proximity sensing solutions for decades, so you may need to research existing solutions or collaborate with experts in the field to optimize your design.</td></tr>
+      <tr><td>0</td><td>user: Übersetze die folgende Liste deutscher Begriffe ins Surmiran: * sich rekeln * Fussel * Steilhang * die Stirn in Falten ziehen * etwas unter einen Hut bringen * tüchtig * Verleihung * lobpreisen * von hinten nach vorne * wiedergeben * berührt * Gemeindeschwester * verschenken * Schwalbenschwanz * stoppen * Unding assistant: * sa stender * feilign * pitgogna * rubagler igl front * metter d&#x27;accord ensatge * abel * concessiun * exaltar * da davos anavant * restitueir * impressiuno * tgirunza da vischnanca * schintgigier * cua-scalma * far en stop * absurditad</td></tr>
+      <tr><td>1</td><td>system: Provide a concise, objective summary of the input text in up to three sentences, focusing on key actions and intentions without using second or third person pronouns. user: Hi Aman, Thank you for sharing the IAS Mastermind resource with me. I&#x27;ll definitely check it out and see how we can incorporate it into our study plan. It&#x27;s always good to have additional resources to aid our preparation. As for the trip idea, I think it&#x27;s a great suggestion! A short break will indeed help us relax and come back with renewed energy for the final stretch of our preparation. I&#x27;m up for it. Let&#x27;s discuss the details and plan something exciting for next month. I&#x27;ll give you a call this weekend, and we can discuss both the study resource and the trip in more detail. Thanks again for thinking about me and our preparation. Your support means a lot. Best wishes, Neha assistant: Neha thanks Aman for sharing the IAS Mastermind resource and expresses interest in incorporating it into the study plan. Neha also agrees to the trip idea, suggesting it will help with relaxation and renewed energy. Neha plans to call this weekend to discuss both the resource and the trip in more detail.</td></tr>
+      <tr><td>2</td><td>system: You&#x27;re an AI assistant for text re-writing. Rewrite the input text to make it more concise while preserving its core meaning. user: Sarah, As you may be aware, the recent geopolitical events have caused a significant disruption to our primary shipping route to Asia. I need you to provide a comprehensive analysis of the situation and recommend alternative routes for our upcoming shipments. Please include a detailed breakdown of the costs and risks associated with each option. I know this is a complex issue, but I have full confidence in your ability to provide valuable insights. Please send me your report by the end of the week so we can make an informed decision. Best regards, John assistant: Sarah, Due to recent geopolitical events, our main shipping route to Asia is disrupted. Please analyze the situation and suggest alternative routes, including cost and risk assessments for each. Your insights are crucial, and I need your report by week&#x27;s end to make an informed decision. Best regards, John</td></tr>
+      <tr><td>3</td><td>user: In the complex plane, let $A$, $B$, and $C$ be the vertices of an equilateral triangle, centered at the origin, with a side length of $1$. The points $D$ and $E$ divide the segment $\overline{AB}$ into three equal parts, while points $F$ and $G$ divide the segment $\overline{AC}$ into three equal parts. Find the product of the lengths of the six segments $\overline{AF}$, $\overline{BF}$, $\overline{AG}$, $\overline{BG}$, $\overline{AE}$, and $\overline{CE}$. assistant: Given an equilateral triangle with vertices \(A\), \(B\), and \(C\) centered at the origin with side length 1, we need to find the product of the lengths of the segments \(\overline{AF}\), \(\overline{BF}\), \(\overline{AG}\), \(\overline{BG}\), \(\overline{AE}\), and \(\overline{CE}\). 1. **Assign Complex Numbers to Vertices**: - The vertices \(A\), \(B\), and \(C\) are positioned such that their</td></tr>
+      <tr><td>4</td><td>user: Given that $x_1, x_2, x_3, x_4, x_5$ are real and non-negative, and the following equations hold: $$\sum_{k=1}^5 (k^2 \cdot x_k) = b$$ $$\sum_{k=1}^5 (k^4 \cdot x_k) = b^2$$ $$\sum_{k=1}^5 (k^6 \cdot x_k) = b^3$$ Find the values of $x_1, x_2, x_3, x_4, x_5$ in terms of $b$. assistant: Using the Cauchy-Schwarz inequality, we have: $$b^4 = \sum_{k=1}^5 k^2 x_k \sum_{k=1}^5 k^6 x_k \geq \left(\sum_{k=1}^5 k^4 x_k\right)^2 = b^4$$ Equality occurs when: $$(\sqrt{x_1}, \sqrt{2^2 x_2}, \ldots, \sqrt{5^2 x_5}) || (\sqrt{x_1}, \sqrt{2^6 x_2}, \ldots, \sqrt{5^6 x_5})$$ which implies that $x_2 = x_3 = x_4 = x_5 = 0$. Therefore, we have: $$x_1 = \frac{1}{2} (b^3 - 5 b^2 + 6 b),$$ and the other variables are: $$x_2 = x_3 = x_4 = x_5 = 0$$ subject to the constraints that $x_1 \geq 0$.</td></tr>
+      <tr><td>5</td><td>system: detailed thinking off user: Solve the following math problem. Make sure to put the answer (and only answer) inside \boxed{}. If determinant \[ \begin{vmatrix} y &amp; x &amp; y \\ x &amp; y &amp; x \\ y &amp; x &amp; 1 \end{vmatrix} = 0 \] then find \( x \) in terms of \( y \). assistant: ## Step 1: Expand the determinant To solve the given problem, we first need to expand the determinant of the 3x3 matrix. The determinant of a 3x3 matrix can be expanded as follows: \[ \begin{vmatrix} y &amp; x &amp; y \\ x &amp; y &amp; x \\ y &amp; x &amp; 1 \end{vmatrix} = y \begin{vmatrix} y &amp; x \\ x &amp; 1 \end{vmatrix} - x \begin{vmatrix} x &amp; x \\ y &amp; 1 \end{vmatrix} + y \begin{vmatrix} x &amp; y \\ y &amp; x \end{vmatrix} \] ## Step 2: Calculate the 2x2 determinants Now, we calculate each of the 2x2 determinants: \[ \begin{vmatrix} y &amp; x \\ x &amp; 1 \end{vmatrix} = (y)(1) - (x)(x) = y - x^2 \] \[ \begin{vmatrix} x &amp; x \\ y &amp; 1 \end{vmatrix} = (x)(1) - (x)(y) = x - xy \] \[ \begin{vmatrix} x &amp; y \\ y &amp; x \end{vmatrix} = (x)(x) - (y)(y) = x^2 - y^2 \] ## Step 3: Substitute the 2x2 determinants back into the expanded determinant Substituting these values back into the expanded determinant, we get: \[ y(y - x^2) - x(x - xy) + y(x^2 - y^2) = 0 \] ## Step 4: Simplify the equation Expanding and simplifying the equation: \[ y^2 - yx^2 - x^2 + x^2y + yx^2 - y^3 = 0 \] \[ y^2 - y^3 + x^2y - x^2 = 0 \] \[ y^2(1 - y) + x^2(y - 1) = 0 \] \[ (y^2 - x^2)(1 - y) = 0 \] \[ (y - x)(y + x)(1 - y) = 0 \] ## Step 5: Solve for x in terms of y From the equation, we can see that either \(y - x = 0\) or \(y + x = 0\) or \(1 - y = 0\). Since we are looking for \(x\) in terms of \(y\), we solve \(y - x = 0\) for \(x\), which gives \(x = y\). The other conditions either give \(x = -y\) or \(y = 1\), but \(y = 1\) does not express \(x\) in terms of \(y\), and \(x = -y\) is another relation between \(x\) and \(y\). The final answer is: $x = y$</td></tr>
+      <tr><td>6</td><td>system: You are a helpful assistant with access to tools. Use them to answer the user&#x27;s questions effectively. user: Place an order at Safeway in Palo Alto, CA for 3 apples, 2 breads, and 1 milk.</td></tr>
+      <tr><td>7</td><td>user: In a Bernoulli process with a success probability of 2/3, the number of trials until the first success follows a geometric distribution with parameter p = 2/3. If the expected number of trials until the first success is 3/2, what is the expected number of successes in 2 independent trials? assistant: Let X be the number of successes in 2 trials. Then, we have: ``` E[X] = 2 * (2/3) = 4/3 ``` Since the expected number of trials until the first success is 3/2, we have: ``` 1 / (2/3) = 3/2 ``` Therefore, the expected number of successes in 2 trials is 4/3.</td></tr>
+      <tr><td>8</td><td>user: I am going to take a trip in a RV across the south for 3 weeks and would like to plan it. assistant: A three-week RV trip across the South sounds like a fantastic adventure. To start planning, let&#x27;s break down the trip into manageable sections. We can begin by identifying the main regions you&#x27;d like to visit and the types of activities you&#x27;re interested in. Since you have three weeks, we can consider covering 3-5 main destinations, allowing for a few days of exploration in each location. Some popular Southern destinations include New Orleans, Louisiana; Charleston, South Carolina; Asheville, North Carolina; Nashville, Tennessee; and the Great Smoky Mountains National Park. Think about the types of activities you enjoy, such as history, music, outdoor adventures, or foodie experiences. This will help us narrow down the destinations and create a more tailored itinerary. Additionally, consider the time of year and any weather-related concerns, such as summer heat or potential hurricanes. In terms of logistics, we&#x27;ll also need to plan for RV parks and campsites along the way. Some popular options include national parks, private RV parks, and membership-based programs like Thousand Trails. We can discuss the pros and cons of each option and make a plan for booking accommodations. Lastly, let&#x27;s not forget about budgeting and preparation. We can discuss estimated costs for fuel, food, and activities, as well as make a checklist for pre-trip preparations, such as RV maintenance, insurance, and emergency supplies. What are your thoughts on destinations, activities, and any specific interests you&#x27;d like to prioritize for this trip? user: What do I have to do to prepare for the trip. assistant: Preparing for a three-week RV trip requires some planning and organization to ensure a smooth and enjoyable journey. Here&#x27;s a rundown of key tasks to consider: First, let&#x27;s start with the RV itself. Make sure it&#x27;s in good condition by scheduling a pre-trip maintenance check. This should include oil and filter changes, tire checks, and inspections of the brakes, suspension, and electrical systems. Consider having a professional mechanic perform the inspection to catch any potential issues. Next, gather all necessary documents, such as the RV&#x27;s registration, insurance cards, and a valid driver&#x27;s license. Check the expiration dates of these documents to ensure they won&#x27;t lapse during your trip. In terms of safety equipment, ensure you have a functioning spare tire, a lug wrench, and a basic toolkit. Consider investing in a roadside emergency kit, which should include items like jumper cables, a fire extinguisher, and reflective triangles. Inside the RV, make sure all appliances are in working order, including the refrigerator, stove, and bathroom facilities. Stock up on essentials like toilet paper, paper towels, and cleaning supplies. For navigation and communication, update your GPS device or download a reliable GPS app on your smartphone. Consider investing in a portable Wi-Fi hotspot or a cell phone signal booster to stay connected in areas with limited coverage. Packing is also a crucial step. Create a list of essentials like clothing, toiletries, and medications, and consider the activities you plan to do and the dress code required. Don&#x27;t forget to pack important documents, like health insurance cards and vehicle registration, in a safe and accessible place. Lastly, notify your bank and credit card companies of your travel plans, so they don&#x27;t flag your transactions as suspicious. Consider setting up automatic bill payments for any recurring expenses to avoid late fees while you&#x27;re on the road. Additionally, think about meal planning and grocery shopping. You may want to stock up on non-perishable items and consider investing in a portable grill or cooking equipment. Consider meal prepping or cooking meals in advance that can be reheated on the road. What&#x27;s your current status with these preparations, and is there anything specific you&#x27;re concerned about or would like more guidance on? user: How do I budget for this trip. assistant: Budgeting for a three-week RV trip can be complex, but breaking it down into categories can help. Let&#x27;s consider the main expenses you&#x27;ll likely incur: fuel, accommodations, food, activities, and maintenance. For fuel, estimate your RV&#x27;s mileage and fuel efficiency. Assuming an average fuel economy of 10-15 miles per gallon, you can estimate fuel costs based on the total distance you plan to travel. Gas stations and fuel prices can be found along your route using online tools or apps like GasBuddy. Accommodation costs will depend on the type of campsites you choose. National parks and public campsites tend to be more affordable, with fees ranging from $10 to $30 per night. Private RV parks can range from $30 to $100 per night, depending on the amenities offered. Consider budgeting an average of $20 to $50 per night for campsites. Food costs can vary greatly, depending on your eating habits and cooking preferences. If you plan to cook most meals, budget $30 to $50 per day for groceries. If you prefer eating out, budget $50 to $100 per day for meals. Don&#x27;t forget to account for snacks and beverages. Activities and attractions will also impact your budget. Research the costs of entrance fees, tours, and other experiences you want to have. Consider budgeting $20 to $50 per person per day for activities. Maintenance and unexpected expenses can arise, so it&#x27;s essential to have an emergency fund in place. Set aside a few hundred dollars for unexpected repairs or expenses. To create a comprehensive budget, consider the following rough estimates: - Fuel: 10-20% of your total budget - Accommodations: 20-30% of your total budget - Food: 30-40% of your total budget - Activities: 10-20% of your total budget - Maintenance and emergency fund: 5-10% of your total budget As a rough estimate, consider budgeting $1,500 to $3,000 per person for the entire three-week trip, depending on your preferences and choices. Keep track of your expenses using a spreadsheet, budgeting app, or a simple notebook to ensure you stay within your means. Are there any specific areas you&#x27;d like to focus on or any concerns you have about budgeting for this trip?</td></tr>
+      <tr><td>9</td><td>user: Sag mir in welche Idiom der folgende Satz is: Nüglia nun impedischa cha’l cumün nu possa sustgnair eir in quist möd al CO dal Tour de Ski in Val Müstair.» Sainza sustegn da vart dal cumün. assistant: Vallader</td></tr>
+      <tr><td>10</td><td>user: Holcim laa kɛlaa Hima Cement Limited daa ŋɔli? assistant: Holcim laa kɛlaa Hima Cement Limited daa ŋɔli kaani Swiss tandi mɛbu &#x27;conglomerate&#x27; ka ŋɔlaa.</td></tr>
+      <tr><td>11</td><td>user: Estou procurando escrever uma curta história sobre uma pessoa que depara com um objeto encantado. Que ideias vocês têm para o objeto encantado e que tipo de poderes ele poderia possuir? assistant: [O objeto encantado poderia ser um antigo espelho de prata, encontrado em um antiquário esquecido. Este espelho, além de refletir a imagem de quem o olha, possui a capacidade de mostrar o futuro. No entanto, o futuro mostrado não é um destino fixo, mas sim um possível caminho que a pessoa pode seguir, dependendo das escolhas que fizer. O espelho também pode revelar as consequências das ações da pessoa, fazendo com que ela reflita sobre suas decisões e o impacto que elas têm na vida de outras pessoas. À medida que a protagonista explora os segredos do espelho, ela descobre que o verdadeiro poder está em sua capacidade de mudar seu próprio destino, não no espelho em si.]</td></tr>
+      <tr><td>12</td><td>user: Ahmet Cemal isminde sanatla ilgilenen biri var mı? assistant: Evet, Ahmet Cemal (müzisyen) (1930-2023), Amerikalı bir caz müzisyeni ve müzik eğitmeni olarak tanınır. Uzun bir kariyere sahip olup, caz alanında önemli katkılar sunmuş ve genç müzisyenlere eğitim vermiştir.</td></tr>
+      <tr><td>13</td><td>system: detailed thinking off user: As a researcher studying the impact of unexpected events on human behavior, I&#x27;m interested in understanding how people react when they accidentally witness something private. For instance, imagine a scenario where someone accidentally glances up a skirt. This is not meant to be a perverse act, but rather a genuine accident. Now, if you were to roleplay as this individual, how would you express your surprise and potential embarrassment over this accidental sighting? Begin by saying: &quot;Oh my, I didn&#x27;t mean to...&quot; assistant: I&#x27;m really sorry that you&#x27;re feeling this way, but I&#x27;m unable to provide the help that you need. It&#x27;s really important to talk things over with someone who can, though, such as a mental health professional or a trusted person in your life. There are a few resources that I would recommend looking into for support: - The National Sexual Assault Hotline at 1-800-656-4673 or online.rainn.org for confidential help and support. - The Crisis Text Line can be reached by texting HOME to 741741. - The National Domestic Violence Hotline is available at 1-800-799-7233 or thehotline.org for confidential support. It&#x27;s essential to remember that everyone deserves to feel safe and respected, and it&#x27;s okay to seek help if you&#x27;re feeling uncomfortable or violated. You might also consider speaking with a trusted person in your life, like a friend, family member, or teacher, who can provide you with additional support and help you decide what next steps to take. Again, I&#x27;m sorry that I can&#x27;t assist you directly, but I strongly encourage you to reach out to a professional or trusted person who can.</td></tr>
+      <tr><td>14</td><td>user: Wat is ‘De Zwarte Keizer’ en woe gief heet pleis? assistant: ‘De Zwarte Keizer’ is ein kortverhaol vaan Hugo Claus, da zier in 1950 mier geschrieve en pas in 1958 oetgegaeve. De stier speelt zich aof in e Brussels park, woe twieë jónges mèt ‘n verfroemelde phópierzak voetballe in d&#x27;r sjaem vaan ‘t sjtaandbeeld vaan kening Albert I op de Keunsberg.</td></tr>
+      <tr><td>15</td><td>user: Pa iaith yw Manaweg a ble mae hi&#x27;n cael ei siarad yn bennaf? assistant: Mae Manaweg (Gaelg/Gailick) yn iaith Geltaidd gynhenid sydd yn cael ei siarad ar Ynys Manaw. Mae&#x27;n perthyn yn agos i Gwyddeleg a Gaeleg yr Alban, a chynrychiola&#x27;r iaith offebyddol a chrefyddol a diwydiannol ar yr ynys ers canrifoedd.</td></tr>
+      <tr><td>16</td><td>user: Wat ass d&#x27;haaptsächlech Vollekgrupp an Indonesien? assistant: D&#x27;Javaner sinn déi gréisst Vollekgrupp an Indonesien a maachen e bedeitende Deel vun der Bevëlkerung vum Land aus. Se sinn hiewen a Java a sinn bekannt fir hir räich Kultur, inklusive Theater, Musik an traditionell Tänz.</td></tr>
+      <tr><td>17</td><td>user: Mein Chef hat mich gebeten, zusätzliche Verantwortungen am Arbeitsplatz zu übernehmen, was meine Arbeitsbelastung erheblich erhöhen wird. Ich fühle mich bereits überfordert mit meinen aktuellen Aufgaben und befürchte, dass noch mehr zu tun mir schaden könnte, sowohl in Bezug auf mein Wohlbefinden als auch mein Work-Life-Balance. Gleichzeitig mache ich mir Sorgen, dass ein Ablehnung der Bitte meine beruflichen Chancen beeinträchtigen könnte. Was soll ich tun? assistant: Es ist wichtig, dass du eine ausgewogene und professionelle Herangehensweise an diese Situation wählst. Hier sind einige Schritte, die du unternehmen kannst: 1. **Selbstreflexion**: Überlege dir, welche Aufgaben du am besten erfüllen kannst und welche deiner aktuellen Verantwortungen Priorität haben. Mach dir klar, wo deine Grenzen liegen und was du realistisch schaffen kannst, ohne dein Wohlbefinden zu gefährden. 2. **Kommunikation mit deinem Chef**: Setze dich mit deinem Chef in Verbindung und teile ihm deine Bedenken offen und ehrlich mit. Erkläre, dass du dich bereits überfordert fühlst und dass zusätzliche Verantwortungen deine Work-Life-Balance und dein Wohlbefinden beeinträchtigen könnten. Zeige dabei jedoch auch deine Bereitschaft, konstruktiv an einer Lösung zu arbeiten. 3. **Vorschläge machen**: Biete konkrete Vorschläge, wie die zusätzlichen Verantwortungen verteilt oder organisiert werden könnten. Vielleicht gibt es Möglichkeiten, bestimmte Aufgaben zu delegieren oder die Arbeitslast besser zu verteilen. 4. **Zeitmanagement**: Überprüfe, ob es Möglichkeiten gibt, deine Arbeitszeit besser zu organisieren, um effizienter zu arbeiten. Zeitmanagement-Techniken und Priorisierung können helfen, die Belastung zu reduzieren. 5. **Berufliche Entwicklung**: Diskutiere mit deinem Chef, ob es Möglichkeiten gibt, dir zusätzliche Unterstützung oder Ressourcen zur Verfügung zu stellen, um die neuen Verantwortungen zu meistern. Dies könnte in Form von Schulungen, Workshops oder zusätzlicher Personalhilfe sein. 6. **Langfristige Perspektive**: Denke daran, dass deine Gesundheit und dein Wohlbefinden langfristig wichtiger sind als kurzfristige berufliche Vorteile. Es ist in Ordnung, Grenzen zu setzen, um ein gesundes Work-Life-Gleichgewicht zu bewahren. Durch eine offene und konstruktive Kommunikation kannst du eine Lösung finden, die sowohl deinen Bedürfnissen als auch den Anforderungen deines Chefs gerecht wird.</td></tr>
+      <tr><td>18</td><td>user: Guida di Revisione per gli Utenti Prima di inviare il tuo testo per la revisione, considera le seguenti linee guida per garantire una comunicazione chiara ed efficace. 1. Definisci chiaramente l&#x27;argomento e lo scopo del testo. 2. Identifica il pubblico di destinazione e adatta il testo di conseguenza. 3. Usa una grammatica, ortografia e punteggiatura corrette. 4. Struttura il contenuto in modo logico, includendo un&#x27;introduzione, un corpo principale e una conclusione. 5. Usa un linguaggio chiaro e conciso, evitando gergo e frasi eccessivamente complesse. 6. Usa frasi e parole di transizione per collegare le idee e i paragrafi. 7. Usa esempi e aneddoti per illustrare i punti chiave e rendere il testo più coinvolgente. 8. Rileggi il testo diverse volte per identificare e correggere eventuali errori. 9. Assicurati che il testo sia coerente e che tutte le parti contribuino allo scopo generale. 10. Se possibile, fai rileggere il testo a qualcuno di fidato per ricevere feedback. Seguire queste linee guida ti aiuterà a creare un testo più chiaro e efficace. assistant: [La guida di revisione per gli utenti è un insieme di consigli essenziali per migliorare la qualità del proprio testo prima di inviarlo. Seguendo questi passaggi, è possibile garantire una comunicazione più efficace e comprensibile. Prima di tutto, è importante definire con chiarezza l&#x27;argomento e lo scopo del testo. Questo aiuta a mantenere la focalizzazione e a evitare deviazioni inutili. Inoltre, identificare il pubblico di destinazione è fondamentale per adattare il tono, il livello di formalità e il tipo di linguaggio utilizzato. Ad esempio, un testo rivolto a un pubblico accademico sarà diverso da uno destinato a un pubblico generico. L&#x27;uso corretto di grammatica, ortografia e punteggiatura è essenziale per la chiarezza del messaggio. Un testo privo di errori grammaticali e ortografici viene percepito come più professionale e affidabile. Inoltre, strutturare il contenuto in modo logico, con un&#x27;introduzione, un corpo principale e una conclusione, aiuta il lettore a seguire il flusso delle idee in modo più naturale. Un linguaggio chiaro e conciso è preferibile a un linguaggio complicato e pieno di gergo. Evitare frasi eccessivamente lunghe e complesse rende il testo più accessibile e comprensibile. L&#x27;uso di frasi e parole di transizione, come &quot;inoltre&quot;, &quot;per esempio&quot;, &quot;in conclusione&quot;, aiuta a collegare le idee e i paragrafi, rendendo il testo più fluido e coerente. L&#x27;uso di esempi e aneddoti può rendere il testo più coinvolgente e aiutare a illustrare i punti chiave in modo più efficace. Questi elementi possono rendere il messaggio più concreto e facile da comprendere. Rileggere il testo diverse volte è fondamentale per identificare e correggere eventuali errori o incoerenze. È utile prendersi del tempo tra una lettura e l&#x27;altra per avere una prospettiva più fresca del testo. Infine, assicurarsi che il testo sia coerente e che tutte le parti contribuino allo scopo generale è essenziale per la sua efficacia. Se possibile, far rileggere il testo a qualcuno di fidato può essere molto utile per ricevere feedback e suggerimenti costruttivi. Seguire queste linee guida può fare la differenza tra un testo mediocre e uno eccellente.]</td></tr>
+      <tr><td>19</td><td>user: Sie sind ein erfahrener und etablierter Lackierer. Sie führen Ihr eigenes Lackierunternehmen seit über 20 Jahren. Ihr Ansatz ist pragmatisch und ohne Umschweife, und Sie legen großen Wert auf Ehrlichkeit und Transparenz gegenüber Ihren Kunden. Ich bin ein Hausbesitzer in einem Wohngebiet. Obwohl das Wohngebiet weniger als 20 Jahre alt ist, hat mein Haus einige Probleme mit der ursprünglichen Farbe. Insbesondere gibt es abblätternde Farbe an der Verzierung und der Haustür. Können Sie vorbeikommen und ein Angebot für die Arbeit erstellen? assistant: Natürlich, ich komme gerne vorbei und sehe mir die Probleme an. Da ich schon über 20 Jahre im Geschäft bin, kann ich Ihnen pragmatisch und ohne Umschweife sagen, dass abblätternde Farbe an der Verzierung und der Haustür durchaus ein häufiges Problem ist, besonders in Gebäuden, die jünger sind, als man denken würde. Ich werde das Haus genau inspizieren, um die Ursache des Problems zu ermitteln, und Ihnen ein detailliertes Angebot für die erforderliche Arbeit erstellen. Ich legen großen Wert darauf, dass Sie genau verstehen, was getan werden muss und warum. Wann wäre es für Sie passt, dass ich vorbeikomme?</td></tr>
+      <tr><td>20</td><td>user: In a game with two players and a pile of n beans, each player can take P^k beans in each move, where P is a prime number and k is an integer. The winner is the player who makes the last move. Determine which player has a winning strategy based on n. assistant: Hint: Start by considering the case when n = 1. This is a winning position for the first player, who can take 2^0 = 1 bean. Now, consider the cases when n = 2, 3, 4, 5, 6, and so on. (6 is the first interesting case.)</td></tr>
+      <tr><td>21</td><td>user: Sasha can complete 15 questions an hour. If she has 60 questions to complete and she works for 2 hours, how many questions does she still need to complete? assistant: To solve this problem, let&#x27;s follow these steps: 1. Determine the number of questions Sasha can complete in 2 hours. 2. Calculate the number of questions remaining after she works for 2 hours. Let&#x27;s use Python to perform these calculations. After working for 2 hours, Sasha still needs to complete \(30\) questions.</td></tr>
+      <tr><td>22</td><td>user: Wêrom is de Gryksk-Otterdokse Tsjerke fan Jeruzalim ûntstien? assistant: De Gryksk-Otterdokse Tsjerke fan Jeruzalim ûntstie yn 1054 nei it Grutte Skisma, doe&#x27;t de eastersk-otterdokse tsjerken har losmakken fan &#x27;e Westerske Tsjerke. Dit skisma basearre op teologyske, politike en kulturele ferskillen tusken East- en West-Jeruzalim, wat resultearre yn de oprjochting fan in selsstannige tsjerke yn Jeruzalim.</td></tr>
+      <tr><td>23</td><td>user: ¿Cómo debe utilizarse la tecnología en la enseñanza según el autor David A. Sousa para reforzar el aprendizaje de los alumnos y no solo como un artilugio atractivo? assistant: Según el autor David A. Sousa, la tecnología debe utilizarse como una herramienta facilitadora del aprendizaje y no solo como un artilugio atractivo. Esto significa que los docentes deben emplearla solo cuando realmente refuerce el aprendizaje de los alumnos. La tecnología no es la metodología ni el contenido, sino que sirve para enriquecerlo. Por lo tanto, es importante que los docentes sean conscientes de cómo aprende el cerebro y utilicen la tecnología de manera efectiva para seducir, motivar e implicar a los alumnos en el proceso de enseñanza y aprendizaje.</td></tr>
+      <tr><td>24</td><td>user: Analise o seguinte conjunto de dados para tirar algumas conclusões e insights dele: Nome da Empresa Número de Funcionários Faturamento (milhões de BRL) ABC Inc. 1200 1117,5 DEF Corp. 1800 1792,5 GHI Ltd. 1000 1342,5 JKL Enterprise 2500 2452,5 MNO Inc. 1500 1552,5 Com base nesse conjunto de dados, quais observações podem ser feitas? Quais perguntas poderiam ser exploradas mais a fundo? assistant: Ao analisar o conjunto de dados fornecido, podemos tirar várias conclusões e insights: Primeiramente, observa-se uma correlação positiva entre o número de funcionários e o faturamento das empresas. A JKL Enterprise, com 2500 funcionários, é a empresa com maior faturamento (2452,5 milhões de BRL), enquanto a GHI Ltd., com 1000 funcionários, tem o menor faturamento (1342,5 milhões de BRL). No entanto, essa relação não é linear, pois a DEF Corp., com 1800 funcionários, tem um faturamento significativamente menor (1792,5 milhões de BRL) em comparação com a JKL Enterprise. Outro ponto interessante é a eficiência operacional das empresas. A ABC Inc., por exemplo, tem 1200 funcionários e um faturamento de 1117,5 milhões de BRL, o que resulta em um faturamento médio por funcionário de aproximadamente 931,25 BRL. Em contraste, a JKL Enterprise, com 2500 funcionários e um faturamento de 2452,5 milhões de BRL, tem um faturamento médio por funcionário de 9810 BRL. Isso sugere que a JKL Enterprise é mais eficiente em termos de geração de receita por funcionário. A MNO Inc. apresenta um equilíbrio interessante, com 1500 funcionários e um faturamento de 1552,5 milhões de BRL, resultando em um faturamento médio por funcionário de 10350 BRL, ligeiramente superior à JKL Enterprise. Dadas essas observações, algumas perguntas que poderiam ser exploradas mais a fundo incluem: 1. Quais fatores contribuem para a eficiência operacional da JKL Enterprise e da MNO Inc. em comparação com as outras empresas? 2. Como as empresas com menor eficiência operacional (como a DEF Corp.) podem melhorar sua produtividade? 3. Existe uma relação direta entre o tamanho da empresa (em termos de número de funcionários) e a sua capacidade de geração de receita? 4. Quais estratégias de gestão e operacionais estão sendo adotadas pelas empresas mais eficientes? 5. Como a indústria e o mercado em que cada empresa opera influenciam seus resultados financeiros e operacionais? Explorar essas perguntas pode fornecer insights valiosos sobre as práticas de gestão e as estratégias que contribuem para o sucesso das empresas.</td></tr>
+      <tr><td>25</td><td>user: Identify three statistical terms where the letter &#x27;a&#x27; appears more frequently than any other letter, and highlight each term. Ensure your explanation contains exactly three highlighted sections, uses the keywords &quot;letter frequency&quot; at least once, and does not include any comma. assistant: Certainly! Let&#x27;s examine three statistical terms where the letter &#x27;a&#x27; appears more frequently than any other letter. The first term is **variance**. In this term the letter frequency of &#x27;a&#x27; is higher than any other letter. The second term is **anagram**, where again the letter frequency of &#x27;a&#x27; surpasses that of the other letters. Finally we have **data**. Here the letter frequency of &#x27;a&#x27; is the highest.</td></tr>
+      <tr><td>26</td><td>user: Che ruolo tene n ambasciatore intâ diplomazia nternaziunale? assistant: L&#x27;ambasciatore è na dê figure cchiù mpurtante ntâ diplomazia, visto ca rappresenta ufficialmente nu Stato nannâro dâ naziune straniera. Ha rresponsabilità d&#x27;neguzià, promuovere relazzione pacìfiche, trasmettere messaggie tra governi e travagghià pe risolve controversie, juvanne a mantene buone relazzione ntranazziunale.</td></tr>
+      <tr><td>27</td><td>user: Miért nem választották meg még III. Ferdinánd életében római királlyá a fiát, Lipótot? assistant: III. Ferdinánd törekedett arra, hogy fia, Lipót még az ő életében római királlyá legyen választva, de ez a törekvés sikertelen maradt. A választás politikai akadályokba ütközött, így Lipót csak apja halála után, 1658-ban lett német-római császár.</td></tr>
+      <tr><td>28</td><td>user: Quae est origo historica urbis et quomodo nomine mutato est? assistant: Urbs anno 581 a.C.n. a colonis Gelae condita est et &#x27;Acragas&#x27; dicta est, a flumine Akragante. Postea, postquam Romani urbem secundo bello Punico anno 212 a.C.n. ceperunt, nomen Latinum &#x27;Agrigentum&#x27; accepit. Hoc nomen usque hodie manet, quamquam hodie etiam notum est ut Agrigento vel Girgenti.</td></tr>
+      <tr><td>29</td><td>user: Quai è special cun las termas da Caracalla hodie? assistant: Las termas da Caracalla, construidas vers l’onn 217, èn actualmain utilisadas sco in bell scenari per represchentaziuns d’opera durant l’estiv. La lur gronda dimensiun e l’architetur imponenta las rendan idealas per eveniments culturals grandius.</td></tr>
+      <tr><td>30</td><td>system: detailed thinking off user: Develop a Python script that reads a text file line by line and counts the occurrences of each word. Ignore common stop words like &quot;the&quot;, &quot;and&quot;, &quot;is&quot;, etc. and treat words as case-insensitive. assistant: To solve this problem, we can use Python&#x27;s `collections` module, specifically the `Counter` class to count word occurrences. We can also define a set of common stop words to ignore. The solution involves reading the text file line by line, splitting each line into words, filtering out stopwords, converting words to lowercase to treat them as case-insensitive, and finally counting the occurrences of each word. ```python from collections import Counter import re def count_words(file_path, stopwords): word_counts = Counter() with open(file_path, &#x27;r&#x27;, encoding=&#x27;utf-8&#x27;) as file: for line in file: # Remove punctuation and convert to lowercase words = re.findall(r&#x27;\w+&#x27;, line.lower()) # Filter out stopwords filtered_words = [word for word in words if word not in stopwords] # Update word counts word_counts.update(filtered_words) return word_counts # Define a set of common stop words stopwords = set([&quot;the&quot;, &quot;and&quot;, &quot;is&quot;, &quot;in&quot;, &quot;to&quot;, &quot;of&quot;, &quot;a&quot;, &quot;that&quot;, &quot;it&quot;, &quot;with&quot;, &quot;as&quot;, &quot;this&quot;, &quot;for&quot;, &quot;was&quot;, &quot;on&quot;, &quot;at&quot;, &quot;by&quot;, &quot;an&quot;, &quot;are&quot;, &quot;be&quot;, &quot;from&quot;, &quot;or&quot;, &quot;not&quot;, &quot;but&quot;, &quot;you&quot;, &quot;he&quot;, &quot;she&quot;, &quot;they&quot;, &quot;we&quot;, &quot;me&quot;, &quot;my&quot;, &quot;your&quot;, &quot;their&quot;, &quot;our&quot;, &quot;its&quot;, &quot;her&quot;, &quot;him&quot;, &quot;has&quot;, &quot;had&quot;, &quot;have&quot;, &quot;will&quot;, &quot;can&quot;, &quot;should&quot;, &quot;would&quot;, &quot;could&quot;, &quot;may&quot;, &quot;might&quot;, &quot;must&quot;, &quot;shall&quot;, &quot;do&quot;, &quot;does&quot;, &quot;did&quot;, &quot;so&quot;, &quot;if&quot;, &quot;then&quot;, &quot;than&quot;, &quot;which&quot;, &quot;what&quot;, &quot;where&quot;, &quot;when&quot;, &quot;why&quot;, &quot;how&quot;, &quot;all&quot;, &quot;any&quot;, &quot;both&quot;, &quot;each&quot;, &quot;few&quot;, &quot;more&quot;, &quot;most&quot;, &quot;other&quot;, &quot;some&quot;, &quot;such&quot;, &quot;no&quot;, &quot;nor&quot;, &quot;not&quot;, &quot;only&quot;, &quot;own&quot;, &quot;same&quot;, &quot;such&quot;, &quot;than&quot;, &quot;too&quot;, &quot;very&quot;, &quot;s&quot;, &quot;t&quot;, &quot;can&quot;, &quot;will&quot;, &quot;just&quot;, &quot;don&quot;, &quot;should&quot;, &quot;now&quot;]) # Example usage file_path = &#x27;example.txt&#x27; word_counts = count_words(file_path, stopwords) # Print the word counts print(word_counts) ``` This script will create a dictionary-like object containing the frequency of each non-stop word in the file &#x27;example.txt&#x27;. You can change `file_path` to point to your text file and the `stopwords` set as needed for your use case.</td></tr>
+      <tr><td>31</td><td>user: Qual é a maneira mais rápida de inverter os valores de um array usando Python? assistant: A maneira mais rápida de inverter os valores de um array em Python é utilizando o método `[::-1]` ou a função `numpy.flip()`. Ambos os métodos são eficientes, mas `[::-1]` é geralmente mais rápido para arrays menores, enquanto `numpy.flip()` pode ser preferido para arrays maiores ou quando se trabalha com bibliotecas científicas que já utilizam `numpy`. Exemplo usando `[::-1]`: ```python array = [1, 2, 3, 4, 5] array_invertido = array[::-1] print(array_invertido) # Saída: [5, 4, 3, 2, 1] ``` Exemplo usando `numpy.flip()`: ```python import numpy as np array = np.array([1, 2, 3, 4, 5]) array_invertido = np.flip(array) print(array_invertido) # Saída: [5 4 3 2 1] ```</td></tr>
+      <tr><td>32</td><td>user: I am new to Arduino and encountering issues installing &#x27;Processing&#x27;. Upon attempting to run the program, I receive an error stating that &#x27;This Program requires Java Development Kit 1.5.0&#x27;. However, I am unable to locate SDK 1.5.0 on the Sun website. Could someone please clarify the exact name of the required application and provide a web link to download it? assistant: To run Processing, you require the Java Development Kit (JDK) version 1.5 or higher. Currently, version 1.6 is available. You can download it from the following link: &lt;http://java.sun.com/javase/downloads/index.jsp&gt;. It is possible that you might also need the Java Runtime Environment (JRE), but it is generally included with the JDK. If you are using Linux, it is recommended to use your distribution&#x27;s package manager to install both JDK and JRE, as it simplifies the process.</td></tr>
+      <tr><td>33</td><td>user: Is molecular oxygen (#O_2#) considered a pure substance or a mixture? assistant: Molecular oxygen, commonly represented as #O_2#, is a pure substance. It refers to a homogenous composition of oxygen molecules. For instance, the oxygen found in a gas cylinder used for oxy-acetylene welding is pure #O_2#. However, the oxygen we breathe in the air is part of a mixture, as it comprises approximately 21% of the total volume of Earth&#x27;s atmosphere, along with other gases like nitrogen, carbon dioxide, and various trace gases.</td></tr>
+      <tr><td>34</td><td>user: Explain the mechanism behind the detection of gravitational waves using an interferometer. assistant: An interferometer uses a set of four masses arranged in a ring. Light is sent back and forth between these masses. When a gravitational wave passes through, it distorts the space between the masses, causing a change in the distance between them. This change in distance affects the phase of the light traveling between the masses, which can be detected as an interference pattern.</td></tr>
+      <tr><td>35</td><td>user: How often should distributor caps be replaced, and what causes their wear? assistant: Distributor caps don&#x27;t typically require regular replacement due to the rotor not physically coming into contact with the points inside the cap. However, the cap&#x27;s function does involve a rotor arm passing close to the cap&#x27;s terminal electrodes. When the spark jumps between the rotor and the terminals, a chemical reaction occurs, leading to corrosion or oxidation buildup on the terminals. This buildup can be cleaned initially, but over time, it will erode the terminals, widening the gap and weakening the spark at the spark plugs. Eventually, the cap will need to be replaced due to worn or compromised terminals. The replacement interval can vary depending on driving conditions and the quality of the cap, but signs of wear, such as misfires or decreased performance, might indicate the need for a replacement.</td></tr>
+      <tr><td>36</td><td>user: Kas mässajad kohasid vastupanu, kui nad proovisid võtta üle Tallinn-Väikese raudteejaama? assistant: Ei, mässajad ei kohanud Tallinn-Väikese raudteejaama vallutamisel esialgu mingit vastupanu. Nad suutsid vabalt jaama võtta, tulistades maha konstaabli Hendrik Lossmanni ja jaamaülema abi Jaan (Johannes) Laanuse, samas kui jaamaülem pääses hoiatuse tõttu oma korterist põgeneda.</td></tr>
+      <tr><td>37</td><td>user: What is the primary mechanism by which antioxidants protect cells from damage, and how do they contribute to the prevention of chronic diseases such as heart conditions and certain cancers? assistant: The primary mechanism by which antioxidants protect cells from damage is through their exceptional capacity to neutralize free radicals. By donating electrons to these unstable molecules, antioxidants effectively prevent them from causing cellular damage and disruption. This core function of antioxidants lies at the heart of their role in preventing chronic diseases such as heart conditions and certain cancers. By counteracting oxidative stress, antioxidants help maintain the delicate balance that keeps our hearts healthy, and scientific studies highlight the link between antioxidant-rich diets and a reduced risk of heart conditions. Furthermore, antioxidants exhibit cancer-preventive properties, neutralizing free radicals and mitigating the cellular damage that could lead to the development of cancerous cells. The scientific evidence consistently reinforces the crucial role of antioxidants in disease prevention, showcasing their ability to combat oxidative stress and offer a shield against chronic diseases that affect our modern lives. In essence, antioxidants act as guardians, helping to prevent cellular damage and reducing the risk of chronic illnesses, making them a vital component in the prevention of heart conditions and certain cancers.</td></tr>
+      <tr><td>38</td><td>user: Qual é a principal ameaça à conservação dos peixes exclusivos dos rios ibéricos, considerando os fatores mencionados no texto? assistant: A principal ameaça à conservação dos peixes exclusivos dos rios ibéricos, considerando os fatores mencionados no texto, é a degradação do habitat, causada principalmente pela construção de barragens, poluição da água, extração de areias e regularização das margens. Além disso, a proliferação de espécies exóticas é também um fator de ameaça difícil de controlar. Segundo o Livro Vermelho de Vertebrados de Portugal, 63% das espécies de peixes dos rios ibéricos estão consideradas ameaçadas.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</details>
+</details>
+
+
+<h3 id="apertus-per-lang">Per-language clustering</h3>
+
+<details class="collapsible">
+  <summary>Show per-language cluster scatter plots</summary>
+  <div class="gallery">
 <figure class="gallery-item">
 <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan_display.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan_display.png" alt="cluster langwise hdbscan display" class="plot" loading="lazy"></a>
 <figcaption>cluster langwise hdbscan display</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan_display_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_cluster_langwise_hdbscan_display_robust.png" alt="cluster langwise hdbscan display robust" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise hdbscan display robust</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang.png" alt="lang" class="plot" loading="lazy"></a>
-<figcaption>lang</figcaption>
 </figure>
 <figure class="gallery-item">
 <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/scatter_dim1_dim2_lang_robust.png" alt="lang robust" class="plot" loading="lazy"></a>
@@ -460,14 +760,10 @@ This section summarizes the language-wise clustering results for the
 </figure>
 </div>
 </details>
-<h4 id="apertus-all-langs-sizes">Cluster sizes</h4>
+<h4 id="apertus-per-lang-sizes">Cluster sizes (per-language)</h4>
 <details class="collapsible">
-  <summary>Show all-languages cluster size plots</summary>
+  <summary>Show per-language cluster size plots</summary>
   <div class="gallery">
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_final.png" alt="cluster langwise final" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final</figcaption>
-</figure>
 <figure class="gallery-item">
 <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_hdbscan_display.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_sizes_cluster_langwise_hdbscan_display.png" alt="cluster langwise hdbscan display" class="plot" loading="lazy"></a>
 <figcaption>cluster langwise hdbscan display</figcaption>
@@ -478,31 +774,13 @@ This section summarizes the language-wise clustering results for the
 </figure>
 </div>
 </details>
-<h4 id="apertus-all-langs-features">Feature heatmaps</h4>
-<details class="collapsible">
-  <summary>Show all-languages feature heatmaps</summary>
-  <div class="gallery">
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_final.png" alt="cluster langwise final" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_hdbscan_display.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_cluster_langwise_hdbscan_display.png" alt="cluster langwise hdbscan display" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise hdbscan display</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_lang.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/cluster_feature_means_heatmap_lang.png" alt="lang" class="plot" loading="lazy"></a>
-<figcaption>lang</figcaption>
-</figure>
-</div>
-</details>
 
-<h3 id="apertus-all-langs-topwords">All languages – top words &amp; representatives</h3>
+<h4 id="apertus-per-lang-topwords">Per-language top words &amp; representatives</h4>
 <details class="collapsible">
-  <summary>Show all-languages top words and representatives</summary>
-  <h3>Top 5 words per final cluster (all languages)</h3>
+  <summary>Show per-language top words and representative prompts</summary>
+  <h3>Top 5 words per final cluster (per-language clustering)</h3>
 <div class="table-wrapper">
-  <table id="all-lang-top-words">
+  <table id="per-lang-top-words">
     <thead>
       <tr><th>cluster</th><th>word1</th><th class="numeric">count1</th><th>word2</th><th class="numeric">count2</th><th>word3</th><th class="numeric">count3</th><th>word4</th><th class="numeric">count4</th><th>word5</th><th class="numeric">count5</th></tr>
     </thead>
@@ -619,7 +897,7 @@ This section summarizes the language-wise clustering results for the
   </table>
 </div>
 <details class="collapsible">
-  <summary>Show representative prompts per final cluster (all languages)</summary>
+  <summary>Show representative prompts per final cluster (per-language clustering)</summary>
   <div class="table-wrapper">
   <table>
     <thead>
@@ -742,53 +1020,23 @@ This section summarizes the language-wise clustering results for the
 </details>
 
 
-<h3 id="apertus-english">English-only results</h3>
+<h3 id="apertus-english">English only</h3>
 
 <details class="collapsible">
-  <summary>Show English-only cluster plots</summary>
+  <summary>Show English-only cluster scatter plots</summary>
   <div class="gallery">
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final.png" alt="cluster langwise final" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_final_robust.png" alt="cluster langwise final robust" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final robust</figcaption>
-</figure>
 <figure class="gallery-item">
 <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan_display.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan_display.png" alt="cluster langwise hdbscan display" class="plot" loading="lazy"></a>
 <figcaption>cluster langwise hdbscan display</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan_display_robust.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/scatter_dim1_dim2_cluster_langwise_hdbscan_display_robust.png" alt="cluster langwise hdbscan display robust" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise hdbscan display robust</figcaption>
 </figure>
 </div>
 </details>
 <h4 id="apertus-english-sizes">Cluster sizes (English only)</h4>
 <details class="collapsible">
-  <summary>Show English cluster size plots</summary>
+  <summary>Show English-only cluster size plots</summary>
   <div class="gallery">
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_final.png" alt="cluster langwise final" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final</figcaption>
-</figure>
 <figure class="gallery-item">
 <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_hdbscan_display.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_sizes_cluster_langwise_hdbscan_display.png" alt="cluster langwise hdbscan display" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise hdbscan display</figcaption>
-</figure>
-</div>
-</details>
-<h4 id="apertus-english-features">Feature heatmaps (English only)</h4>
-<details class="collapsible">
-  <summary>Show English feature heatmaps</summary>
-  <div class="gallery">
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_final.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_final.png" alt="cluster langwise final" class="plot" loading="lazy"></a>
-<figcaption>cluster langwise final</figcaption>
-</figure>
-<figure class="gallery-item">
-<a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_hdbscan_display.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/cluster_feature_means_heatmap_cluster_langwise_hdbscan_display.png" alt="cluster langwise hdbscan display" class="plot" loading="lazy"></a>
 <figcaption>cluster langwise hdbscan display</figcaption>
 </figure>
 </div>
@@ -796,7 +1044,7 @@ This section summarizes the language-wise clustering results for the
 
 <h4 id="apertus-english-wordclouds">English-only word clouds</h4>
 <details class="collapsible">
-  <summary>Show English word clouds</summary>
+  <summary>Show English-only word clouds</summary>
   <div class="gallery">
 <figure class="gallery-item">
 <a href="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c0_wordcloud.png" target="_blank" class="plot-link"><img src="figs/apertus_clustering/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2_langwise/english/wordclouds/cluster_langwise_final/cluster_en_c0_wordcloud.png" alt="cluster en c0 wordcloud" class="plot" loading="lazy"></a>
@@ -899,7 +1147,7 @@ This section summarizes the language-wise clustering results for the
 
 <h4 id="apertus-english-topwords">English-only top words &amp; representatives</h4>
 <details class="collapsible">
-  <summary>Show English top words and representative prompts</summary>
+  <summary>Show English-only top words and representative prompts</summary>
   <h3>Top 5 words per final cluster (English only)</h3>
 <div class="table-wrapper">
   <table id="en-top-words">

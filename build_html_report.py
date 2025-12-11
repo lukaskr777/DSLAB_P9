@@ -1,19 +1,22 @@
 """
 Build a complete HTML report combining:
 1) Public-AI (LiteLLM_SpendLogs) analysis for the Apertus-70B model group, and
-2) Language-wise clustering results for the swiss-ai/apertus-sft-mixture dataset.
+2) Clustering results for the swiss-ai/apertus-sft-mixture dataset.
 
 The script:
-- Locates all generated figures (usage, performance, behavior, user clustering, language-wise clustering,
-  English-only subsets, word clouds, top-word tables, representative prompts).
+- Locates all generated figures (usage, performance, behavior, user clustering,
+  mixed-languages clustering, per-language clustering, English-only subsets, word
+  clouds, top-word tables, representative prompts).
 - Builds galleries, tables, navigation anchors, and an overview section.
 - Uses collapsible sections for large galleries and tables.
-- Reads human-friendly plot titles from a JSON file; behavior for missing titles is configurable.
-- Produces a styled, self-contained `index.html` with clickable, lazy-loaded plots that open full-resolution
-  versions in a new tab.
+- Reads human-friendly plot titles from a JSON file; behavior for missing titles
+  is configurable.
+- Produces a styled, self-contained `index.html` with clickable, lazy-loaded
+  plots that open full-resolution versions in a new tab.
 
-All paths are resolved relative to the repo layout; the script assumes that the plotting scripts have already
-produced their outputs in the expected `figs/` subdirectories.
+All paths are resolved relative to the repo layout; the script assumes that the
+plotting scripts have already produced their outputs in the expected `figs/`
+subdirectories.
 """
 
 import argparse
@@ -65,7 +68,6 @@ def _load_plot_titles() -> dict[str, str]:
     try:
         data = json.loads(PLOT_TITLES_PATH.read_text(encoding="utf-8"))
         if isinstance(data, dict):
-            # Coerce values to str
             _PLOT_TITLES_CACHE = {str(k): str(v) for k, v in data.items()}
         else:
             _PLOT_TITLES_CACHE = {}
@@ -398,7 +400,6 @@ def _cluster_summary_block(path: Path) -> str:
         return f"<p>Cluster summary has no cluster entries in {html.escape(str(path))}.</p>"
 
     base_keys = ("cluster", "n_users", "median_requests", "median_req_per_active_day")
-    # Keys that are not part of the core stats table
     other_keys = {key for c in clusters for key in c.keys() if key not in base_keys}
 
     # --- Main per-cluster table (core stats) ---
@@ -456,7 +457,6 @@ def _cluster_summary_block(path: Path) -> str:
     else:
         feat_table_html = ""
 
-
     metrics_html = f"""
 <p>
   <span class="metric-badge">k = {html.escape(str(k_sel))}</span>
@@ -470,6 +470,7 @@ def _cluster_summary_block(path: Path) -> str:
 
 # ---------- Section builders ----------
 
+
 def _overview_section_html() -> str:
     """Short overview section with methodology."""
     content = """
@@ -479,9 +480,9 @@ This report combines two complementary analyses:
 <ul>
   <li><strong>Public AI logs – Apertus 70B:</strong> Usage, performance, behavior, and user-level clustering
       derived from <code>LiteLLM_SpendLogs</code> for the <code>swiss-ai/apertus-70b-instruct</code> model group.</li>
-  <li><strong>apertus_sft_mixture clustering:</strong> UMAP-based visualization and clustering
-      of conversations in the <code>swiss-ai/apertus-sft-mixture</code> dataset, with language-specific and
-      English-only breakdowns.</li>
+  <li><strong>Clustering of apertus_sft_mixture conversations:</strong> UMAP-based visualization and clustering
+      of conversations in the <code>swiss-ai/apertus-sft-mixture</code> dataset, including a mixed-languages run,
+      per-language clustering, and an English-only subset.</li>
 </ul>
 """
     return _section("Overview", content, section_id="overview")
@@ -543,64 +544,148 @@ It focuses on usage &amp; workload, performance &amp; efficiency, behavioral sta
 
 def _apertus_section_html(
     html_path: Path,
-    figs_dir: Path,
+    mixed_dir: Path,
+    langwise_dir: Path,
 ) -> str:
-    # All languages – scatter / sizes / feature heatmaps
-    all_lang_scatter_paths = sorted(figs_dir.glob("scatter_dim1_dim2_*.png"))
-    all_lang_sizes_paths = sorted(figs_dir.glob("cluster_sizes_*.png"))
-    all_lang_feats_paths = sorted(figs_dir.glob("cluster_feature_means_heatmap_*.png"))
+    """
+    Build the apertus_sft_mixture clustering section, split into:
+    - Mixed languages
+    - Per-language clustering
+    - English only
+
+    All feature heatmaps are intentionally discarded in this section.
+    """
+
+    # ---------- Mixed languages (single clustering over all languages) ----------
+
+    if mixed_dir.exists():
+        mixed_scatter_paths = sorted(mixed_dir.glob("scatter_dim1_dim2_*.png"))
+        mixed_sizes_paths = sorted(mixed_dir.glob("cluster_sizes_*.png"))
+
+        # Updated paths for mixed-languages wordclouds, top words, and representatives
+        mixed_wc_dir = mixed_dir / "wordclouds" / "cluster_hdbscan"
+        mixed_wc_paths = sorted(mixed_wc_dir.glob("*.png")) if mixed_wc_dir.exists() else []
+
+        mixed_top_words_path = mixed_dir / "top_words_cluster_hdbscan.txt"
+        mixed_reps_path = mixed_dir / "cluster_representatives_cluster_hdbscan.txt"
+
+        print(f"[INFO] Found {len(mixed_scatter_paths)} mixed-languages scatter plots in {mixed_dir}")
+        print(f"[INFO] Found {len(mixed_sizes_paths)} mixed-languages cluster-size plots in {mixed_dir}")
+        print(f"[INFO] Found {len(mixed_wc_paths)} mixed-languages wordcloud plots in {mixed_wc_dir}")
+
+        mixed_scatter_gallery = _gallery(mixed_scatter_paths, html_path)
+        mixed_sizes_gallery = _gallery(mixed_sizes_paths, html_path)
+        mixed_wc_gallery = _gallery(mixed_wc_paths, html_path)
+
+        mixed_words_html = (
+            _top_words_table(
+                mixed_top_words_path,
+                "Top 5 words per cluster (mixed languages)",
+                table_id="mixed-top-words",
+            )
+            + _representatives_table(
+                mixed_reps_path,
+                "Show representative prompts per cluster (mixed languages)",
+            )
+        )
+
+        mixed_html = f"""
+<h3 id="apertus-mixed">Mixed languages</h3>
+
+{_details("Show mixed-languages cluster scatter plots", mixed_scatter_gallery, open_=False)}
+<h4 id="apertus-mixed-sizes">Cluster sizes (mixed languages)</h4>
+{_details("Show mixed-languages cluster size plots", mixed_sizes_gallery, open_=False)}
+
+<h4 id="apertus-mixed-wordclouds">Mixed-languages word clouds</h4>
+{_details("Show mixed-languages word clouds", mixed_wc_gallery, open_=False)}
+
+<h4 id="apertus-mixed-topwords">Mixed-languages top words &amp; representatives</h4>
+{_details(
+    "Show mixed-languages top words and representative prompts",
+    mixed_words_html,
+    open_=False,
+)}
+"""
+    else:
+        mixed_html = f"""
+<h3 id="apertus-mixed">Mixed languages</h3>
+<p>Mixed-languages figures directory not found: <code>{html.escape(str(mixed_dir))}</code>.</p>
+"""
+
+    # ---------- Per-language clustering (current "all_languages") ----------
+
+    all_lang_scatter_paths = sorted(langwise_dir.glob("scatter_dim1_dim2_*.png"))
+    all_lang_sizes_paths = sorted(langwise_dir.glob("cluster_sizes_*.png"))
+
+    print(f"[INFO] Found {len(all_lang_scatter_paths)} per-language scatter plots in {langwise_dir}")
+    print(f"[INFO] Found {len(all_lang_sizes_paths)} per-language cluster-size plots in {langwise_dir}")
 
     all_lang_scatter_gallery = _gallery(all_lang_scatter_paths, html_path)
     all_lang_sizes_gallery = _gallery(all_lang_sizes_paths, html_path)
-    all_lang_feats_gallery = _gallery(all_lang_feats_paths, html_path)
 
-    top_words_all_path = figs_dir / "top_words_cluster_langwise_final.txt"
-    reps_all_path = figs_dir / "cluster_representatives_cluster_langwise_final.txt"
+    top_words_all_path = langwise_dir / "top_words_cluster_langwise_final.txt"
+    reps_all_path = langwise_dir / "cluster_representatives_cluster_langwise_final.txt"
 
     all_lang_words_html = (
         _top_words_table(
             top_words_all_path,
-            "Top 5 words per final cluster (all languages)",
-            table_id="all-lang-top-words",
+            "Top 5 words per final cluster (per-language clustering)",
+            table_id="per-lang-top-words",
         )
         + _representatives_table(
             reps_all_path,
-            "Show representative prompts per final cluster (all languages)",
+            "Show representative prompts per final cluster (per-language clustering)",
         )
     )
 
-    # English-only sections
-    figs_dir_en = figs_dir / "english"
+    per_lang_html = f"""
+<h3 id="apertus-per-lang">Per-language clustering</h3>
+
+{_details("Show per-language cluster scatter plots", all_lang_scatter_gallery, open_=False)}
+<h4 id="apertus-per-lang-sizes">Cluster sizes (per-language)</h4>
+{_details("Show per-language cluster size plots", all_lang_sizes_gallery, open_=False)}
+
+<h4 id="apertus-per-lang-topwords">Per-language top words &amp; representatives</h4>
+{_details(
+    "Show per-language top words and representative prompts",
+    all_lang_words_html,
+    open_=False,
+)}
+"""
+
+    # ---------- English-only subset (inside langwise_dir/english) ----------
+
+    figs_dir_en = langwise_dir / "english"
     if figs_dir_en.exists():
         en_scatter_paths = sorted(figs_dir_en.glob("scatter_dim1_dim2_*.png"))
         en_sizes_paths = sorted(figs_dir_en.glob("cluster_sizes_*.png"))
-        en_feats_paths = sorted(figs_dir_en.glob("cluster_feature_means_heatmap_*.png"))
+        wc_dir_en = figs_dir_en / "wordclouds" / "cluster_langwise_final"
+        en_wc_paths = sorted(wc_dir_en.glob("*.png")) if wc_dir_en.exists() else []
+
+        print(f"[INFO] Found {len(en_scatter_paths)} English-only scatter plots in {figs_dir_en}")
+        print(f"[INFO] Found {len(en_sizes_paths)} English-only cluster-size plots in {figs_dir_en}")
+        print(f"[INFO] Found {len(en_wc_paths)} English-only wordcloud plots in {wc_dir_en}")
 
         en_scatter_gallery = _gallery(en_scatter_paths, html_path)
         en_sizes_gallery = _gallery(en_sizes_paths, html_path)
-        en_feats_gallery = _gallery(en_feats_paths, html_path)
+        en_wc_gallery = _gallery(en_wc_paths, html_path)
 
         top_words_en_path = figs_dir_en / "top_words_cluster_langwise_final.txt"
         reps_en_path = figs_dir_en / "cluster_representatives_cluster_langwise_final_en.txt"
-        wc_dir_en = figs_dir_en / "wordclouds" / "cluster_langwise_final"
-        en_wc_paths = sorted(wc_dir_en.glob("*.png"))
-        en_wc_gallery = _gallery(en_wc_paths, html_path)
 
         english_html = f"""
-<h3 id="apertus-english">English-only results</h3>
+<h3 id="apertus-english">English only</h3>
 
-{_details("Show English-only cluster plots", en_scatter_gallery, open_=False)}
+{_details("Show English-only cluster scatter plots", en_scatter_gallery, open_=False)}
 <h4 id="apertus-english-sizes">Cluster sizes (English only)</h4>
-{_details("Show English cluster size plots", en_sizes_gallery, open_=False)}
-<h4 id="apertus-english-features">Feature heatmaps (English only)</h4>
-{_details("Show English feature heatmaps", en_feats_gallery, open_=False)}
+{_details("Show English-only cluster size plots", en_sizes_gallery, open_=False)}
 
 <h4 id="apertus-english-wordclouds">English-only word clouds</h4>
-{_details("Show English word clouds", en_wc_gallery, open_=False)}
+{_details("Show English-only word clouds", en_wc_gallery, open_=False)}
 
 <h4 id="apertus-english-topwords">English-only top words &amp; representatives</h4>
 {_details(
-    "Show English top words and representative prompts",
+    "Show English-only top words and representative prompts",
     _top_words_table(
         top_words_en_path,
         "Top 5 words per final cluster (English only)",
@@ -614,42 +699,36 @@ def _apertus_section_html(
 )}
 """
     else:
-        english_html = """
-<h3 id="apertus-english">English-only results</h3>
-<p>No English-only directory found. Run the plotting script with English outputs enabled.</p>
+        english_html = f"""
+<h3 id="apertus-english">English only</h3>
+<p>No English-only directory found. Expected at <code>{html.escape(str(figs_dir_en))}</code>.</p>
 """
 
-    # Section mini-TOC
+    # ---------- Section mini-TOC and wrapper ----------
+
     section_toc = """
 <ul class="section-toc">
-  <li><a href="#apertus-all-langs">All languages – cluster plots</a></li>
-  <li><a href="#apertus-all-langs-topwords">All languages – top words &amp; representatives</a></li>
-  <li><a href="#apertus-english">English-only highlights</a></li>
+  <li><a href="#apertus-mixed">Mixed languages</a></li>
+  <li><a href="#apertus-per-lang">Per-language clustering</a></li>
+  <li><a href="#apertus-english">English only</a></li>
 </ul>
 """
 
     apertus_content = f"""
 <p>
-This section summarizes the language-wise clustering results for the
+This section summarizes the clustering results for the
 <code>swiss-ai/apertus-sft-mixture</code> dataset.
+We show a mixed-languages clustering run, per-language clustering, and an English-only subset.
 </p>
 
 {section_toc}
 
-<h3 id="apertus-all-langs">All languages – cluster plots</h3>
-{_details("Show all-languages cluster scatter plots", all_lang_scatter_gallery, open_=False)}
-<h4 id="apertus-all-langs-sizes">Cluster sizes</h4>
-{_details("Show all-languages cluster size plots", all_lang_sizes_gallery, open_=False)}
-<h4 id="apertus-all-langs-features">Feature heatmaps</h4>
-{_details("Show all-languages feature heatmaps", all_lang_feats_gallery, open_=False)}
-
-<h3 id="apertus-all-langs-topwords">All languages – top words &amp; representatives</h3>
-{_details("Show all-languages top words and representatives", all_lang_words_html, open_=False)}
-
+{mixed_html}
+{per_lang_html}
 {english_html}
 """
     return _section(
-        "apertus_sft_mixture Clustering",
+        "Clustering of apertus_sft_mixture conversations",
         apertus_content,
         section_id="apertus-clustering",
     )
@@ -671,9 +750,15 @@ def build_html(
     run_suffix = "_langwise"
     run_tag = f"{tag}{run_suffix}"
 
-    figs_dir = figs_root_apertus / run_tag
-    if not figs_dir.exists():
-        raise FileNotFoundError(f"FIGS_DIR does not exist: {figs_dir}")
+    # Mixed-languages clustering (all languages in one run)
+    mixed_dir = figs_root_apertus / tag
+    if not mixed_dir.exists():
+        print(f"[WARN] Mixed-languages figs directory does not exist: {mixed_dir}")
+
+    # Per-language clustering (the previous 'all_languages' langwise run)
+    langwise_dir = figs_root_apertus / run_tag
+    if not langwise_dir.exists():
+        raise FileNotFoundError(f"Langwise FIGS_DIR does not exist: {langwise_dir}")
 
     # Public AI logs – gather figures and log counts
     usage_paths = sorted(p for p in usage_dir.glob("*.png") if p.is_file())
@@ -698,7 +783,11 @@ def build_html(
         userclust_paths=userclust_paths,
         cluster_summary_path=cluster_summary_path,
     )
-    section_apertus = _apertus_section_html(html_path=html_path, figs_dir=figs_dir)
+    section_apertus = _apertus_section_html(
+        html_path=html_path,
+        mixed_dir=mixed_dir,
+        langwise_dir=langwise_dir,
+    )
 
     # Navigation
     nav_html = """
@@ -706,7 +795,7 @@ def build_html(
   <ul>
     <li><a href="#overview">Overview</a></li>
     <li><a href="#public-ai-analysis">Public AI logs – Apertus 70B analysis</a></li>
-    <li><a href="#apertus-clustering">apertus_sft_mixture Clustering</a></li>
+    <li><a href="#apertus-clustering">Clustering of apertus_sft_mixture conversations</a></li>
   </ul>
 </nav>
 """
@@ -805,7 +894,6 @@ def build_html(
     .gallery-item img {{
       width: 100%;
       height: auto;
-      /* No max-height: show larger thumbnails for better readability */
       object-fit: contain;
       display: block;
     }}
@@ -908,7 +996,7 @@ def build_html(
 <body>
   <header>
     <h1>Public AI Logs Analysis &amp; Clustering of the apertus_sft_mixture dataset</h1>
-    <p>Public AI logs analysis (for the Apertus 70B model) and language-wise clustering of the apertus_sft_mixture dataset.</p>
+    <p>Public AI logs analysis (for the Apertus 70B model) and clustering of the apertus_sft_mixture dataset.</p>
   </header>
   {nav_html}
   <main>
