@@ -12,6 +12,7 @@ This script:
     * Per-feature bar plots of per-cluster means
     * Cluster-wise word clouds
     * Top-5 words per cluster tables
+    * Top-3 representative prompts per cluster (per clustering method)
 
 Existing figures directory is cleared with `ensure_empty_dir` before plotting.
 """
@@ -35,6 +36,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
+import matplotlib.colors as mcolors
 from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 import stopwordsiso
@@ -57,6 +59,7 @@ CLUSTERED_DF_PATH = OUT_DIR / f"{TAG}_clustered.parquet"
 # Root directory for figures; a subdirectory will be created per embeddings file
 FIGS_ROOT = Path("figs/apertus_clustering")
 FIGS_DIR = FIGS_ROOT / TAG
+
 if sys.platform == "win32":
     FONT_PATH = r"C:\Windows\Fonts\NotoSans-Regular.ttf"
 else:
@@ -79,6 +82,38 @@ for lang in stopwordsiso.langs():
     GLOBAL_STOPWORDS |= STOPWORDS_PER_LANG[lang]
 
 GLOBAL_STOPWORDS |= EXTRA_STOPWORDS
+
+
+# ---------- Colormap helper (exactly n colors) ----------
+
+def get_colormap(n_clusters: int) -> mcolors.ListedColormap:
+    """
+    Get a discrete colormap with exactly n_clusters distinct colors.
+
+    Uses tab20 / tab20b / tab20c as a pool (up to ~60 colors).
+    If more colors are requested, falls back to sampling from a continuous colormap.
+    """
+    if n_clusters <= 0:
+        n_clusters = 1
+
+    base1 = colormaps.get_cmap("tab20")
+    base2 = colormaps.get_cmap("tab20b")
+    base3 = colormaps.get_cmap("tab20c")
+
+    colors1 = np.array(base1.colors)
+    colors2 = np.array(base2.colors)
+    colors3 = np.array(base3.colors)
+
+    all_colors = np.vstack([colors1, colors2, colors3])
+    total_available = all_colors.shape[0]
+
+    if n_clusters <= total_available:
+        return mcolors.ListedColormap(all_colors[:n_clusters])
+
+    # More clusters than our discrete pool: sample from a continuous colormap
+    continuous = colormaps.get_cmap("viridis")
+    sampled = continuous(np.linspace(0.0, 1.0, n_clusters))
+    return mcolors.ListedColormap(sampled)
 
 
 # ---------- Plotting helpers ----------
@@ -133,8 +168,8 @@ def make_cluster_plots(
         label_to_idx = {lab: i for i, lab in enumerate(unique_labels)}
         idx_colors = np.array([label_to_idx[lab] for lab in labels])
 
-        # Discrete colormap with one entry per cluster
-        cmap = colormaps.get_cmap("tab20").resampled(n_clusters)
+        # Discrete colormap with exactly one entry per cluster
+        cmap = get_colormap(n_clusters)
 
         plt.figure(figsize=(8, 6))
         scatter = plt.scatter(
@@ -144,6 +179,7 @@ def make_cluster_plots(
             s=5,
             alpha=0.7,
             cmap=cmap,
+            linewidths=0,
         )
         plt.xlabel("Dim 1")
         plt.ylabel("Dim 2")
@@ -247,9 +283,9 @@ def preprocess_text_for_wordcloud(text: str) -> str:
     - Tokenize on whitespace
     - Strip leading/trailing punctuation
     - Drop tokens that are:
-        * LaTeX / command-like (start with '\')
+        * LaTeX / command-like (start with '\\')
         * pure punctuation
-        * multinlingual stopwords
+        * multilingual stopwords
         * very short ASCII tokens (len < 3)
     """
     if not text:
@@ -280,7 +316,7 @@ def preprocess_text_for_wordcloud(text: str) -> str:
         if t.startswith("\\"):
             continue
 
-        # After stripping, e.g. '"the' -> 'the', 'is:' -> 'is', skip stopwords
+        # After stripping, skip stopwords
         if t in GLOBAL_STOPWORDS:
             continue
 
@@ -300,8 +336,6 @@ def make_cluster_wordclouds(
     Compute and save a word cloud image for each cluster, based on `text_col`.
 
     - Uses multilingual stopwords via stopwordsiso.
-    - Detects language per conversation via langid and uses language-specific
-      stopwords when available.
     - Removes role prefixes and very short tokens.
 
     Saves PNG files into `figs_dir / "wordclouds" / label_col`.
@@ -362,7 +396,7 @@ def make_cluster_wordclouds(
 
 def compute_top_words_per_cluster(df: pd.DataFrame, label_col: str, text_col: str, out_path: Path) -> None:
     """
-    For each cluster in `label_col`, compute the five most frequent words (after preprocessing and stopword removal) 
+    For each cluster in `label_col`, compute the five most frequent words (after preprocessing and stopword removal)
     in `text_col`, and write them to a TXT file as a tab-separated table.
 
     If a cluster has fewer than 5 distinct words, remaining slots are left empty.
@@ -410,6 +444,88 @@ def compute_top_words_per_cluster(df: pd.DataFrame, label_col: str, text_col: st
             f.write("\n")
 
     print(f"[{label_col}] Top-words table written to: {out_path}")
+
+
+# ---------- Representative prompts per cluster ----------
+
+def compute_cluster_representatives(
+    df: pd.DataFrame,
+    X_red: np.ndarray,
+    label_col: str,
+    text_col: str,
+    out_path: Path,
+) -> None:
+    """
+    For each cluster (in label_col), pick the top 3 representative conversations:
+
+    - Compute centroid of X_red for the cluster.
+    - Compute Euclidean distance to centroid for each sample in the cluster.
+    - Select the 3 samples with smallest distance.
+    - Order these 3 by conversation length (shorter to longer).
+    - Use the corresponding conversation_texts as "representative prompts".
+
+    Writes a TSV with columns:
+        cluster    prompt1    prompt2    prompt3
+    """
+    if text_col not in df.columns:
+        print(f"[{label_col}] Column {text_col!r} not found, skipping representatives.")
+        return
+
+    labels = df[label_col].to_numpy()
+    unique_labels = pd.unique(labels)
+
+    with out_path.open("w", encoding="utf-8") as f:
+        f.write("cluster\tprompt1\tprompt2\tprompt3\n")
+
+        for lab in unique_labels:
+            if pd.isna(lab):
+                continue
+
+            mask = labels == lab
+            idx = np.where(mask)[0]
+            if idx.size == 0:
+                continue
+
+            X_c = X_red[idx]
+            if X_c.size == 0:
+                continue
+
+            # Distances to centroid
+            centroid = X_c.mean(axis=0)
+            dists = np.sum((X_c - centroid) ** 2, axis=1)
+            order = np.argsort(dists)
+
+            # Take up to 3 closest
+            top_k = min(3, len(order))
+            chosen_indices = idx[order[:top_k]]
+
+            # Collect (length, text) pairs
+            texts_with_len: list[tuple[int, str]] = []
+            for g_idx in chosen_indices:
+                row = df.iloc[g_idx]
+                raw_text = str(row[text_col]).replace("\r", " ").replace("\n", " ")
+                raw_text = re.sub(r"\s+", " ", raw_text).strip()
+                if not raw_text:
+                    continue
+                texts_with_len.append((len(raw_text), raw_text))
+
+            if not texts_with_len:
+                continue
+
+            # Sort by length: shorter to longer
+            texts_with_len.sort(key=lambda t: t[0])
+            prompts = [t[1] for t in texts_with_len]
+
+            # Pad to exactly 3 prompts
+            while len(prompts) < 3:
+                prompts.append("")
+
+            f.write(str(lab))
+            for p in prompts[:3]:
+                f.write("\t" + p)
+            f.write("\n")
+
+    print(f"[{label_col}] Cluster representatives (top 3) written to: {out_path}")
 
 
 # ---------- Main ----------
@@ -473,7 +589,29 @@ def main() -> None:
             if label_col not in df.columns:
                 continue
             out_path = FIGS_DIR / f"top_words_{label_col}.txt"
-            compute_top_words_per_cluster(df=df, label_col=label_col, text_col="conversation_text", out_path=out_path)
+            compute_top_words_per_cluster(
+                df=df,
+                label_col=label_col,
+                text_col="conversation_text",
+                out_path=out_path,
+            )
+
+    # 4) Top-3 representative prompts per cluster (per clustering method)
+    print("Computing representative prompts per cluster...")
+    if "conversation_text" not in df.columns:
+        print("Column 'conversation_text' not found; cannot compute representatives.")
+    else:
+        for label_col in ("cluster_hdbscan", "cluster_leiden", "cluster_kmeans"):
+            if label_col not in df.columns:
+                continue
+            out_rep = FIGS_DIR / f"cluster_representatives_{label_col}.txt"
+            compute_cluster_representatives(
+                df=df,
+                X_red=X_red,
+                label_col=label_col,
+                text_col="conversation_text",
+                out_path=out_rep,
+            )
 
     print("Done.")
 

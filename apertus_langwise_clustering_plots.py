@@ -11,16 +11,17 @@ It:
 - Regenerates:
     * Scatter plots in reduced space (Dim1 vs Dim2), for:
         - language labels ('lang')
-        - language-wise HDBSCAN clusters ('cluster_langwise_hdbscan')
-        - final aggregated clusters ('cluster_langwise_final')
+        - language-wise HDBSCAN clusters (language-aware display labels)
+        - final aggregated clusters ('cluster_langwise_final', filtered as in global metrics)
     * Cluster size bar plots
     * Per-cluster feature mean heatmap (z-scored)
-    * Per-feature bar plots of per-cluster means
+    * Per-feature bar plots of per-cluster raw means
     * Cluster-wise word clouds (for 'cluster_langwise_final')
     * Top-5 words per final cluster tables (for 'cluster_langwise_final')
-    * Representative prompts per final cluster (all languages and English-only)
+    * Representative prompts per final cluster (top 3 per cluster, ordered from shorter to longer;
+      both all languages and English-only)
 
-Figures are written under figs/apertus_clustering/RUN_TAG, and that directory is cleared with `ensure_empty_dir` 
+Figures are written under figs/apertus_clustering/RUN_TAG, and that directory is cleared with `ensure_empty_dir`
 before plotting, so that previous *non-langwise* figures (under TAG) are preserved.
 
 Additionally, English-only plots and summaries are written under figs/apertus_clustering/RUN_TAG/english.
@@ -45,6 +46,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
+import matplotlib.colors as mcolors
 from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 import stopwordsiso
@@ -97,6 +99,40 @@ for _lang in stopwordsiso.langs():
 GLOBAL_STOPWORDS |= EXTRA_STOPWORDS
 
 
+# ---------- Color map helper (exactly n_clusters colors) ----------
+
+def get_colormap(n_clusters: int) -> mcolors.ListedColormap:
+    """
+    Get a discrete colormap with exactly n_clusters distinct colors.
+
+    Uses tab20 / tab20b / tab20c as a pool (up to ~60 colors).
+    If more colors are requested, falls back to sampling from a continuous colormap.
+    """
+    if n_clusters <= 0:
+        # Fallback: at least one color
+        n_clusters = 1
+
+    base1 = colormaps.get_cmap("tab20")
+    base2 = colormaps.get_cmap("tab20b")
+    base3 = colormaps.get_cmap("tab20c")
+
+    # These are ListedColormap, so they have .colors
+    colors1 = np.array(base1.colors)
+    colors2 = np.array(base2.colors)
+    colors3 = np.array(base3.colors)
+
+    all_colors = np.vstack([colors1, colors2, colors3])
+    total_available = all_colors.shape[0]
+
+    if n_clusters <= total_available:
+        return mcolors.ListedColormap(all_colors[:n_clusters])
+
+    # More clusters than our pool: sample from a continuous colormap
+    continuous = colormaps.get_cmap("viridis")
+    sampled = continuous(np.linspace(0.0, 1.0, n_clusters))
+    return mcolors.ListedColormap(sampled)
+
+
 # ---------- Plotting helpers ----------
 
 def make_cluster_plots(
@@ -118,18 +154,11 @@ def make_cluster_plots(
         - The scatter plot uses 1%-99% quantile axis limits
         - Output filename has "_robust" appended
 
-    For HDBSCAN-based labels ('cluster_langwise_hdbscan'), points labeled -1 (noise)
-    are dropped from all per-cluster plots.
+    Noise filtering and any language-based filtering are expected to be handled
+    by the caller (df / X_red should already be filtered).
     """
     figs_dir.mkdir(parents=True, exist_ok=True)
     labels = df[label_col].to_numpy()
-
-    # Drop HDBSCAN noise for per-cluster plots
-    if label_col == "cluster_langwise_hdbscan":
-        mask = labels != -1
-        df = df.loc[mask].reset_index(drop=True)
-        labels = labels[mask]
-        X_red = X_red[mask]
 
     if df.empty:
         print(f"[{label_col}] No data after filtering, skipping plots.")
@@ -150,11 +179,11 @@ def make_cluster_plots(
         label_to_idx = {lab: i for i, lab in enumerate(unique_labels)}
         idx_colors = np.array([label_to_idx[lab] for lab in labels])
 
-        # Discrete colormap with one entry per cluster
-        cmap = colormaps.get_cmap("tab20").resampled(max(n_clusters, 1))
+        # Discrete colormap with exactly one entry per cluster
+        cmap = get_colormap(n_clusters)
 
         plt.figure(figsize=(8, 6))
-        scatter = plt.scatter(x, y, c=idx_colors, s=5, alpha=0.7, cmap=cmap)
+        scatter = plt.scatter(x, y, c=idx_colors, cmap=cmap, s=5, alpha=0.7, linewidths=0)
         plt.xlabel("Dim 1")
         plt.ylabel("Dim 2")
         plt.title(f"Reduced-space scatter (colored by {label_col})")
@@ -368,7 +397,7 @@ def make_cluster_wordclouds(
 
 def compute_top_words_per_cluster(df: pd.DataFrame, label_col: str, text_col: str, out_path: Path) -> None:
     """
-    For each cluster in `label_col`, compute the five most frequent words (after preprocessing and stopword removal) 
+    For each cluster in `label_col`, compute the five most frequent words (after preprocessing and stopword removal)
     in `text_col`, and write them to a TXT file as a tab-separated table.
 
     If a cluster has fewer than 5 distinct words, remaining slots are left empty.
@@ -424,14 +453,16 @@ def compute_cluster_representatives(
     df: pd.DataFrame, X_red: np.ndarray, label_col: str, text_col: str, out_path: Path
 ) -> None:
     """
-    For each cluster (in label_col), pick a representative conversation:
+    For each cluster (in label_col), pick the top 3 representative conversations:
 
     - Compute centroid of X_red for the cluster.
-    - Select the sample whose X_red is closest (Euclidean) to the centroid.
-    - Use the corresponding conversation_text as the "standard prompt".
+    - Compute Euclidean distance to centroid for each sample in the cluster.
+    - Select the 3 samples with smallest distance.
+    - Order these 3 by conversation length (shorter to longer).
+    - Use the corresponding conversation_texts as "standard prompts".
 
     Writes a TSV with columns:
-        cluster    full_prompt
+        cluster    prompt1    prompt2    prompt3
     """
     if text_col not in df.columns:
         print(f"[{label_col}] Column {text_col!r} not found, skipping representatives.")
@@ -441,7 +472,7 @@ def compute_cluster_representatives(
     unique_labels = pd.unique(labels)
 
     with out_path.open("w", encoding="utf-8") as f:
-        f.write("cluster\tfull_prompt\n")
+        f.write("cluster\tprompt1\tprompt2\tprompt3\n")
 
         for lab in unique_labels:
             # Skip NaN labels (if any)
@@ -454,25 +485,101 @@ def compute_cluster_representatives(
                 continue
 
             X_c = X_red[idx]
-            # If X_c is empty or has bad shape, skip
             if X_c.size == 0:
                 continue
 
+            # Distances to centroid
             centroid = X_c.mean(axis=0)
             dists = np.sum((X_c - centroid) ** 2, axis=1)
-            best_local_idx = int(np.argmin(dists))
-            best_global_idx = idx[best_local_idx]
+            order = np.argsort(dists)
 
-            row = df.iloc[best_global_idx]
-            raw_text = str(row[text_col]).replace("\r", " ").replace("\n", " ")
-            raw_text = re.sub(r"\s+", " ", raw_text).strip()
+            # Take up to 3 closest
+            top_k = min(3, len(order))
+            chosen_indices = idx[order[:top_k]]
 
-            if not raw_text:
+            # Collect (length, text) pairs
+            texts_with_len: list[tuple[int, str]] = []
+            for g_idx in chosen_indices:
+                row = df.iloc[g_idx]
+                raw_text = str(row[text_col]).replace("\r", " ").replace("\n", " ")
+                raw_text = re.sub(r"\s+", " ", raw_text).strip()
+                if not raw_text:
+                    continue
+                texts_with_len.append((len(raw_text), raw_text))
+
+            if not texts_with_len:
                 continue
 
-            f.write(f"{lab}\t{raw_text}\n")
+            # Sort by length: shorter to longer
+            texts_with_len.sort(key=lambda t: t[0])
+            prompts = [t[1] for t in texts_with_len]
 
-    print(f"[{label_col}] Cluster representatives written to: {out_path}")
+            # Pad to exactly 3 prompts
+            while len(prompts) < 3:
+                prompts.append("")
+
+            f.write(str(lab))
+            for p in prompts[:3]:
+                f.write("\t" + p)
+            f.write("\n")
+
+    print(f"[{label_col}] Cluster representatives (top 3) written to: {out_path}")
+
+
+# ---------- Filtering helper to match global metrics logic ----------
+
+def filter_final_for_global_plots(df: pd.DataFrame, X_red: np.ndarray) -> tuple[pd.DataFrame, np.ndarray]:
+    """
+    Filter (df, X_red) for global plots on 'cluster_langwise_final' so that:
+
+    - We drop noise labels ('*_noise').
+    - We drop pure-language labels (e.g., 'en', 'de').
+    - We keep only languages that have >= 2 distinct clusters (e.g., 'en_c0', 'en_c1', ...).
+
+    Returns the filtered DataFrame (with reset index) and the filtered X_red.
+    """
+    label_col = "cluster_langwise_final"
+    if label_col not in df.columns:
+        return df, X_red
+
+    labels_all = df[label_col].astype(str)
+
+    # Cluster-like labels: '{lang}_c{cluster_id}'
+    mask_cluster_like = labels_all.str.contains("_c")
+    # Noise labels: '{lang}_noise'
+    mask_noise = labels_all.str.endswith("_noise")
+
+    # Extract language for cluster-like labels
+    lang_for_cluster = labels_all[mask_cluster_like].str.split("_c", n=1, expand=True)[0]
+
+    if lang_for_cluster.empty:
+        return df.iloc[0:0].copy(), X_red[[]]
+
+    # Count distinct clusters per language
+    tmp = pd.DataFrame(
+        {
+            "lang": lang_for_cluster.to_numpy(),
+            "label": labels_all[mask_cluster_like].to_numpy(),
+        }
+    )
+    cluster_counts = tmp.groupby("lang")["label"].nunique()
+    langs_with_multi = set(cluster_counts[cluster_counts >= 2].index)
+
+    if not langs_with_multi:
+        # No language has >= 2 clusters
+        return df.iloc[0:0].copy(), X_red[[]]
+
+    # For all rows, recover language part for cluster-like labels
+    all_lang_for_cluster = labels_all.where(mask_cluster_like).str.split("_c", n=1, expand=True)[0]
+    mask_lang_has_multi = all_lang_for_cluster.isin(langs_with_multi)
+
+    # Final mask: true clusters, non-noise, language with >= 2 clusters
+    mask_keep = mask_cluster_like & (~mask_noise) & mask_lang_has_multi
+
+    df_filt = df.loc[mask_keep].reset_index(drop=True)
+    X_filt = X_red[mask_keep.to_numpy()]
+
+    return df_filt, X_filt
 
 
 # ---------- Main ----------
@@ -501,24 +608,91 @@ def main() -> None:
     scaler = StandardScaler()
     X_red = scaler.fit_transform(X_umap)
 
+    # Build a language-aware display column for HDBSCAN labels
+    if "cluster_langwise_hdbscan" in df.columns and "lang" in df.columns:
+        cl = df["cluster_langwise_hdbscan"].to_numpy()
+        lang = df["lang"].astype(str).to_numpy()
+
+        display_labels = []
+        for l, c in zip(lang, cl):
+            if c == -1:
+                display_labels.append(f"{l}_noise")
+            else:
+                display_labels.append(f"{l}_c{int(c)}")
+
+        df["cluster_langwise_hdbscan_display"] = pd.Series(display_labels, index=df.index, dtype="string")
+        print("Created 'cluster_langwise_hdbscan_display' column.")
+    else:
+        print("Cannot create 'cluster_langwise_hdbscan_display' (missing 'cluster_langwise_hdbscan' or 'lang').")
+
     # Recreate figures directory (clear existing plots for this RUN_TAG only)
     ensure_empty_dir(FIGS_DIR)
     print(f"Figures will be written to: {FIGS_DIR}")
 
-    # 1) Cluster plots (all languages):
-    #    - 'lang'                    (language)
-    #    - 'cluster_langwise_final'  (final aggregated cluster label)
-    #    - 'cluster_langwise_hdbscan' (per-language HDBSCAN raw labels)
+    # ---------------------------------------------------------------------
+    # 1) Cluster plots (all languages)
+    # ---------------------------------------------------------------------
     print("Generating cluster plots (all languages)...")
-    for label_col in ("lang", "cluster_langwise_final", "cluster_langwise_hdbscan"):
-        if label_col not in df.columns:
-            print(f"Column {label_col!r} not in DataFrame, skipping plots for it.")
-            continue
 
-        make_cluster_plots(df, X_red, label_col=label_col, figs_dir=FIGS_DIR, use_robust_limits=False)
-        make_cluster_plots(df, X_red, label_col=label_col, figs_dir=FIGS_DIR, use_robust_limits=True)
+    # 1.1) Language labels
+    if "lang" in df.columns:
+        make_cluster_plots(df, X_red, label_col="lang", figs_dir=FIGS_DIR, use_robust_limits=False)
+        make_cluster_plots(df, X_red, label_col="lang", figs_dir=FIGS_DIR, use_robust_limits=True)
+    else:
+        print("Column 'lang' not in DataFrame, skipping language plots.")
 
+    # 1.2) Final aggregated clusters (filtered to match global metrics logic)
+    if "cluster_langwise_final" in df.columns:
+        df_final, X_final = filter_final_for_global_plots(df, X_red)
+        if df_final.empty:
+            print("[cluster_langwise_final] No data after global-filtering; skipping final-cluster plots.")
+        else:
+            make_cluster_plots(
+                df_final,
+                X_final,
+                label_col="cluster_langwise_final",
+                figs_dir=FIGS_DIR,
+                use_robust_limits=False,
+            )
+            make_cluster_plots(
+                df_final,
+                X_final,
+                label_col="cluster_langwise_final",
+                figs_dir=FIGS_DIR,
+                use_robust_limits=True,
+            )
+    else:
+        print("Column 'cluster_langwise_final' not in DataFrame, skipping final cluster plots.")
+
+    # 1.3) Per-language HDBSCAN clusters (language-aware display labels, noise excluded)
+    if "cluster_langwise_hdbscan_display" in df.columns:
+        mask_non_noise = ~df["cluster_langwise_hdbscan_display"].str.endswith("_noise")
+        if mask_non_noise.any():
+            df_hdb = df.loc[mask_non_noise].reset_index(drop=True)
+            X_hdb = X_red[mask_non_noise.to_numpy()]
+
+            make_cluster_plots(
+                df_hdb,
+                X_hdb,
+                label_col="cluster_langwise_hdbscan_display",
+                figs_dir=FIGS_DIR,
+                use_robust_limits=False,
+            )
+            make_cluster_plots(
+                df_hdb,
+                X_hdb,
+                label_col="cluster_langwise_hdbscan_display",
+                figs_dir=FIGS_DIR,
+                use_robust_limits=True,
+            )
+        else:
+            print("[cluster_langwise_hdbscan_display] All labels are noise; skipping HDBSCAN plots.")
+    else:
+        print("Column 'cluster_langwise_hdbscan_display' not in DataFrame, skipping HDBSCAN plots.")
+
+    # ---------------------------------------------------------------------
     # 2) Word clouds (all languages, final clusters)
+    # ---------------------------------------------------------------------
     print("Generating word clouds per final cluster (all languages)...")
     if "conversation_text" not in df.columns:
         print("Column 'conversation_text' not found; cannot build word clouds.")
@@ -526,12 +700,18 @@ def main() -> None:
         label_col = "cluster_langwise_final"
         if label_col in df.columns:
             make_cluster_wordclouds(
-                df=df, label_col=label_col, text_col="conversation_text", figs_dir=FIGS_DIR, font_path=FONT_PATH
+                df=df,
+                label_col=label_col,
+                text_col="conversation_text",
+                figs_dir=FIGS_DIR,
+                font_path=FONT_PATH,
             )
         else:
             print(f"Column {label_col!r} not found; skipping word clouds.")
 
+    # ---------------------------------------------------------------------
     # 3) Top-5 words per final cluster (all languages)
+    # ---------------------------------------------------------------------
     print("Computing top-5 words per final cluster (all languages)...")
     if "conversation_text" not in df.columns:
         print("Column 'conversation_text' not found; cannot compute top words.")
@@ -539,22 +719,31 @@ def main() -> None:
         label_col = "cluster_langwise_final"
         if label_col in df.columns:
             out_path = FIGS_DIR / f"top_words_{label_col}.txt"
-            compute_top_words_per_cluster(df=df, label_col=label_col, text_col="conversation_text", out_path=out_path)
+            compute_top_words_per_cluster(
+                df=df, label_col=label_col, text_col="conversation_text", out_path=out_path
+            )
         else:
             print(f"Column {label_col!r} not found; skipping top-words table.")
 
+    # ---------------------------------------------------------------------
     # 4) Representative prompts per final cluster (all languages)
+    # ---------------------------------------------------------------------
     print("Computing representative prompts per final cluster (all languages)...")
     if "conversation_text" in df.columns and "cluster_langwise_final" in df.columns:
         out_rep_all = FIGS_DIR / "cluster_representatives_cluster_langwise_final.txt"
         compute_cluster_representatives(
-            df=df, X_red=X_red, label_col="cluster_langwise_final", text_col="conversation_text", out_path=out_rep_all
+            df=df,
+            X_red=X_red,
+            label_col="cluster_langwise_final",
+            text_col="conversation_text",
+            out_path=out_rep_all,
         )
     else:
         print("Missing columns for representatives on all languages; skipping.")
 
-    # 5) ENGLISH-FOCUSED SECTION ---------------------------------------------
-
+    # ---------------------------------------------------------------------
+    # 5) ENGLISH-FOCUSED SECTION
+    # ---------------------------------------------------------------------
     if "lang" in df.columns:
         mask_en = df["lang"] == "en"
         if mask_en.any():
@@ -566,26 +755,49 @@ def main() -> None:
             ensure_empty_dir(figs_dir_en)
             print(f"English-only figures will be written to: {figs_dir_en}")
 
-            # 5.1) English-only cluster plots
-            for label_col in ("cluster_langwise_final", "cluster_langwise_hdbscan"):
-                if label_col not in df_en.columns:
-                    print(f"[EN] Column {label_col!r} not in English subset, skipping plots.")
-                    continue
-
+            # 5.1) English-only cluster plots for final and HDBSCAN-display labels
+            if "cluster_langwise_final" in df_en.columns:
                 make_cluster_plots(
                     df_en,
                     X_red_en,
-                    label_col=label_col,
+                    label_col="cluster_langwise_final",
                     figs_dir=figs_dir_en,
                     use_robust_limits=False,
                 )
                 make_cluster_plots(
                     df_en,
                     X_red_en,
-                    label_col=label_col,
+                    label_col="cluster_langwise_final",
                     figs_dir=figs_dir_en,
                     use_robust_limits=True,
                 )
+            else:
+                print("[EN] 'cluster_langwise_final' not in English subset, skipping plots.")
+
+            if "cluster_langwise_hdbscan_display" in df_en.columns:
+                mask_en_non_noise = ~df_en["cluster_langwise_hdbscan_display"].str.endswith("_noise")
+                if mask_en_non_noise.any():
+                    df_en_hdb = df_en.loc[mask_en_non_noise].reset_index(drop=True)
+                    X_en_hdb = X_red_en[mask_en_non_noise.to_numpy()]
+
+                    make_cluster_plots(
+                        df_en_hdb,
+                        X_en_hdb,
+                        label_col="cluster_langwise_hdbscan_display",
+                        figs_dir=figs_dir_en,
+                        use_robust_limits=False,
+                    )
+                    make_cluster_plots(
+                        df_en_hdb,
+                        X_en_hdb,
+                        label_col="cluster_langwise_hdbscan_display",
+                        figs_dir=figs_dir_en,
+                        use_robust_limits=True,
+                    )
+                else:
+                    print("[EN] All English HDBSCAN-display labels are noise; skipping HDBSCAN plots.")
+            else:
+                print("[EN] 'cluster_langwise_hdbscan_display' not in English subset, skipping HDBSCAN plots.")
 
             # 5.2) English-only word clouds and top words
             if "conversation_text" in df_en.columns:
@@ -613,7 +825,7 @@ def main() -> None:
                 else:
                     print("[EN] 'cluster_langwise_final' missing in English subset; skipping top-words table.")
 
-                # 5.3) English-only representatives
+                # 5.3) English-only representatives (top 3, shorter→longer)
                 if "cluster_langwise_final" in df_en.columns:
                     out_rep_en = figs_dir_en / "cluster_representatives_cluster_langwise_final_en.txt"
                     compute_cluster_representatives(

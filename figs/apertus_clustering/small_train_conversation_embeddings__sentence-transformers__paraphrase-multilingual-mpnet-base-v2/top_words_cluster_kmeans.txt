@@ -1,38 +1,38 @@
-cluster	title	word1	count1	word2	count2	word3	count3	word4	count4	word5	count5
-0	solve	step	86868	equation	29759	answer	29346	solve	17383	cdot	13576
-1	mixed	і	1495	și	1428	economic	1310	water	1200	të	1131
-2	help	access	4527	helpful	4298	questions	3799	tools	3291	answer	3224
-3	series	series	6343	sequence	4808	sum	3831	terms	3534	term	3130
-4	social	create	14600	social	7174	provide	7045	sentence	6868	community	6867
-5	keys	key	5340	input	4905	provide	4016	person	3446	focusing	3344
-6	geometry	equation	6636	circle	3434	distance	3403	graph	2829	parabola	2595
-7	code	return	59515	python	51805	function	43587	def	40879	list	33047
-8	club	club	5927	beat	5768	nature	3186	head	2946	female	2931
-9	payment	payment	2534	item	2493	status	2359	method	2145	modify	2108
-10	story	story	20186	character	16822	create	15912	time	14722	characters	11420
-11	polynomial	equation	13949	roots	8358	polynomial	6481	x^2	5546	solution	4889
-12	rings	rings	148	distance	92	radius	90	≤	89	output	79
-13	types	abstract	33	entities	33	type	28	protein	28	types	23
-14	json	abstract	346	entities	345	json	294	output	286	type	266
-15	probability	times	20287	calculate	15718	probability	12171	time	11610	cost	9967
-16	flight	flight	1377	reservation	1342	agent	1235	flights	946	checked	925
-17	image	image	84	integers	35	b_val	30	symbols	28	lexicographically	28
-18	physics	energy	11294	time	5646	field	4937	quantum	4771	e.g	4678
-19	docs	instruction	1442	document	1144	summary	721	specific	501	knowledge	405
-20	data	data	37613	time	13560	analysis	10341	provide	9115	values	8737
-21	luxembourgish	vun	2203	huet	1174	ass	931	të	832	isch	757
-22	snail	feet	5880	day	4630	snail	4373	days	2341	climb	1902
-23	fibonacci	fibonacci	297	≤	216	return	210	mid	201	common	163
-24	function	function	20513	f(x	12900	set	10890	matrix	7280	equation	7186
-25	response	response	1165	responses	788	step	764	b's	469	question	430
-26	primes	sum	9417	integers	7760	prime	7517	integer	7403	positive	6922
-27	yoruba	lɛ	1840	kɛ	1345	tha	1333	daa	1314	ann	1081
-28	cells	cells	355	erroneous_cells	244	result	216	step	216	erroneous	177
-29	chemistry	reaction	5569	acid	4234	times	4228	carbon	3801	bond	3762
-30	image	image	182	suns	139	rays	102	≤	96	beaver	83
-31	recommendations	answer	1470	book	828	movie	695	restaurant	607	step	557
-32	ladin	ła	2956	satz	833	idiom	822	sag	821	l'è	767
-33	german	liste	1498	übersetze	1493	deutscher	757	begriffe	754	deutsche	737
-34	geometry	triangle	15317	angle	10802	circle	6943	times	6186	square	5472
-35	tree	node	6119	def	6066	return	5915	tree	4169	class	3444
-36	rewrite	project	3183	input	2822	hope	2713	rewrite	2586	re-writing	2567
+cluster	word1	count1	word2	count2	word3	count3	word4	count4	word5	count5
+0	step	86868	equation	29759	answer	29346	solve	17383	cdot	13576
+1	і	1495	și	1428	economic	1310	water	1200	të	1131
+2	access	4527	helpful	4298	questions	3799	tools	3291	answer	3224
+3	series	6343	sequence	4808	sum	3831	terms	3534	term	3130
+4	create	14600	social	7174	provide	7045	sentence	6868	community	6867
+5	key	5340	input	4905	provide	4016	person	3446	focusing	3344
+6	equation	6636	circle	3434	distance	3403	graph	2829	parabola	2595
+7	return	59515	python	51805	function	43587	def	40879	list	33047
+8	club	5927	beat	5768	nature	3186	head	2946	female	2931
+9	payment	2534	item	2493	status	2359	method	2145	modify	2108
+10	story	20186	character	16822	create	15912	time	14722	characters	11420
+11	equation	13949	roots	8358	polynomial	6481	x^2	5546	solution	4889
+12	rings	148	distance	92	radius	90	≤	89	output	79
+13	abstract	33	entities	33	type	28	protein	28	types	23
+14	abstract	346	entities	345	json	294	output	286	type	266
+15	times	20287	calculate	15718	probability	12171	time	11610	cost	9967
+16	flight	1377	reservation	1342	agent	1235	flights	946	checked	925
+17	image	84	integers	35	b_val	30	symbols	28	lexicographically	28
+18	energy	11294	time	5646	field	4937	quantum	4771	e.g	4678
+19	instruction	1442	document	1144	summary	721	specific	501	knowledge	405
+20	data	37613	time	13560	analysis	10341	provide	9115	values	8737
+21	vun	2203	huet	1174	ass	931	të	832	isch	757
+22	feet	5880	day	4630	snail	4373	days	2341	climb	1902
+23	fibonacci	297	≤	216	return	210	mid	201	common	163
+24	function	20513	f(x	12900	set	10890	matrix	7280	equation	7186
+25	response	1165	responses	788	step	764	b's	469	question	430
+26	sum	9417	integers	7760	prime	7517	integer	7403	positive	6922
+27	lɛ	1840	kɛ	1345	tha	1333	daa	1314	ann	1081
+28	cells	355	erroneous_cells	244	result	216	step	216	erroneous	177
+29	reaction	5569	acid	4234	times	4228	carbon	3801	bond	3762
+30	image	182	suns	139	rays	102	≤	96	beaver	83
+31	answer	1470	book	828	movie	695	restaurant	607	step	557
+32	ła	2956	satz	833	idiom	822	sag	821	l'è	767
+33	liste	1498	übersetze	1493	deutscher	757	begriffe	754	deutsche	737
+34	triangle	15317	angle	10802	circle	6943	times	6186	square	5472
+35	node	6119	def	6066	return	5915	tree	4169	class	3444
+36	project	3183	input	2822	hope	2713	rewrite	2586	re-writing	2567

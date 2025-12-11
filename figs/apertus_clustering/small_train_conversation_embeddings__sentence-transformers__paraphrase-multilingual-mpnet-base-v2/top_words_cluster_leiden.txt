@@ -1,43 +1,43 @@
-cluster	title	word1	count1	word2	count2	word3	count3	word4	count4	word5	count5
-0	club	club	6058	beat	5800	nature	3782	ła	3408	head	3183
-1	math	function	31041	equation	28307	sum	20304	f(x	18428	set	17327
-2	story	create	33450	time	26113	story	22124	character	18539	experience	15529
-3	stats	data	34027	times	23614	calculate	20486	probability	17504	time	16757
-4	energy	energy	14185	times	8366	time	8112	e.g	7514	reaction	6050
-5	code	return	64281	python	54193	function	46698	def	44738	list	34087
-6	solve	step	86806	equation	29752	answer	29338	solve	17381	cdot	13589
-7	help	access	4609	helpful	4379	questions	3897	project	3666	tools	3455
-8	geometry	triangle	15289	angle	11347	circle	9873	equation	7347	distance	6492
-9	keys	key	5319	input	4889	provide	4045	person	3461	focusing	3364
-10	german	liste	1498	übersetze	1493	deutscher	757	begriffe	754	deutsche	737
-11	flight	flight	1939	flights	1359	reservation	1352	agent	1252	passenger	943
-12	banking	account	3330	balance	3300	def	3127	self.balance	2331	class	2064
-13	recommendations	answer	1478	book	838	pizza	769	movie	706	restaurant	617
-14	snail	feet	5891	day	4630	snail	4373	days	2341	climb	1902
-15	json	abstract	379	entities	378	json	318	output	308	type	294
-16	payment	payment	2534	item	2493	status	2359	method	2145	modify	2108
-17	table	table	2149	column	1276	column_mappings	713	list	608	result	487
-18	response	response	1172	responses	788	step	769	b's	469	question	433
-19	code	code	1109	output	670	language	597	string	565	cop's	520
-20	bmi	bmi	380	weight	243	height	216	calculate	148	body	144
-21	docs	instruction	1442	document	1144	summary	721	specific	501	knowledge	405
-22	missing	filled	139	input	130	return	125	missing	121	json	121
-23	cells	cells	355	erroneous_cells	244	result	216	step	216	erroneous	177
-24	fibonacci	fibonacci	297	≤	216	return	210	mid	201	common	163
-25	graph	graph	225	intervals	184	clique	170	interval	151	≤	140
-26	scores	assign	26	valence-arousal-dominance	26	score	26	json	26	format	26
-27	io	input	151	output	119	integer	114	count	77	digit	72
-28	permutation	permutation	282	robot	279	operation	224	identity	171	time	165
-29	errors	error	114	pristine	89	errors	77	characters	67	bytes	62
-30	rings	rings	148	distance	92	radius	90	≤	89	output	79
-31	platform	time	64	json	63	days	63	platform	63	card_type	63
-32	image	image	182	suns	139	rays	102	≤	96	beaver	83
-33	multiverse	multiverse	201	doctor	118	output	99	universe	95	input	85
-34	properties	double	277	properties	130	property	126	≤	78	circle	73
-35	relations	relations	181	image	169	set	140	relation	130	equivalence	111
-36	answers	answer	197	question	121	≤	102	answers	51	output	49
-37	partitions	rows	205	partition	181	partitions	94	cluster	93	table	89
-38	path	path	125	intersections	111	fee	64	passing	59	event	53
-39	xxx	xxx	358	xxxx	168	xxxxx	112	snowflake	50	unfold	45
-40	characters	reinhardt	120	tomie	40	eyes	38	red	34	abilities	32
-41	image	image	84	integers	35	b_val	30	symbols	28	lexicographically	28
+cluster	word1	count1	word2	count2	word3	count3	word4	count4	word5	count5
+0	club	6058	beat	5800	nature	3782	ła	3408	head	3183
+1	function	31041	equation	28307	sum	20304	f(x	18428	set	17327
+2	create	33450	time	26113	story	22124	character	18539	experience	15529
+3	data	34027	times	23614	calculate	20486	probability	17504	time	16757
+4	energy	14185	times	8366	time	8112	e.g	7514	reaction	6050
+5	return	64281	python	54193	function	46698	def	44738	list	34087
+6	step	86806	equation	29752	answer	29338	solve	17381	cdot	13589
+7	access	4609	helpful	4379	questions	3897	project	3666	tools	3455
+8	triangle	15289	angle	11347	circle	9873	equation	7347	distance	6492
+9	key	5319	input	4889	provide	4045	person	3461	focusing	3364
+10	liste	1498	übersetze	1493	deutscher	757	begriffe	754	deutsche	737
+11	flight	1939	flights	1359	reservation	1352	agent	1252	passenger	943
+12	account	3330	balance	3300	def	3127	self.balance	2331	class	2064
+13	answer	1478	book	838	pizza	769	movie	706	restaurant	617
+14	feet	5891	day	4630	snail	4373	days	2341	climb	1902
+15	abstract	379	entities	378	json	318	output	308	type	294
+16	payment	2534	item	2493	status	2359	method	2145	modify	2108
+17	table	2149	column	1276	column_mappings	713	list	608	result	487
+18	response	1172	responses	788	step	769	b's	469	question	433
+19	code	1109	output	670	language	597	string	565	cop's	520
+20	bmi	380	weight	243	height	216	calculate	148	body	144
+21	instruction	1442	document	1144	summary	721	specific	501	knowledge	405
+22	filled	139	input	130	return	125	missing	121	json	121
+23	cells	355	erroneous_cells	244	result	216	step	216	erroneous	177
+24	fibonacci	297	≤	216	return	210	mid	201	common	163
+25	graph	225	intervals	184	clique	170	interval	151	≤	140
+26	assign	26	valence-arousal-dominance	26	score	26	json	26	format	26
+27	input	151	output	119	integer	114	count	77	digit	72
+28	permutation	282	robot	279	operation	224	identity	171	time	165
+29	error	114	pristine	89	errors	77	characters	67	bytes	62
+30	rings	148	distance	92	radius	90	≤	89	output	79
+31	time	64	json	63	days	63	platform	63	card_type	63
+32	image	182	suns	139	rays	102	≤	96	beaver	83
+33	multiverse	201	doctor	118	output	99	universe	95	input	85
+34	double	277	properties	130	property	126	≤	78	circle	73
+35	relations	181	image	169	set	140	relation	130	equivalence	111
+36	answer	197	question	121	≤	102	answers	51	output	49
+37	rows	205	partition	181	partitions	94	cluster	93	table	89
+38	path	125	intersections	111	fee	64	passing	59	event	53
+39	xxx	358	xxxx	168	xxxxx	112	snowflake	50	unfold	45
+40	reinhardt	120	tomie	40	eyes	38	red	34	abilities	32
+41	image	84	integers	35	b_val	30	symbols	28	lexicographically	28

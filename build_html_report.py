@@ -398,11 +398,10 @@ def _cluster_summary_block(path: Path) -> str:
         return f"<p>Cluster summary has no cluster entries in {html.escape(str(path))}.</p>"
 
     base_keys = ("cluster", "n_users", "median_requests", "median_req_per_active_day")
-    extra_feats = sorted(
-        {key for c in clusters for key in c.keys() if key not in base_keys}
-    )
+    # Keys that are not part of the core stats table
+    other_keys = {key for c in clusters for key in c.keys() if key not in base_keys}
 
-    # Main per-cluster table (core stats)
+    # --- Main per-cluster table (core stats) ---
     core_headers = list(base_keys)
     core_rows: list[list[str]] = []
     for c in clusters:
@@ -421,15 +420,30 @@ def _cluster_summary_block(path: Path) -> str:
         table_id="publicai-cluster-core",
     )
 
-    # Feature means as one feature per line: [cluster, feature, mean_value]
-    if extra_feats:
+    # --- Feature means as one feature per line: [cluster, feature, mean_value] ---
+
+    feat_means_key = "feature_means"
+    has_feat_means = feat_means_key in other_keys and any(
+        isinstance(c.get(feat_means_key), dict) for c in clusters
+    )
+
+    if has_feat_means:
         feat_headers: list[str] = ["cluster", "feature", "mean_value"]
         feat_rows: list[list[str]] = []
+
         for c in clusters:
             cluster_id = str(c.get("cluster", ""))
-            for f_key in extra_feats:
-                val = c.get(f_key, "")
-                feat_rows.append([cluster_id, f_key, str(val)])
+            feat_means = c.get(feat_means_key) or {}
+            if not isinstance(feat_means, dict):
+                continue
+
+            # Sort features by name for stable output
+            for feat_name, val in sorted(feat_means.items()):
+                if isinstance(val, (int, float)):
+                    val_str = f"{val:.4g}"  # compact numeric formatting
+                else:
+                    val_str = str(val)
+                feat_rows.append([cluster_id, feat_name, val_str])
 
         feat_numeric_cols = [2]  # mean_value
         feat_table_html = _html_table(
@@ -441,6 +455,7 @@ def _cluster_summary_block(path: Path) -> str:
         )
     else:
         feat_table_html = ""
+
 
     metrics_html = f"""
 <p>
@@ -464,7 +479,7 @@ This report combines two complementary analyses:
 <ul>
   <li><strong>Public AI logs – Apertus 70B:</strong> Usage, performance, behavior, and user-level clustering
       derived from <code>LiteLLM_SpendLogs</code> for the <code>swiss-ai/apertus-70b-instruct</code> model group.</li>
-  <li><strong>apertus_sft_mixture – language-wise clustering:</strong> UMAP-based visualization and clustering
+  <li><strong>apertus_sft_mixture clustering:</strong> UMAP-based visualization and clustering
       of conversations in the <code>swiss-ai/apertus-sft-mixture</code> dataset, with language-specific and
       English-only breakdowns.</li>
 </ul>
@@ -634,7 +649,7 @@ This section summarizes the language-wise clustering results for the
 {english_html}
 """
     return _section(
-        "apertus_sft_mixture – language-wise clustering",
+        "apertus_sft_mixture Clustering",
         apertus_content,
         section_id="apertus-clustering",
     )
@@ -690,7 +705,7 @@ def build_html(
 <nav>
   <ul>
     <li><a href="#overview">Overview</a></li>
-    <li><a href="#public-ai-analysis">Public AI logs – Apertus 70B</a></li>
+    <li><a href="#public-ai-analysis">Public AI logs – Apertus 70B analysis</a></li>
     <li><a href="#apertus-clustering">apertus_sft_mixture Clustering</a></li>
   </ul>
 </nav>

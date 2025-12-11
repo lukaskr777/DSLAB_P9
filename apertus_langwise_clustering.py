@@ -1,7 +1,7 @@
 """
 Language-wise clustering script for swiss-ai/apertus-sft-mixture.
 
-This script assumes that conversation-level embeddings have already been computed and stored in a .npy file 
+This script assumes that conversation-level embeddings have already been computed and stored in a .npy file
 (one row per conversation, in the same order as the text-only Parquet).
 
 Pipeline:
@@ -22,8 +22,10 @@ Pipeline:
 8. For each language separately:
    - Let n_lang = number of conversations in that language.
    - If n_lang ≥ MIN_LANG_SAMPLES_FOR_CLUSTERING:
-       * set min_cluster_size = max(HDBSCAN_MIN_CLUSTER_SIZE_FLOOR, int(HDBSCAN_MIN_CLUSTER_SIZE_FRACTION * n_lang)).
-       * set min_samples = max(1, min(min_cluster_size, int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size))).
+       * set min_cluster_size = max(HDBSCAN_MIN_CLUSTER_SIZE_FLOOR,
+                                    int(HDBSCAN_MIN_CLUSTER_SIZE_FRACTION * n_lang)).
+       * set min_samples = max(1, min(min_cluster_size,
+                                      int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size))).
        * run HDBSCAN on X_red restricted to that language.
        * let noise_frac = (#points with label -1) / n_lang.
        * if HDBSCAN puts all points in noise OR noise_frac > MAX_NOISE_FRACTION:
@@ -104,7 +106,7 @@ HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
 
-# If the fraction of points labeled as noise by HDBSCAN exceeds this threshold, 
+# If the fraction of points labeled as noise by HDBSCAN exceeds this threshold,
 # the language is treated as a single cluster.
 MAX_NOISE_FRACTION = 0.6
 
@@ -165,8 +167,7 @@ def add_basic_text_features(df: pd.DataFrame) -> pd.DataFrame:
     Adds:
         - text_length: length of conversation_text in characters
 
-    Assumes that no empty conversations were dropped in the embedding pipeline,
-    so we do not drop any rows here.
+    Assumes that no empty conversations were dropped in the embedding pipeline, so we do not drop any rows here.
     """
     if "conversation_text" not in df.columns:
         raise KeyError("Expected a 'conversation_text' column in the input DataFrame.")
@@ -254,6 +255,67 @@ def evaluate_clustering_metrics(
         "davies_bouldin": db,
         "calinski_harabasz": ch,
     }
+
+
+def evaluate_global_clustering(
+    df: pd.DataFrame,
+    X_red: np.ndarray,
+    label_col: str = "cluster_langwise_final",
+    max_silhouette_samples: int | None = MAX_SILHOUETTE_SAMPLES,
+) -> dict[str, float]:
+    # Mask of rows with a label
+    mask_valid = df[label_col].notna()
+    labels_all = df.loc[mask_valid, label_col].astype(str)
+
+    # Global noise fraction (over all valid labels)
+    mask_noise_global = labels_all.str.endswith("_noise")
+    if labels_all.size > 0:
+        noise_fraction_global = float(mask_noise_global.mean())
+    else:
+        noise_fraction_global = float("nan")
+
+    # Cluster-like labels: "{lang}_c{cluster_id}"
+    mask_cluster_like = labels_all.str.contains("_c")
+
+    # Extract language part for cluster-like labels
+    # e.g. "en_c3" -> "en"
+    lang_for_cluster = labels_all[mask_cluster_like].str.split("_c", n=1, expand=True)[0]
+
+    # Count how many distinct clusters per language
+    # We can just count distinct full labels per language, since they are "lang_cX"
+    df_cl = pd.DataFrame({
+        "lang": lang_for_cluster.to_numpy(),
+        "label": labels_all[mask_cluster_like].to_numpy(),
+    })
+
+    cluster_counts = df_cl.groupby("lang")["label"].nunique()  # number of clusters per language
+    langs_with_multiple_clusters = set(cluster_counts[cluster_counts >= 2].index)
+
+    # Build mask: keep points that
+    #  - are cluster-like (lang_cX)
+    #  - are not noise
+    #  - belong to languages with >= 2 clusters
+    # First recover language for *all* cluster-like labels:
+    all_lang_for_cluster = labels_all.where(mask_cluster_like).str.split("_c", n=1, expand=True)[0]
+    mask_lang_has_multi = all_lang_for_cluster.isin(langs_with_multiple_clusters)
+
+    mask_keep_for_metrics = (~mask_noise_global) & mask_cluster_like & mask_lang_has_multi
+
+    # Indices in the original df that we actually use for metrics
+    idx_valid = np.where(mask_valid.to_numpy())[0]
+    idx_keep = idx_valid[mask_keep_for_metrics.to_numpy()]
+
+    labels = df.loc[idx_keep, label_col].astype(str).to_numpy()
+    X = X_red[idx_keep]
+
+    if np.unique(labels).size <= 1:
+        metrics = EMPTY_METRICS.copy()
+    else:
+        metrics = evaluate_clustering_metrics(X, labels, max_silhouette_samples=max_silhouette_samples)
+
+    metrics["noise_fraction"] = noise_fraction_global
+    metrics["number_clusters"] = float(np.unique(labels).size)
+    return metrics
 
 
 # ---------- Language-wise clustering helper ----------
@@ -364,6 +426,25 @@ def write_scores_file(df: pd.DataFrame, X_red: np.ndarray, scores_path: Path) ->
         f.write(f"Reduced shape (UMAP dims): {X_red.shape}\n")
         f.write("\n")
 
+        # === Global metrics for the full clustering (cluster_langwise_final) ===
+        f.write("=== Global clustering metrics (cluster_langwise_final) ===\n")
+        global_metrics = evaluate_global_clustering(df, X_red, label_col="cluster_langwise_final")
+        f.write(
+            "  number_clusters="
+            + str(int(global_metrics["number_clusters"]))
+            + "  noise_fraction="
+            + _format_metric(global_metrics["noise_fraction"])
+            + ", silhouette="
+            + _format_metric(global_metrics["silhouette"])
+            + ", davies_bouldin="
+            + _format_metric(global_metrics["davies_bouldin"])
+            + ", calinski_harabasz="
+            + _format_metric(global_metrics["calinski_harabasz"])
+            + "\n"
+        )
+        f.write("\n")
+
+        # === Languages summary ===
         f.write("=== Languages summary ===\n")
         lang_counts = df["lang"].value_counts(dropna=False).sort_index()
         for lang, cnt in lang_counts.items():

@@ -4,6 +4,9 @@ RUN_TAG: small_train_conversation_embeddings__sentence-transformers__paraphrase-
 n_samples: 197337
 Reduced shape (UMAP dims): (197337, 15)
 
+=== Global clustering metrics (cluster_langwise_final) ===
+  number_clusters=57  noise_fraction=0.228796, silhouette=0.286251, davies_bouldin=10.647414, calinski_harabasz=23845.332149
+
 === Languages summary ===
   lang='af': count=679
   lang='ar': count=893
