@@ -35,3 +35,11 @@ Datasets are confidential and must be placed in `{DATA_DIR}`. Figures are writte
 # HTML Report
 
 - **`build_html_report.py`** — Generates a consolidated, styled `index.html` with all figures and sections.
+
+---
+
+# Extension of the clustering script to Public-AI logs
+
+The clustering pipeline can be applied to LiteLLM conversations via an export step.
+
+- **`export_litellm_to_parquet.py`** - Exports LiteLLM conversations from the PostgreSQL database into a single Parquet file compatible with the Apertus clustering pipeline.
