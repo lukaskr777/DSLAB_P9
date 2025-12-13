@@ -1,22 +1,21 @@
 """
+DON'T RUN THIS SCRIPT, IT WILL MESS UP THE CURRENT REPORT, WHERE IMAGES HAVE BEEN MANUALLY CURATED.
+
 Build a complete HTML report combining:
 1) Public-AI (LiteLLM_SpendLogs) analysis for the Apertus-70B model group, and
 2) Clustering results for the swiss-ai/apertus-sft-mixture dataset.
 
 The script:
-- Locates all generated figures (usage, performance, behavior, user clustering,
-  mixed-languages clustering, per-language clustering, English-only subsets, word
-  clouds, top-word tables, representative prompts).
+- Locates all generated figures (usage, performance, behavior, user clustering, mixed-languages clustering, 
+  per-language clustering, English-only subsets, word clouds, top-word tables, representative prompts).
 - Builds galleries, tables, navigation anchors, and an overview section.
 - Uses collapsible sections for large galleries and tables.
-- Reads human-friendly plot titles from a JSON file; behavior for missing titles
-  is configurable.
-- Produces a styled, self-contained `index.html` with clickable, lazy-loaded
-  plots that open full-resolution versions in a new tab.
+- Reads human-friendly plot titles from a JSON file; behavior for missing titles is configurable.
+- Produces a styled, self-contained `index.html` with clickable, lazy-loaded plots 
+  that open full-resolution versions in a new tab.
 
-All paths are resolved relative to the repo layout; the script assumes that the
-plotting scripts have already produced their outputs in the expected `figs/`
-subdirectories.
+All paths are resolved relative to the repo layout; the script assumes that the plotting scripts have 
+already produced their outputs in the expected `figs/` subdirectories.
 """
 
 import argparse
@@ -131,6 +130,7 @@ def _get_plot_caption(p: Path) -> str | None:
 
 
 def _img_tag(src: Path, html_path: Path, alt: str = "", css_class: str = "plot") -> str:
+    """Build an HTML <img> tag wrapped in a clickable <a> to the full-resolution image."""
     rel_str = _rel_from_html(src, html_path)
     escaped_src = html.escape(rel_str)
     escaped_alt = html.escape(alt)
@@ -164,11 +164,7 @@ def _gallery(img_paths: Sequence[Path], html_path: Path) -> str:
 
 
 def _details(
-    summary: str,
-    inner_html: str,
-    css_class: str = "collapsible",
-    open_: bool = False,
-    details_id: str | None = None,
+    summary: str, inner_html: str, css_class: str = "collapsible", open_: bool = False, details_id: str | None = None
 ) -> str:
     """Wrap content in a <details> element."""
     open_attr = " open" if open_ else ""
@@ -291,6 +287,7 @@ def _parse_top_words(path: Path) -> list[dict[str, str]]:
 
 
 def _top_words_table(path: Path, title: str, table_id: str | None = None) -> str:
+    """Generate an HTML table of top words per cluster from the given TSV file."""
     rows = _parse_top_words(path)
     if not rows:
         return f"<p>No top-words file found at {html.escape(str(path))}.</p>"
@@ -351,6 +348,7 @@ def _parse_representatives(path: Path) -> list[dict[str, str]]:
 
 
 def _representatives_table(path: Path, title: str) -> str:
+    """Generate an HTML table of representative prompts per cluster from the given TSV file."""
     rows = _parse_representatives(path)
     if not rows:
         return f"<p>No representatives file found at {html.escape(str(path))}.</p>"

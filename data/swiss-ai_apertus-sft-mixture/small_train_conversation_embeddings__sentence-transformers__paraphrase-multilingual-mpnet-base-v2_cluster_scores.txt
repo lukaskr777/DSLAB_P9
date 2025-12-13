@@ -4,56 +4,55 @@ n_samples: 197337
 Reduced shape (UMAP dims): (197337, 15)
 
 === HDBSCAN ===
-min_cluster_size: 800
-min_samples: 200
+min_cluster_size: 789
+min_samples: 197
 metric: euclidean
 cluster_selection_method: eom
 cluster_selection_epsilon: 0.0
-num_clusters_excl_noise: 39
-n_noise: 66587
-noise_fraction: 0.3374
-internal_metrics_on_non_noise: silhouette=0.487766, davies_bouldin=0.680158, calinski_harabasz=52363.490170
+num_clusters_excl_noise: 38
+n_noise: 68241
+noise_fraction: 0.3458
+internal_metrics_on_non_noise: silhouette=0.492711, davies_bouldin=0.665227, calinski_harabasz=54018.916343
 cluster_sizes (including noise):
-  label=-1: count=66587
+  label=-1: count=68241
   label=0: count=1529
   label=1: count=4728
   label=2: count=2656
-  label=3: count=8534
-  label=4: count=27833
-  label=5: count=9680
-  label=6: count=5378
-  label=7: count=953
+  label=3: count=27539
+  label=4: count=8328
+  label=5: count=9613
+  label=6: count=979
+  label=7: count=5436
   label=8: count=958
   label=9: count=856
-  label=10: count=1677
-  label=11: count=5734
-  label=12: count=1896
-  label=13: count=896
-  label=14: count=2999
+  label=10: count=1676
+  label=11: count=5750
+  label=12: count=1912
+  label=13: count=3000
+  label=14: count=1612
   label=15: count=1095
-  label=16: count=1611
-  label=17: count=1926
-  label=18: count=1361
-  label=19: count=4396
-  label=20: count=1481
-  label=21: count=7480
-  label=22: count=2402
-  label=23: count=870
-  label=24: count=838
-  label=25: count=2342
-  label=26: count=1044
-  label=27: count=1038
-  label=28: count=813
-  label=29: count=2693
-  label=30: count=2352
-  label=31: count=3310
-  label=32: count=1536
-  label=33: count=3367
-  label=34: count=3448
-  label=35: count=1316
-  label=36: count=1426
-  label=37: count=2159
-  label=38: count=4139
+  label=16: count=896
+  label=17: count=1928
+  label=18: count=1363
+  label=19: count=4419
+  label=20: count=1486
+  label=21: count=7487
+  label=22: count=845
+  label=23: count=2362
+  label=24: count=1049
+  label=25: count=812
+  label=26: count=2698
+  label=27: count=2374
+  label=28: count=1042
+  label=29: count=1563
+  label=30: count=3398
+  label=31: count=1833
+  label=32: count=3366
+  label=33: count=3451
+  label=34: count=1319
+  label=35: count=1450
+  label=36: count=2160
+  label=37: count=4128
 
 === Leiden ===
 resolution: 0.35

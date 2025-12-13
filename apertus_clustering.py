@@ -79,8 +79,12 @@ UMAP_METRIC = "cosine"
 UMAP_RANDOM_STATE = 0
 
 # HDBSCAN
-HDBSCAN_MIN_CLUSTER_SIZE = 800  # should be 0.004 * n_samples approximately
-HDBSCAN_MIN_SAMPLES = int(0.25 * HDBSCAN_MIN_CLUSTER_SIZE)  # None -> default (min_cluster_size)
+# Absolute minimum cluster size
+HDBSCAN_MIN_CLUSTER_SIZE_FLOOR = 200
+# Fraction of cluster size used to set min_cluster_size (before applying floor)
+HDBSCAN_MIN_CLUSTER_SIZE_FRACTION = 0.004  # min_cluster_size ~ 0.4% of n_rows, with a hard floor
+# min_samples ~= fraction * min_cluster_size, but clamped into [1, min_cluster_size]
+HDBSCAN_MIN_SAMPLES_FRACTION = 0.25
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
@@ -382,9 +386,15 @@ def write_scores_file(
         f.write("\n")
 
         # HDBSCAN summary
+        min_cluster_size = max(
+            HDBSCAN_MIN_CLUSTER_SIZE_FLOOR,
+            int(HDBSCAN_MIN_CLUSTER_SIZE_FRACTION * n_samples),
+        )
+        min_samples = int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size)
+        min_samples = max(1, min(min_samples, min_cluster_size))
         f.write("=== HDBSCAN ===\n")
-        f.write(f"min_cluster_size: {HDBSCAN_MIN_CLUSTER_SIZE}\n")
-        f.write(f"min_samples: {HDBSCAN_MIN_SAMPLES}\n")
+        f.write(f"min_cluster_size: {min_cluster_size}\n")
+        f.write(f"min_samples: {min_samples}\n")
         f.write(f"metric: {HDBSCAN_METRIC}\n")
         f.write(f"cluster_selection_method: {HDBSCAN_CLUSTER_SELECTION_METHOD}\n")
         f.write(f"cluster_selection_epsilon: {HDBSCAN_CLUSTER_SELECTION_EPSILON}\n")
@@ -519,9 +529,15 @@ def main() -> None:
 
     # HDBSCAN on reduced space
     print("Clustering with HDBSCAN on UMAP-reduced embeddings...")
+    min_cluster_size = max(
+        HDBSCAN_MIN_CLUSTER_SIZE_FLOOR,
+        int(HDBSCAN_MIN_CLUSTER_SIZE_FRACTION * X_red.shape[0]),
+    )
+    min_samples = int(HDBSCAN_MIN_SAMPLES_FRACTION * min_cluster_size)
+    min_samples = max(1, min(min_samples, min_cluster_size))
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=HDBSCAN_MIN_CLUSTER_SIZE,
-        min_samples=HDBSCAN_MIN_SAMPLES,
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
         metric=HDBSCAN_METRIC,
         cluster_selection_method=HDBSCAN_CLUSTER_SELECTION_METHOD,
         cluster_selection_epsilon=HDBSCAN_CLUSTER_SELECTION_EPSILON,
