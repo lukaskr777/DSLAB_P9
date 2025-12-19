@@ -60,9 +60,9 @@ All related code lives in **`cost_estimation_hl/`**.
 Configuration layer defining all simulation parameters:
 
 - **`cluster_configs.json`** — Compute cluster definitions (GPU type, counts, memory, parallelism, throughput)
-- **`api_configs.json`** — API-level and model parameters
-- **`usage_simulation_config.py`** — Userbase and arrival process configuration
-- **`computation_config.py`** — Batching and compute-side simulation parameters
+- **`api_configs.json`** — API-level congigs
+- **`usage_simulation_config.py`** — Classes for arrival process configuration
+- **`computation_config.py`** — Classes for batching and compute-side simulation parameters
 
 Two Python files define **dataclasses** that load and validate these configurations for use in the simulation.
 
@@ -75,7 +75,7 @@ In-depth analytical notebooks:
 - **`cost_modelling.ipynb`** — Compute cluster modelling and cost breakdowns
 - **`full_modelling.ipynb`** — End-to-end latency modelling combining userbase demand with cluster capacity to evaluate latency across different cluster setups
 
-These notebooks are intended for **exploration, validation, and sensitivity analysis**.
+These notebooks are intended for **exploration, validation, and analysis**.
 
 ---
 
@@ -86,7 +86,7 @@ Located at the root of `cost_estimation_hl/`:
 - **`usage_simulation.py`** — Defines the userbase simulator and prompt arrival processes
 - **`computation_simulation.py`** — Encapsulates prompt processing, batching, and compute-side latency simulation
 
-Together, these modules form the core **event-driven simulation loop**.
+Together, these modules form the core **simulation loop**.
 
 ---
 
