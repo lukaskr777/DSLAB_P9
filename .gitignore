@@ -6,7 +6,6 @@ __pycache__/
 .venv/
 *.parquet
 *.csv
-*.png
 *.npy
 *.joblib
 *.dat
