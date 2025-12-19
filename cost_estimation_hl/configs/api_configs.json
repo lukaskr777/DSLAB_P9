@@ -1,0 +1,29 @@
+{
+  "configurations": [
+    {
+      "name": "GPT-5 nano",
+      "price_per_prefill_tkn": 5e-8,
+      "price_per_decode_tkn": 4e-7
+    },
+    {
+      "name": "GPT-5.1",
+      "price_per_prefill_tkn": 1.25e-6,
+      "price_per_decode_tkn": 1e-5
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "price_per_prefill_tkn": 1e-6,
+      "price_per_decode_tkn": 5e-6
+    },
+    {
+      "name": "Claude Sonnet 4.5",
+      "price_per_prefill_tkn": 3e-6,
+      "price_per_decode_tkn": 15e-6
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "price_per_prefill_tkn": 5e-6,
+      "price_per_decode_tkn": 25e-6
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Usage & Latency Simulation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: Arial, sans-serif; margin: 30px; background: #f7f7f7; color: #333; }
+h2 { text-align: center; }
+.container { max-width: 700px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+label { display: block; margin-top: 10px; font-weight: bold; }
+input, select { width: 100%; padding: 6px 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; }
+button { margin-top: 15px; padding: 10px 15px; border: none; background: #4CAF50; color: white; font-size: 16px; border-radius: 8px; cursor: pointer; }
+button:hover { background: #45a049; }
+canvas { margin-top: 30px; }
+hr { margin: 40px 0; border: 1px dashed #ccc; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Usage Simulation</h2>
+
+<label>Hour Peak:
+  <input type="number" id="hour_peak" value="12" min="0" max="23">
+</label>
+<label>Users:
+  <input type="number" id="users" value="4800" min="1">
+</label>
+<label>Daily Prompts:
+  <input type="number" id="daily_prompts" value="3" min="1">
+</label>
+<label>Median Prompt Tokens:
+  <input type="number" id="median_prompt_tokens" value="1200" min="1">
+</label>
+<label>Simulation Repetitions:
+  <input type="number" id="repetitions" value="100" min="1">
+</label>
+<label>Real Date (YYYY-MM-DD):
+  <input type="date" id="real_date" value="2025-09-04">
+</label>
+<button onclick="runSimulation()">Run Usage Simulation</button>
+
+<canvas id="usageChart" width="600" height="300"></canvas>
+
+<hr>
+
+<h2>Latency & Cost Simulation</h2>
+<label>Batch Size:
+  <input type="number" id="batch_size" value="16" min="1">
+</label>
+<label>Dynamic Limit (sec):
+  <input type="number" id="dynamic_lim_sec" value="0.1" step="0.01" min="0">
+</label>
+<label>Pricing Ratio R:
+  <input type="number" id="pricing_ratio" value="10" min="1">
+</label>
+<label>Data Source:
+  <select id="data_source">
+    <option value="real">Real Data</option>
+    <option value="sim">Simulated Data</option>
+  </select>
+</label>
+<button onclick="runLatencySimulation()">Run Latency Simulation</button>
+
+<canvas id="latencyChart" width="700" height="400"></canvas>
+</div>
+
+<script>
+let usageChart = null;
+let latencyChart = null;
+
+async function runSimulation() {
+    const payload = {
+        hour_peak: parseInt(document.getElementById("hour_peak").value),
+        users: parseInt(document.getElementById("users").value),
+        daily_prompts: parseInt(document.getElementById("daily_prompts").value),
+        median_prompt_tokens: parseInt(document.getElementById("median_prompt_tokens").value),
+        repetitions: parseInt(document.getElementById("repetitions").value),
+        real_date: document.getElementById("real_date").value
+    };
+    try {
+        const res = await fetch("/simulate", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const ctx = document.getElementById("usageChart").getContext("2d");
+        if (usageChart) usageChart.destroy();
+        usageChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.hours,
+                datasets: [
+                    {label: 'Median Total Tokens', data: data.median, borderColor: '#4CAF50', fill: false, tension: 0.3, pointRadius: 4},
+                    {label: '5th Percentile', data: data.p5, borderColor: 'rgba(200,0,0,0.4)', fill: '+1', pointRadius:0, borderDash:[5,5]},
+                    {label: '95th Percentile', data: data.p95, borderColor: 'rgba(0,0,200,0.4)', fill:'-1', pointRadius:0, borderDash:[5,5]},
+                    {label: 'Real Data', data: data.real, borderColor: 'orange', fill:false, tension:0.3, pointRadius:3}
+                ]
+            },
+            options: {responsive:true, plugins:{legend:{display:true}}, scales:{x:{title:{display:true,text:'Hour'}},y:{title:{display:true,text:'Total Tokens'},beginAtZero:true}}}
+        });
+    } catch (err) { alert("Error fetching simulation data: " + err); }
+}
+
+async function runLatencySimulation() {
+    const payload = {
+        batch_size: parseInt(document.getElementById("batch_size").value),
+        dynamic_lim_sec: parseFloat(document.getElementById("dynamic_lim_sec").value),
+        pricing_ratio: parseFloat(document.getElementById("pricing_ratio").value),
+        data_source: document.getElementById("data_source").value,
+        real_date: document.getElementById("real_date").value
+    };
+    // Pass simulation params as well
+    const usage_payload = {
+        hour_peak: parseInt(document.getElementById("hour_peak").value),
+        users: parseInt(document.getElementById("users").value),
+        daily_prompts: parseInt(document.getElementById("daily_prompts").value),
+        median_prompt_tokens: parseInt(document.getElementById("median_prompt_tokens").value),
+        repetitions: parseInt(document.getElementById("repetitions").value),
+        real_date: document.getElementById("real_date").value
+    };
+
+    try {
+        const res = await fetch("/latency_simulate", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({...payload, usage_params: usage_payload})
+        });
+        const data = await res.json();
+        const ctx = document.getElementById("latencyChart").getContext("2d");
+        if (latencyChart) latencyChart.destroy();
+
+        const cfgNames = data.results.map(r => r.cluster_name);
+        const latencies = data.results.map(r => parseFloat(r.median_latency_1k));
+        const prefillPrices = data.results.map(r => parseFloat(r.prefill_price_1K));
+        const decodePrices = data.results.map(r => parseFloat(r.decode_price_1K));
+        const trueLatency = parseFloat(data.true_latency_1k);
+
+        latencyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: cfgNames,
+                datasets: [
+                    {label:'Median Latency per 1k tokens (s)', data: latencies, backgroundColor:'skyblue', yAxisID:'y1'},
+                    {label:'Prefill Price per 1k tokens ($)', data: prefillPrices, backgroundColor:'orange', yAxisID:'y2'},
+                    {label:'Decode Price per 1k tokens ($)', data: decodePrices, backgroundColor:'lightcoral', yAxisID:'y2'},
+                    {label:'True Latency per 1k tokens (s)', data: cfgNames.map(()=>trueLatency), type:'line', borderColor:'blue', borderWidth:2, fill:false, yAxisID:'y1'}
+                ]
+            },
+            options:{
+                responsive:true,
+                plugins:{legend:{display:true}},
+                scales:{
+                    y1:{type:'linear', position:'left', title:{display:true,text:'Latency (s per 1k tokens)'}},
+                    y2:{type:'linear', position:'right', title:{display:true,text:'Price ($ per 1k tokens)'}}
+                }
+            }
+        });
+
+    } catch (err) {
+        alert("Error fetching latency simulation: " + err);
+        console.error(err);
+    }
+}
+</script>
+</body>
+</html>

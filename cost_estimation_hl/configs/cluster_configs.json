@@ -1,0 +1,73 @@
+{
+  "configurations": [
+
+    {
+  "name": "A100_8x40GB_p4d_replica1",
+  "num_replicas": 1,
+  "num_gpu_per_replica": 8,
+  "gpu_vram_B": 40000000000,
+  "model_size_B": 140000000000,
+  "peak_prefill_tks_per_sec_per_replica": 10000,
+  "peak_decode_tks_per_sec_per_replica": 1000,
+  "price_per_hour": 32.77,
+  "is_price_monthly": false
+  },
+   {
+  "name": "A100_8x40GB_p4d_replica2",
+  "num_replicas": 2,
+  "num_gpu_per_replica": 8,
+  "gpu_vram_B": 40000000000,
+  "model_size_B": 140000000000,
+  "peak_prefill_tks_per_sec_per_replica": 10000,
+  "peak_decode_tks_per_sec_per_replica": 1000,
+  "price_per_hour": 64,
+  "is_price_monthly": false
+  },
+   {
+  "name": "A100_8x40GB_p4d_replica4",
+  "num_replicas": 4,
+  "num_gpu_per_replica": 8,
+  "gpu_vram_B": 40000000000,
+  "model_size_B": 140000000000,
+  "peak_prefill_tks_per_sec_per_replica": 10000,
+  "peak_decode_tks_per_sec_per_replica": 1000,
+  "price_per_hour": 126,
+  "is_price_monthly": false
+  },
+
+  {
+  "name": "H100_8x80GB_p5_replica1",
+  "num_replicas": 1,
+  "num_gpu_per_replica": 8,
+  "gpu_vram_B": 80000000000,
+  "model_size_B": 140000000000,
+  "peak_prefill_tks_per_sec_per_replica": 30000,
+  "peak_decode_tks_per_sec_per_replica": 3000,
+  "price_per_hour": 98.32,
+  "is_price_monthly": false
+},
+{
+  "name": "H100_8x80GB_p5_replica2",
+  "num_replicas": 2,
+  "num_gpu_per_replica": 8,
+  "gpu_vram_B": 80000000000,
+  "model_size_B": 140000000000,
+  "peak_prefill_tks_per_sec_per_replica": 30000,
+  "peak_decode_tks_per_sec_per_replica": 3000,
+  "price_per_hour": 196,
+  "is_price_monthly": false
+},
+{
+  "name": "H100_8x80GB_p5_replica4",
+  "num_replicas": 4,
+  "num_gpu_per_replica": 8,
+  "gpu_vram_B": 80000000000,
+  "model_size_B": 140000000000,
+  "peak_prefill_tks_per_sec_per_replica": 30000,
+  "peak_decode_tks_per_sec_per_replica": 3000,
+  "price_per_hour": 362,
+  "is_price_monthly": false
+}
+
+  ]
+}

@@ -2,4 +2,5 @@
 data/
 .DS_STORE
 /venv
-/Datasets
+.vscode
+__pycache__

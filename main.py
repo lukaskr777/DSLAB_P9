@@ -1,9 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import numpy as np
 import glob
-
-
 
 
 
@@ -16,4 +14,6 @@ if __name__ == "__main__":
     print(df.describe())
 
     df.plot(x="total_tokens", y="total_spend", kind="line")
+    print()
+
 
