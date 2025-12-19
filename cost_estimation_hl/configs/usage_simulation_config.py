@@ -26,7 +26,7 @@ class UsageSimulationCfg:
 
 
 
-## TODO, this is not so nice, perhaps a random independent would be better
+
 class CompletionTokenDist:
 
 

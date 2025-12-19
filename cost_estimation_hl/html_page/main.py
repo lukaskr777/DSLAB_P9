@@ -181,7 +181,7 @@ def latency_simulate(req: LatencyRequest):
         median_latency_1k = 1e3 * ((df_full["prefillTime"] - df_full["startTime"]).dt.total_seconds() / df_full["prompt_tokens"]).quantile(0.5)
 
         # Price per 1k tokens
-        prefill_price_1K = cluster_cfg.price_per(days=1) / (prompt_tks + R * comp_tks)
+        prefill_price_1K = 1e3 * cluster_cfg.price_per(days=1) / (prompt_tks + R * comp_tks)
         decode_price_1K = prefill_price_1K * R
 
         results.append({
