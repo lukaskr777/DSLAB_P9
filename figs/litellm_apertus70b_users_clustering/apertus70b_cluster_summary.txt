@@ -1,0 +1,81 @@
+{
+  "k_selected": "3",
+  "silhouette": "0.311",
+  "clusters": [
+    {
+      "cluster": 0,
+      "n_users": 5162,
+      "median_requests": 10.0,
+      "median_req_per_active_day": 4.333333333333333,
+      "feature_means": {
+        "request_count": 14.162340178225493,
+        "n_unique_providers": 1.3773731111972103,
+        "n_unique_sessions": 14.162340178225493,
+        "active_days": 2.750484308407594,
+        "activity_span_days": 7.707069994988754,
+        "requests_per_active_day": 6.216659034997942,
+        "mean_inter_req_s": 100859.55707312589,
+        "most_active_hour": 11.577876791941108,
+        "weekday_fraction": 0.8324298457578087,
+        "avg_tokens_per_req": 4452.236413407283,
+        "avg_completion_tokens": 1320.5716021919395,
+        "completion_ratio_mean": 0.36974754046235814,
+        "prompt_to_completion_ratio_mean": 9.060335639627871,
+        "mean_latency_s": 48.00222757958981,
+        "latency_std_s": 61.66045196904945,
+        "mean_completion_latency_s": 34.695195223359796,
+        "success_rate": 0.9187079585247881
+      }
+    },
+    {
+      "cluster": 1,
+      "n_users": 265,
+      "median_requests": 1.0,
+      "median_req_per_active_day": 1.0,
+      "feature_means": {
+        "request_count": 1.8150943396226416,
+        "n_unique_providers": 1.0150943396226415,
+        "n_unique_sessions": 1.8150943396226416,
+        "active_days": 1.0113207547169811,
+        "activity_span_days": 0.036087588312368975,
+        "requests_per_active_day": 1.8,
+        "mean_inter_req_s": 2101.354954860737,
+        "most_active_hour": 10.535849056603773,
+        "weekday_fraction": 0.8578616352201257,
+        "avg_tokens_per_req": 1.0715902964959567,
+        "avg_completion_tokens": 0.3363522012578616,
+        "completion_ratio_mean": 0.0056399244094886124,
+        "prompt_to_completion_ratio_mean": 0.035100752462535696,
+        "mean_latency_s": 0.009571069182389936,
+        "latency_std_s": 0.02117580946801004,
+        "mean_completion_latency_s": 0.00970642857142857,
+        "success_rate": 0.003090745732255166
+      }
+    },
+    {
+      "cluster": 2,
+      "n_users": 14669,
+      "median_requests": 2.0,
+      "median_req_per_active_day": 2.0,
+      "feature_means": {
+        "request_count": 3.035244392937487,
+        "n_unique_providers": 1.010907355647965,
+        "n_unique_sessions": 3.035244392937487,
+        "active_days": 1.0789419865021475,
+        "activity_span_days": 0.19238650777701405,
+        "requests_per_active_day": 2.8827232031267758,
+        "mean_inter_req_s": 8838.743193025857,
+        "most_active_hour": 11.846410798282092,
+        "weekday_fraction": 0.8538263122641743,
+        "avg_tokens_per_req": 2814.383936469375,
+        "avg_completion_tokens": 1251.7203605054176,
+        "completion_ratio_mean": 0.44868439069545624,
+        "prompt_to_completion_ratio_mean": 3.0592791340876286,
+        "mean_latency_s": 42.82069983989905,
+        "latency_std_s": 16.26337143177401,
+        "mean_completion_latency_s": 33.78482228322934,
+        "success_rate": 0.9954268639080147
+      }
+    }
+  ]
+}

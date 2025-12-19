@@ -1,6 +1,15 @@
-.dslab_env/
-data/
 .DS_STORE
 /venv
 .vscode
 __pycache__
+__pycache__/
+.venv/
+*.parquet
+*.csv
+*.png
+*.npy
+*.joblib
+*.dat
+__MACOSX/
+.ipynb_checkpoints/
+.vscode/

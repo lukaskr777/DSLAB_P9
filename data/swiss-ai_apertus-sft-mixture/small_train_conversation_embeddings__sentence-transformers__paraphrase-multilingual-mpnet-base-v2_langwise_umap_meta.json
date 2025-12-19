@@ -1,0 +1,9 @@
+{
+  "n_components": 15,
+  "n_neighbors": 70,
+  "min_dist": 0.0,
+  "metric": "cosine",
+  "random_state": 0,
+  "n_rows": 197337,
+  "embeddings_path": "data/swiss-ai_apertus-sft-mixture/small_train_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy"
+}

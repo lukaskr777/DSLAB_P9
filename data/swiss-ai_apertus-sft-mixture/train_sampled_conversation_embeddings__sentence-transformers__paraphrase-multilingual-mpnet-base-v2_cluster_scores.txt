@@ -1,0 +1,153 @@
+Embeddings file: data/swiss-ai_apertus-sft-mixture/train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2.npy
+TAG: train_sampled_conversation_embeddings__sentence-transformers__paraphrase-multilingual-mpnet-base-v2
+n_samples: 39422
+Reduced shape (UMAP dims): (39422, 15)
+
+=== HDBSCAN ===
+min_cluster_size: 250
+min_samples: 50
+metric: euclidean
+cluster_selection_method: eom
+cluster_selection_epsilon: 0.0
+num_clusters_excl_noise: 25
+n_noise: 12897
+noise_fraction: 0.3272
+internal_metrics_on_non_noise: silhouette=0.510923, davies_bouldin=0.663677, calinski_harabasz=16594.791835
+cluster_sizes (including noise):
+  label=-1: count=12897
+  label=0: count=305
+  label=1: count=955
+  label=2: count=3559
+  label=3: count=544
+  label=4: count=1055
+  label=5: count=1764
+  label=6: count=1956
+  label=7: count=815
+  label=8: count=906
+  label=9: count=2066
+  label=10: count=745
+  label=11: count=358
+  label=12: count=486
+  label=13: count=281
+  label=14: count=1201
+  label=15: count=1249
+  label=16: count=1122
+  label=17: count=404
+  label=18: count=425
+  label=19: count=551
+  label=20: count=417
+  label=21: count=892
+  label=22: count=1561
+  label=23: count=1861
+  label=24: count=1047
+
+=== Leiden ===
+resolution: 1.0
+internal_metrics: silhouette=0.302617, davies_bouldin=0.976909, calinski_harabasz=9515.544685
+cluster_sizes:
+  label=0: count=5714
+  label=1: count=4134
+  label=2: count=3353
+  label=3: count=3316
+  label=4: count=2448
+  label=5: count=2425
+  label=6: count=2338
+  label=7: count=2163
+  label=8: count=2048
+  label=9: count=2025
+  label=10: count=1880
+  label=11: count=1807
+  label=12: count=1691
+  label=13: count=980
+  label=14: count=867
+  label=15: count=807
+  label=16: count=518
+  label=17: count=309
+  label=18: count=198
+  label=19: count=125
+  label=20: count=76
+  label=21: count=68
+  label=22: count=65
+  label=23: count=30
+  label=24: count=24
+  label=25: count=13
+
+=== KMeans sweep ===
+k, inertia, silhouette, davies_bouldin, calinski_harabasz
+2, 4.196668e+05, 0.307489, 1.374938, 16124.683288
+3, 3.201928e+05, 0.325377, 1.199534, 16689.893068
+4, 2.880984e+05, 0.342669, 1.106625, 13829.528919
+5, 2.524214e+05, 0.345081, 0.894564, 13230.629038
+6, 2.105460e+05, 0.347879, 0.934021, 14257.204693
+7, 1.728803e+05, 0.366146, 0.905983, 15900.435350
+8, 1.616731e+05, 0.364043, 0.910944, 14963.642279
+9, 1.436101e+05, 0.372182, 0.923741, 15359.297706
+10, 1.238734e+05, 0.389925, 0.865240, 16525.305560
+11, 1.184221e+05, 0.392618, 0.848649, 15738.434971
+12, 1.082434e+05, 0.397644, 0.818088, 15989.591134
+13, 9.954915e+04, 0.383102, 0.843246, 16223.643012
+14, 9.838237e+04, 0.351950, 0.964821, 15188.845447
+15, 9.345504e+04, 0.333930, 0.988709, 14995.594006
+16, 8.973598e+04, 0.328586, 1.007557, 14684.447625
+17, 8.149527e+04, 0.349210, 0.999462, 15407.380827
+18, 7.949344e+04, 0.356216, 0.943166, 14924.240889
+19, 7.175758e+04, 0.358328, 0.891637, 15850.246052
+20, 6.584656e+04, 0.369053, 0.845974, 16549.760421
+21, 6.090551e+04, 0.386505, 0.855064, 17157.127133
+22, 5.909129e+04, 0.384861, 0.865957, 16898.966781
+23, 5.699530e+04, 0.385837, 0.856928, 16789.489093
+24, 5.526142e+04, 0.385021, 0.903259, 16616.718748
+25, 5.344268e+04, 0.386995, 0.897839, 16521.721078
+26, 5.142022e+04, 0.392674, 0.878700, 16546.253285
+27, 4.884742e+04, 0.399222, 0.862658, 16827.214446
+28, 4.742190e+04, 0.404346, 0.852645, 16734.521098
+29, 4.284562e+04, 0.413845, 0.821288, 18010.238979
+30, 4.226291e+04, 0.408467, 0.811003, 17647.324593
+31, 4.066980e+04, 0.408906, 0.815979, 17778.217164
+32, 3.874096e+04, 0.414437, 0.802244, 18124.147635
+33, 3.806622e+04, 0.399392, 0.838657, 17890.317650
+34, 3.687862e+04, 0.396814, 0.846834, 17944.832683
+35, 3.605475e+04, 0.377385, 0.885117, 17841.051546
+36, 3.528457e+04, 0.375489, 0.900632, 17733.722124
+37, 3.478650e+04, 0.372042, 0.935643, 17503.199688
+38, 3.415553e+04, 0.367876, 0.953692, 17363.977134
+39, 3.274588e+04, 0.376297, 0.933704, 17679.009762
+40, 3.226613e+04, 0.372208, 0.953034, 17496.391511
+41, 3.144655e+04, 0.369382, 0.965807, 17528.872588
+
+Selected k (best_k): 32
+Final KMeans internal_metrics: silhouette=0.414437, davies_bouldin=0.802244, calinski_harabasz=18124.147635
+
+=== KMeans (k = best_k) cluster sizes ===
+  label=0: count=66
+  label=1: count=1918
+  label=2: count=1619
+  label=3: count=2073
+  label=4: count=1422
+  label=5: count=30
+  label=6: count=955
+  label=7: count=1997
+  label=8: count=1020
+  label=9: count=172
+  label=10: count=3084
+  label=11: count=1835
+  label=12: count=1147
+  label=13: count=1404
+  label=14: count=1094
+  label=15: count=13
+  label=16: count=1255
+  label=17: count=1322
+  label=18: count=1537
+  label=19: count=1287
+  label=20: count=1203
+  label=21: count=1305
+  label=22: count=1105
+  label=23: count=2531
+  label=24: count=1391
+  label=25: count=159
+  label=26: count=2898
+  label=27: count=318
+  label=28: count=586
+  label=29: count=2031
+  label=30: count=305
+  label=31: count=340
