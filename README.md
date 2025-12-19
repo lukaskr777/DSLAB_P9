@@ -43,3 +43,77 @@ Datasets are confidential and must be placed in `{DATA_DIR}`. Figures are writte
 The clustering pipeline can be applied to LiteLLM conversations via an export step.
 
 - **`export_litellm_to_parquet.py`** - Exports LiteLLM conversations from the PostgreSQL database into a single Parquet file compatible with the Apertus clustering pipeline.
+
+
+
+# 3. Cost & Latency Estimation
+
+This module provides a **high-level simulation framework for estimating LLM inference cost and latency** under varying **user demand patterns** and **compute cluster configurations**. It connects user-level prompt arrivals with cluster-level batching, scheduling, and throughput constraints to model realistic end-to-end performance.
+
+All related code lives in **`cost_estimation_hl/`**.
+
+---
+
+## Codebase Structure
+
+### `cost_estimation_hl/configs/`
+Configuration layer defining all simulation parameters:
+
+- **`cluster_configs.json`** — Compute cluster definitions (GPU type, counts, memory, parallelism, throughput)
+- **`api_configs.json`** — API-level and model parameters
+- **`usage_simulation_config.py`** — Userbase and arrival process configuration
+- **`computation_config.py`** — Batching and compute-side simulation parameters
+
+Two Python files define **dataclasses** that load and validate these configurations for use in the simulation.
+
+---
+
+### `cost_estimation_hl/notebooks/`
+In-depth analytical notebooks:
+
+- **`userbase_modelling.ipynb`** — Analysis and modelling of user behavior and prompt arrival processes
+- **`cost_modelling.ipynb`** — Compute cluster modelling and cost breakdowns
+- **`full_modelling.ipynb`** — End-to-end latency modelling combining userbase demand with cluster capacity to evaluate latency across different cluster setups
+
+These notebooks are intended for **exploration, validation, and sensitivity analysis**.
+
+---
+
+### Simulation Modules
+
+Located at the root of `cost_estimation_hl/`:
+
+- **`usage_simulation.py`** — Defines the userbase simulator and prompt arrival processes
+- **`computation_simulation.py`** — Encapsulates prompt processing, batching, and compute-side latency simulation
+
+Together, these modules form the core **event-driven simulation loop**.
+
+---
+
+### Local Simulation UI (FastAPI)
+
+The **`html_page/`** folder provides a lightweight **FastAPI-based REST interface** for running simulations locally and inspecting results via a browser.
+
+To run the local server:
+
+```bash
+cd cost_estimation_hl/html_page
+uvicorn main:app --reload
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
